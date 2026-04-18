@@ -1,0 +1,296 @@
+/* Timeline Planner */
+
+.timeline-planner-root {
+	display: flex;
+	flex-direction: column;
+	height: 100%;
+	background: var(--background-primary);
+	color: var(--text-normal);
+	font-size: var(--font-ui-small);
+}
+
+.timeline-planner-toolbar {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	padding: 8px 10px;
+	border-bottom: 1px solid var(--background-modifier-border);
+	flex-wrap: wrap;
+}
+
+.timeline-planner-title-row {
+	display: flex;
+	align-items: baseline;
+	gap: 8px;
+	flex-wrap: wrap;
+}
+
+.timeline-planner-file-label {
+	font-size: var(--font-ui-smaller);
+	color: var(--text-muted);
+	font-weight: 400;
+	max-width: 280px;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.timeline-planner-toolbar button {
+	margin: 0;
+}
+
+.timeline-planner-zoom {
+	display: flex;
+	align-items: center;
+	gap: 4px;
+	margin-left: auto;
+}
+
+.timeline-planner-zoom-label {
+	opacity: 0.8;
+	font-size: var(--font-ui-smaller);
+}
+
+.timeline-planner-scroll {
+	flex: 1;
+	overflow: auto;
+	position: relative;
+	cursor: grab;
+}
+
+.timeline-planner-scroll.timeline-planner-scroll--panning {
+	cursor: grabbing;
+	user-select: none;
+}
+
+.timeline-planner-main {
+	position: relative;
+	min-width: min-content;
+}
+
+.timeline-planner-today-line {
+	position: absolute;
+	top: 0;
+	bottom: 0;
+	left: 0;
+	width: 2px;
+	transform: translateX(-50%);
+	background: #d32f2f;
+	pointer-events: none;
+	z-index: 4;
+	box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.35);
+}
+
+.timeline-planner-grid {
+	display: grid;
+	min-width: min-content;
+	border-bottom: 1px solid var(--background-modifier-border);
+	align-items: stretch;
+}
+
+.timeline-planner-dayhead {
+	padding: 4px 2px;
+	text-align: center;
+	border-right: 1px solid var(--background-modifier-border);
+	min-width: 28px;
+	box-sizing: border-box;
+	font-variant-numeric: tabular-nums;
+}
+
+.timeline-planner-dayhead.is-weekend {
+	background: var(--background-modifier-hover);
+}
+
+.timeline-planner-dayhead.is-today {
+	background: var(--background-modifier-active-hover);
+	font-weight: 600;
+}
+
+.timeline-planner-rows {
+	display: flex;
+	flex-direction: column;
+}
+
+.timeline-planner-row {
+	display: flex;
+	border-bottom: 1px solid var(--background-modifier-border);
+	min-height: 44px;
+}
+
+.timeline-planner-row-label {
+	width: 180px;
+	min-width: 180px;
+	flex-shrink: 0;
+	padding: 6px 6px 6px 4px;
+	border-right: 1px solid var(--background-modifier-border);
+	display: flex;
+	flex-direction: row;
+	align-items: center;
+	gap: 2px;
+}
+
+.timeline-planner-row-handle {
+	flex-shrink: 0;
+	width: 14px;
+	padding: 4px 0;
+	cursor: grab;
+	color: var(--text-muted);
+	font-size: 9px;
+	line-height: 1;
+	letter-spacing: -1px;
+	user-select: none;
+	text-align: center;
+}
+
+.timeline-planner-row-handle:active {
+	cursor: grabbing;
+}
+
+.timeline-planner-row-label-main {
+	flex: 1;
+	min-width: 0;
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
+	justify-content: center;
+}
+
+.timeline-planner-row-title {
+	font-weight: 500;
+	word-break: break-word;
+	cursor: text;
+}
+
+.timeline-planner-row-title:hover {
+	text-decoration: underline;
+	text-decoration-color: var(--text-muted);
+}
+
+.timeline-planner-row-meta {
+	font-size: var(--font-ui-smaller);
+	color: var(--text-muted);
+}
+
+.timeline-planner-track {
+	flex: 1;
+	position: relative;
+	min-height: 44px;
+	background: repeating-linear-gradient(
+		90deg,
+		var(--background-primary) 0,
+		var(--background-primary) calc(var(--tp-day-w, 32px) - 1px),
+		var(--background-modifier-border) calc(var(--tp-day-w, 32px) - 1px),
+		var(--background-modifier-border) var(--tp-day-w, 32px)
+	);
+}
+
+.timeline-planner-bar {
+	position: absolute;
+	top: 6px;
+	height: calc(100% - 12px);
+	min-width: 8px;
+	border-radius: 4px;
+	background: var(--interactive-accent);
+	color: var(--text-on-accent);
+	display: flex;
+	align-items: center;
+	padding: 0 6px;
+	box-sizing: border-box;
+	cursor: grab;
+	user-select: none;
+	overflow: hidden;
+	box-shadow: 0 1px 2px rgba(0, 0, 0, 0.15);
+}
+
+.timeline-planner-bar:active {
+	cursor: grabbing;
+}
+
+.timeline-planner-bar-text {
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	pointer-events: none;
+	font-size: var(--font-ui-smaller);
+}
+
+.timeline-planner-handle {
+	position: absolute;
+	top: 0;
+	width: 8px;
+	height: 100%;
+	cursor: ew-resize;
+	z-index: 2;
+}
+
+.timeline-planner-handle-left {
+	left: 0;
+}
+
+.timeline-planner-handle-right {
+	right: 0;
+}
+
+.timeline-planner-row-actions {
+	display: flex;
+	gap: 4px;
+	margin-top: 4px;
+}
+
+.timeline-planner-row-actions button {
+	padding: 2px 6px;
+	font-size: var(--font-ui-smaller);
+}
+
+.timeline-planner-empty {
+	padding: 24px;
+	text-align: center;
+	color: var(--text-muted);
+}
+
+.timeline-planner-modal-text {
+	min-height: 120px;
+	width: 100%;
+	font-family: var(--font-text);
+}
+
+/*
+ * While panning or dragging, `html` gets a short-lived class (TimelineView.ts).
+ * Body sets the cursor; descendants use `inherit` so we don’t restyle every
+ * leaf with a fixed cursor. Class toggles only when the gesture mode changes.
+ */
+html.timeline-planner-doc-cursor-grab,
+html.timeline-planner-doc-cursor-grab body {
+	cursor: grab !important;
+}
+
+html.timeline-planner-doc-cursor-grab body * {
+	cursor: inherit !important;
+}
+
+html.timeline-planner-doc-cursor-grabbing,
+html.timeline-planner-doc-cursor-grabbing body {
+	cursor: grabbing !important;
+}
+
+html.timeline-planner-doc-cursor-grabbing body * {
+	cursor: inherit !important;
+}
+
+html.timeline-planner-doc-cursor-ew-resize,
+html.timeline-planner-doc-cursor-ew-resize body {
+	cursor: ew-resize !important;
+}
+
+html.timeline-planner-doc-cursor-ew-resize body * {
+	cursor: inherit !important;
+}
+
+html.timeline-planner-doc-cursor-ns-resize,
+html.timeline-planner-doc-cursor-ns-resize body {
+	cursor: ns-resize !important;
+}
+
+html.timeline-planner-doc-cursor-ns-resize body * {
+	cursor: inherit !important;
+}

@@ -1,0 +1,9 @@
+{
+	"id": "obsidian-timeline-planner",
+	"name": "Timeline Planner",
+	"version": "1.0.0",
+	"minAppVersion": "1.5.0",
+	"description": "Simple timeline planning: tasks on a time axis with drag, resize, and notes.",
+	"author": "",
+	"isDesktopOnly": false
+}

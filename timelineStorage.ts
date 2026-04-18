@@ -1,0 +1,123 @@
+import type { App, TFile, Vault } from "obsidian";
+import { getFrontMatterInfo, parseYaml, stringifyYaml } from "obsidian";
+import { TIMELINE_FM_KEY } from "./constants";
+import type { TimelinePlannerData, TimelineTask } from "./types";
+
+function pad2(n: number): string {
+	return n < 10 ? `0${n}` : `${n}`;
+}
+
+export function defaultRangeStart(): string {
+	const t = new Date();
+	t.setHours(0, 0, 0, 0);
+	t.setDate(t.getDate() - 7);
+	return `${t.getFullYear()}-${pad2(t.getMonth() + 1)}-${pad2(t.getDate())}`;
+}
+
+export function createEmptyPlannerData(): TimelinePlannerData {
+	return {
+		tasks: [],
+		rangeStart: defaultRangeStart(),
+		dayCount: 42,
+		pixelsPerDay: 32,
+	};
+}
+
+const DEFAULT_BODY = `# Timeline planner
+
+The timeline is stored in the \`${TIMELINE_FM_KEY}\` property in YAML frontmatter above.\nYou can write anything you want in this note below the frontmatter — links, context, meeting notes — it will not be overwritten by the plugin.
+`;
+
+function normalizeTask(raw: unknown): TimelineTask | null {
+	if (!raw || typeof raw !== "object") return null;
+	const o = raw as Record<string, unknown>;
+	const id = typeof o.id === "string" ? o.id : "";
+	const title = typeof o.title === "string" ? o.title : "";
+	const text = typeof o.text === "string" ? o.text : "";
+	const start = typeof o.start === "string" ? o.start : "";
+	const end = typeof o.end === "string" ? o.end : "";
+	if (!id || !start || !end) return null;
+	return { id, title, text, start, end };
+}
+
+export function normalizePlannerData(raw: unknown): TimelinePlannerData | null {
+	if (!raw || typeof raw !== "object") return null;
+	const o = raw as Record<string, unknown>;
+	const tasksRaw = o.tasks;
+	const tasks = Array.isArray(tasksRaw)
+		? (tasksRaw.map(normalizeTask).filter(Boolean) as TimelineTask[])
+		: [];
+	return {
+		tasks,
+		rangeStart: typeof o.rangeStart === "string" ? o.rangeStart : "",
+		dayCount: typeof o.dayCount === "number" && o.dayCount > 0 ? o.dayCount : 42,
+		pixelsPerDay:
+			typeof o.pixelsPerDay === "number" && o.pixelsPerDay > 0
+				? o.pixelsPerDay
+				: 32,
+	};
+}
+
+function plannerToPlain(data: TimelinePlannerData): Record<string, unknown> {
+	return {
+		rangeStart: data.rangeStart,
+		dayCount: data.dayCount,
+		pixelsPerDay: data.pixelsPerDay,
+		tasks: data.tasks.map((t) => ({
+			id: t.id,
+			title: t.title,
+			text: t.text,
+			start: t.start,
+			end: t.end,
+		})),
+	};
+}
+
+export async function readTimelineFromFile(
+	app: App,
+	file: TFile
+): Promise<TimelinePlannerData | null> {
+	const content = await app.vault.read(file);
+	const info = getFrontMatterInfo(content);
+	if (!info.exists) return null;
+	let fm: Record<string, unknown>;
+	try {
+		fm = parseYaml(info.frontmatter) as Record<string, unknown>;
+	} catch {
+		return null;
+	}
+	if (!fm || typeof fm !== "object") return null;
+	const timeline = fm[TIMELINE_FM_KEY];
+	return normalizePlannerData(timeline);
+}
+
+export async function writeTimelineToFile(
+	app: App,
+	file: TFile,
+	data: TimelinePlannerData
+): Promise<void> {
+	const plain = plannerToPlain(data);
+	await app.fileManager.processFrontMatter(file, (fm) => {
+		fm[TIMELINE_FM_KEY] = plain;
+	});
+}
+
+export function buildNewNoteContent(data: TimelinePlannerData): string {
+	const fm = { [TIMELINE_FM_KEY]: plannerToPlain(data) };
+	return `---\n${stringifyYaml(fm)}---\n\n${DEFAULT_BODY}`;
+}
+
+export async function ensureParentFolders(vault: Vault, filePath: string): Promise<void> {
+	const normalized = filePath.replace(/\\/g, "/");
+	const lastSlash = normalized.lastIndexOf("/");
+	if (lastSlash <= 0) return;
+	const dir = normalized.slice(0, lastSlash);
+	const parts = dir.split("/").filter(Boolean);
+	let acc = "";
+	for (const part of parts) {
+		acc = acc ? `${acc}/${part}` : part;
+		if (!(await vault.adapter.exists(acc))) {
+			await vault.createFolder(acc);
+		}
+	}
+}
