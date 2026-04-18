@@ -51,6 +51,8 @@ export class TimelineView extends ItemView {
 	private readonly api: {
 		persist: (v: TimelineView) => Promise<void>;
 	};
+	/** Task ids selected with Ctrl/Cmd+click on bars — moved together when you drag or use nudge buttons. */
+	private readonly selectedTaskIds = new Set<string>();
 	private dragState:
 		| {
 				mode: "move" | "resize-left" | "resize-right";
@@ -58,6 +60,11 @@ export class TimelineView extends ItemView {
 				startX: number;
 				origStart: Date;
 				origEnd: Date;
+				/** Present for `move`: all tasks that move together (same day delta from drag start). */
+				groupOrigins?: Map<
+					string,
+					{ origStart: Date; origEnd: Date }
+				>;
 		  }
 		| {
 				mode: "pending-bar";
@@ -225,6 +232,28 @@ export class TimelineView extends ItemView {
 			"Ctrl + Scroll on the timeline to zoom in or out."
 		);
 
+		const selTools = toolbar.createDiv({
+			cls: "timeline-planner-selection-tools",
+		});
+		selTools.createSpan({
+			cls: "timeline-planner-selection-label",
+			text: "Selection:",
+		});
+		const nudgeLeft = selTools.createEl("button", { text: "◀ day" });
+		nudgeLeft.setAttr(
+			"title",
+			"Move all selected tasks one day earlier (Ctrl+click bars to select)"
+		);
+		nudgeLeft.setAttr("aria-label", "Selected tasks one day earlier");
+		nudgeLeft.addEventListener("click", () => this.shiftSelectedTasksByDays(-1));
+		const nudgeRight = selTools.createEl("button", { text: "day ▶" });
+		nudgeRight.setAttr(
+			"title",
+			"Move all selected tasks one day later (Ctrl+click bars to select)"
+		);
+		nudgeRight.setAttr("aria-label", "Selected tasks one day later");
+		nudgeRight.addEventListener("click", () => this.shiftSelectedTasksByDays(1));
+
 		const scroll = this.rootEl.createDiv({ cls: "timeline-planner-scroll" });
 		this.scrollEl = scroll;
 		scroll.setAttr(
@@ -279,6 +308,13 @@ export class TimelineView extends ItemView {
 			this.onGlobalMouseMove(ev)
 		);
 		this.registerDomEvent(window, "mouseup", () => this.onGlobalMouseUp());
+		this.registerDomEvent(window, "keydown", (ev: KeyboardEvent) => {
+			if (ev.key !== "Escape") return;
+			if (this.selectedTaskIds.size === 0) return;
+			ev.preventDefault();
+			this.selectedTaskIds.clear();
+			this.redraw();
+		});
 
 		this.registerEvent(
 			this.app.vault.on("rename", (file, oldPath) => {
@@ -350,6 +386,30 @@ export class TimelineView extends ItemView {
 		);
 		if (next === this.data.pixelsPerDay) return;
 		this.data.pixelsPerDay = next;
+		void this.persistAndRedraw();
+	}
+
+	private shiftSelectedTasksByDays(delta: number): void {
+		if (!this.timelineFile) {
+			new Notice("No note linked to this timeline.");
+			return;
+		}
+		if (this.selectedTaskIds.size === 0) {
+			new Notice("No tasks selected. Ctrl+click bars to select.");
+			return;
+		}
+		for (const id of Array.from(this.selectedTaskIds)) {
+			const t = this.data.tasks.find((x) => x.id === id);
+			if (!t) continue;
+			const a = parseYmd(t.start);
+			const b = parseYmd(t.end);
+			const c = clampDateOrder(a, b);
+			const ns = addDays(c.start, delta);
+			const ne = addDays(c.end, delta);
+			const o = clampDateOrder(ns, ne);
+			t.start = formatYmd(o.start);
+			t.end = formatYmd(o.end);
+		}
 		void this.persistAndRedraw();
 	}
 
@@ -591,6 +651,7 @@ export class TimelineView extends ItemView {
 			if (ev.button !== 0) return;
 			ev.preventDefault();
 			ev.stopPropagation();
+			this.selectedTaskIds.clear();
 			this.dragState = { mode: "reorder", taskId: task.id };
 			this.syncDocumentCursorFromInteractionState();
 		});
@@ -636,12 +697,16 @@ export class TimelineView extends ItemView {
 		const i0 = daysBetweenInclusive(rangeStart, visStart);
 		const span = daysBetweenInclusive(visStart, visEnd) + 1;
 
-		const bar = track.createDiv({ cls: "timeline-planner-bar" });
+		const bar = track.createDiv({
+			cls:
+				"timeline-planner-bar" +
+				(this.selectedTaskIds.has(task.id) ? " is-selected" : ""),
+		});
 		bar.style.left = `${i0 * dayW}px`;
 		bar.style.width = `${span * dayW - 4}px`;
 		bar.setAttr(
 			"title",
-			"Double-click to edit. Drag horizontally to move in time; drag vertically to reorder (or use ⋮⋮)."
+			"Double-click to edit. Ctrl+click to multi-select. Drag horizontally to move in time; drag vertically to reorder (or use ⋮⋮)."
 		);
 		bar.createDiv({
 			cls: "timeline-planner-bar-text",
@@ -663,7 +728,21 @@ export class TimelineView extends ItemView {
 		bar.addEventListener("mousedown", (ev) => {
 			if (ev.button !== 0) return;
 			if (ev.target === hL || ev.target === hR) return;
+			if (ev.ctrlKey || ev.metaKey) {
+				ev.preventDefault();
+				ev.stopPropagation();
+				if (this.selectedTaskIds.has(task.id)) {
+					this.selectedTaskIds.delete(task.id);
+				} else {
+					this.selectedTaskIds.add(task.id);
+				}
+				this.redraw();
+				return;
+			}
 			ev.preventDefault();
+			if (!this.selectedTaskIds.has(task.id)) {
+				this.selectedTaskIds.clear();
+			}
 			this.dragState = {
 				mode: "pending-bar",
 				taskId: task.id,
@@ -734,15 +813,49 @@ export class TimelineView extends ItemView {
 					return;
 				}
 				if (Math.abs(dy) > Math.abs(dx)) {
+					this.selectedTaskIds.clear();
 					this.dragState = { mode: "reorder", taskId: st.taskId };
 				} else {
-					this.dragState = {
-						mode: "move",
-						taskId: st.taskId,
-						startX: st.startX,
-						origStart: st.origStart,
-						origEnd: st.origEnd,
-					};
+					const primaryId = st.taskId;
+					const ids =
+						this.selectedTaskIds.size > 0 &&
+						this.selectedTaskIds.has(primaryId)
+							? Array.from(this.selectedTaskIds)
+							: [primaryId];
+					const groupOrigins = new Map<
+						string,
+						{ origStart: Date; origEnd: Date }
+					>();
+					for (const id of ids) {
+						const t = this.data.tasks.find((x) => x.id === id);
+						if (!t) continue;
+						const a = parseYmd(t.start);
+						const b = parseYmd(t.end);
+						const c = clampDateOrder(a, b);
+						groupOrigins.set(id, {
+							origStart: new Date(c.start),
+							origEnd: new Date(c.end),
+						});
+					}
+					const pr = groupOrigins.get(primaryId);
+					if (!pr || groupOrigins.size === 0) {
+						this.dragState = {
+							mode: "move",
+							taskId: primaryId,
+							startX: st.startX,
+							origStart: new Date(st.origStart),
+							origEnd: new Date(st.origEnd),
+						};
+					} else {
+						this.dragState = {
+							mode: "move",
+							taskId: primaryId,
+							startX: st.startX,
+							origStart: new Date(pr.origStart),
+							origEnd: new Date(pr.origEnd),
+							groupOrigins,
+						};
+					}
 				}
 				st = this.dragState;
 			}
@@ -764,6 +877,25 @@ export class TimelineView extends ItemView {
 
 			const dx = ev.clientX - st.startX;
 			const dayDelta = Math.round(dx / this.data.pixelsPerDay);
+
+			if (st.mode === "move") {
+				const go = st.groupOrigins;
+				if (go && go.size > 0) {
+					for (const [id, o] of go) {
+						const tsk = this.data.tasks.find((x) => x.id === id);
+						if (!tsk) continue;
+						const ns = addDays(o.origStart, dayDelta);
+						const ne = addDays(o.origEnd, dayDelta);
+						const cl = clampDateOrder(ns, ne);
+						tsk.start = formatYmd(cl.start);
+						tsk.end = formatYmd(cl.end);
+					}
+					this.scheduleDragRedraw();
+					ev.preventDefault();
+					return;
+				}
+			}
+
 			let ns = new Date(st.origStart);
 			let ne = new Date(st.origEnd);
 
@@ -853,6 +985,7 @@ export class TimelineView extends ItemView {
 	}
 
 	private deleteTask(id: string): void {
+		this.selectedTaskIds.delete(id);
 		this.data.tasks = this.data.tasks.filter((t) => t.id !== id);
 		new Notice("Task removed.");
 		void this.persistAndRedraw();

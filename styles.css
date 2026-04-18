@@ -51,6 +51,21 @@
 	font-size: var(--font-ui-smaller);
 }
 
+.timeline-planner-selection-tools {
+	display: flex;
+	align-items: center;
+	gap: 4px;
+	margin-left: 8px;
+	padding-left: 8px;
+	border-left: 1px solid var(--background-modifier-border);
+}
+
+.timeline-planner-selection-label {
+	opacity: 0.85;
+	font-size: var(--font-ui-smaller);
+	margin-right: 2px;
+}
+
 .timeline-planner-scroll {
 	flex: 1;
 	overflow: auto;
@@ -204,6 +219,12 @@
 
 .timeline-planner-bar:active {
 	cursor: grabbing;
+}
+
+.timeline-planner-bar.is-selected {
+	box-shadow:
+		0 0 0 2px var(--background-primary),
+		0 0 0 4px var(--interactive-accent);
 }
 
 .timeline-planner-bar-text {
