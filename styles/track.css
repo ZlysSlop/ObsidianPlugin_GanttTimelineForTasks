@@ -1,6 +1,6 @@
 /* Day grid background behind task bars */
 
-.timeline-planner-track {
+.timeline-task-row-track {
 	flex: 1;
 	position: relative;
 	min-height: 44px;

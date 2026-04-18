@@ -1,12 +1,12 @@
 /* Single task row + label column + title/meta/actions */
 
-.timeline-planner-row {
+.timeline-task-row {
 	display: flex;
 	border-bottom: 1px solid var(--background-modifier-border);
 	min-height: 44px;
 }
 
-.timeline-planner-row-label {
+.timeline-task-row-label {
 	width: 180px;
 	min-width: 180px;
 	flex-shrink: 0;
@@ -18,7 +18,7 @@
 	gap: 2px;
 }
 
-.timeline-planner-row-handle {
+.timeline-task-row-movehandle {
 	flex-shrink: 0;
 	width: 14px;
 	padding: 4px 0;
@@ -31,11 +31,11 @@
 	text-align: center;
 }
 
-.timeline-planner-row-handle:active {
+.timeline-task-row-movehandle:active {
 	cursor: default;
 }
 
-.timeline-planner-row-label-main {
+.timeline-task-row-info-panel {
 	flex: 1;
 	min-width: 0;
 	display: flex;
@@ -44,29 +44,29 @@
 	justify-content: center;
 }
 
-.timeline-planner-row-title {
+.timeline-task-row-info-panel-title {
 	font-weight: 500;
 	word-break: break-word;
 	cursor: default;
 }
 
-.timeline-planner-row-title:hover {
+.timeline-task-row-info-panel-title:hover {
 	text-decoration: underline;
 	text-decoration-color: var(--text-muted);
 }
 
-.timeline-planner-row-meta {
+.timeline-task-row-info-panel-meta {
 	font-size: var(--font-ui-smaller);
 	color: var(--text-muted);
 }
 
-.timeline-planner-row-actions {
+.timeline-task-row-info-panel-actions {
 	display: flex;
 	gap: 4px;
 	margin-top: 4px;
 }
 
-.timeline-planner-row-actions button {
+.timeline-task-row-info-panel-actions button {
 	padding: 2px 6px;
 	font-size: var(--font-ui-smaller);
 }

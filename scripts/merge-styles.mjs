@@ -1,6 +1,8 @@
 /**
- * Obsidian loads only `styles.css` from the plugin folder; `@import` of other
- * files is not reliably resolved. This script concatenates `styles/*.css` into
+ * Obsidian loads only `styles.css` from the plugin folder. Relative `@import`
+ * URLs are resolved against the app origin (e.g. `app://obsidian.md/`), not the
+ * plugin path — so `./styles/foo.css` becomes `app://obsidian.md/styles/foo.css`
+ * and fails with ERR_FILE_NOT_FOUND. This script concatenates `styles/*.css` into
  * the single file Obsidian expects. Run via `npm run build` (or `npm run styles`).
  */
 import fs from "node:fs";

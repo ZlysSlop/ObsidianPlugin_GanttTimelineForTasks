@@ -507,7 +507,7 @@ export class TimelineView extends ItemView {
 	 */
 	private computeReorderTargetIndex(clientY: number): number {
 		if (!this.bodyEl) return 0;
-		const rows = this.bodyEl.querySelectorAll(".timeline-planner-row");
+		const rows = this.bodyEl.querySelectorAll(".timeline-task-row");
 		if (rows.length === 0) return 0;
 		if (rows.length === 1) return 0;
 
@@ -635,7 +635,7 @@ export class TimelineView extends ItemView {
 		const b = Math.max(ms.startY, ms.curY);
 		if (!this.bodyEl) return;
 		const picked = new Set<string>();
-		this.bodyEl.querySelectorAll(".timeline-planner-bar").forEach((el) => {
+		this.bodyEl.querySelectorAll(".timeline-task-row-task-bar").forEach((el) => {
 			const br = el.getBoundingClientRect();
 			if (br.right < l || br.left > r || br.bottom < t || br.top > b) return;
 			const id = (el as HTMLElement).dataset.taskId;
@@ -655,7 +655,7 @@ export class TimelineView extends ItemView {
 		track.addEventListener("mousedown", (ev) => {
 			if (ev.button !== 0) return;
 			if (!this.timelineFile) return;
-			if ((ev.target as HTMLElement).closest(".timeline-planner-bar")) return;
+			if ((ev.target as HTMLElement).closest(".timeline-task-row-task-bar")) return;
 			ev.preventDefault();
 			ev.stopPropagation();
 			this.marqueeState = {
@@ -748,11 +748,11 @@ export class TimelineView extends ItemView {
 	}
 
 	private renderTaskRow(task: TimelineTask, rangeStart: Date, dayW: number): void {
-		const row = this.bodyEl.createDiv({ cls: "timeline-planner-row" });
+		const row = this.bodyEl.createDiv({ cls: "timeline-task-row" });
 
-		const label = row.createDiv({ cls: "timeline-planner-row-label" });
+		const label = row.createDiv({ cls: "timeline-task-row-label" });
 		const handle = label.createDiv({
-			cls: "timeline-planner-row-handle",
+			cls: "timeline-task-row-movehandle",
 			text: "⋮⋮",
 		});
 		handle.setAttr("aria-label", "Drag to reorder");
@@ -769,9 +769,9 @@ export class TimelineView extends ItemView {
 			this.syncDocumentCursorFromInteractionState();
 		});
 
-		const labelMain = label.createDiv({ cls: "timeline-planner-row-label-main" });
+		const labelMain = label.createDiv({ cls: "timeline-task-row-info-panel" });
 		const titleEl = labelMain.createDiv({
-			cls: "timeline-planner-row-title",
+			cls: "timeline-task-row-info-panel-title",
 			text: task.title || "[untitled]",
 		});
 		titleEl.addEventListener("click", (e) => {
@@ -779,14 +779,14 @@ export class TimelineView extends ItemView {
 			this.openEditModal(task);
 		});
 
-		const meta = labelMain.createDiv({ cls: "timeline-planner-row-meta" });
+		const meta = labelMain.createDiv({ cls: "timeline-task-row-info-panel-meta" });
 		meta.setText(`${task.start} → ${task.end}`);
 
-		const actions = labelMain.createDiv({ cls: "timeline-planner-row-actions" });
+		const actions = labelMain.createDiv({ cls: "timeline-task-row-info-panel-actions" });
 		const delBtn = actions.createEl("button", { text: "Delete" });
 		delBtn.addEventListener("click", () => this.deleteTask(task.id));
 
-		const track = row.createDiv({ cls: "timeline-planner-track" });
+		const track = row.createDiv({ cls: "timeline-task-row-track" });
 		track.style.minWidth = `${this.data.dayCount * dayW}px`;
 		this.bindMarqueeOnTrack(track);
 
@@ -811,7 +811,7 @@ export class TimelineView extends ItemView {
 
 		const bar = track.createDiv({
 			cls:
-				"timeline-planner-bar" +
+				"timeline-task-row-task-bar" +
 				(this.selectedTaskIds.has(task.id) ? " is-selected" : ""),
 		});
 		bar.dataset.taskId = task.id;
@@ -822,7 +822,7 @@ export class TimelineView extends ItemView {
 			"Double-click to edit. Ctrl+click to multi-select, or drag on empty track to box-select. Drag horizontally to move in time; drag vertically to reorder (or use ⋮⋮)."
 		);
 		bar.createDiv({
-			cls: "timeline-planner-bar-text",
+			cls: "timeline-task-row-task-bar-text",
 			text: task.title || "(untitled)",
 		});
 		bar.addEventListener("dblclick", (ev) => {
@@ -832,10 +832,10 @@ export class TimelineView extends ItemView {
 		});
 
 		const hL = bar.createDiv({
-			cls: "timeline-planner-handle timeline-planner-handle-left",
+			cls: "timeline-task-row-task-bar-handle timeline-task-row-task-bar-handle-left",
 		});
 		const hR = bar.createDiv({
-			cls: "timeline-planner-handle timeline-planner-handle-right",
+			cls: "timeline-task-row-task-bar-handle timeline-task-row-task-bar-handle-right",
 		});
 
 		bar.addEventListener("mousedown", (ev) => {

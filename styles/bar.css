@@ -1,6 +1,6 @@
 /* Task bar + resize handles + label text */
 
-.timeline-planner-bar {
+.timeline-task-row-task-bar {
 	position: absolute;
 	top: 6px;
 	height: calc(100% - 12px);
@@ -12,23 +12,23 @@
 	align-items: center;
 	padding: 0 6px;
 	box-sizing: border-box;
-	cursor: default;
+	cursor: grab;
 	user-select: none;
 	overflow: hidden;
 	box-shadow: 0 1px 2px rgba(0, 0, 0, 0.15);
 }
 
-.timeline-planner-bar:active {
-	cursor: default;
+.timeline-task-row-task-bar:active {
+	cursor: grabbing;
 }
 
-.timeline-planner-bar.is-selected {
+.timeline-task-row-task-bar.is-selected {
 	box-shadow:
 		0 0 0 2px var(--background-primary),
 		0 0 0 4px var(--interactive-accent);
 }
 
-.timeline-planner-bar-text {
+.timeline-task-row-task-bar-text {
 	white-space: nowrap;
 	overflow: hidden;
 	text-overflow: ellipsis;
@@ -36,7 +36,7 @@
 	font-size: var(--font-ui-smaller);
 }
 
-.timeline-planner-handle {
+.timeline-task-row-task-bar-handle {
 	position: absolute;
 	top: 0;
 	width: 8px;
@@ -45,10 +45,10 @@
 	z-index: 2;
 }
 
-.timeline-planner-handle-left {
+.timeline-task-row-task-bar-handle-left {
 	left: 0;
 }
 
-.timeline-planner-handle-right {
+.timeline-task-row-task-bar-handle-right {
 	right: 0;
 }
