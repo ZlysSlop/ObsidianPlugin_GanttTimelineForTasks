@@ -315,3 +315,20 @@ html.timeline-planner-doc-cursor-ns-resize body {
 html.timeline-planner-doc-cursor-ns-resize body * {
 	cursor: inherit !important;
 }
+
+html.timeline-planner-doc-cursor-crosshair,
+html.timeline-planner-doc-cursor-crosshair body {
+	cursor: crosshair !important;
+}
+
+html.timeline-planner-doc-cursor-crosshair body * {
+	cursor: inherit !important;
+}
+
+/* Rubber-band selection (empty timeline track drag). Appended to document.body (fixed, viewport coords). */
+.timeline-planner-marquee {
+	box-sizing: border-box;
+	border: 1px solid color-mix(in srgb, var(--interactive-accent) 70%, #2563eb);
+	background: color-mix(in srgb, var(--interactive-accent) 18%, transparent);
+	pointer-events: none;
+}

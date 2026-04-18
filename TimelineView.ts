@@ -37,6 +37,8 @@ export class TimelineView extends ItemView {
 	private static readonly ZOOM_STEP = 4;
 	/** Bar drag: movement past this picks vertical reorder vs horizontal date move. */
 	private static readonly PENDING_BAR_DRAG_PX = 6;
+	/** Empty track: movement past this starts a rubber-band (marquee) selection. */
+	private static readonly MARQUEE_DRAG_PX = 4;
 	/** Limits trackpad “pinch as ctrl+wheel” from jumping zoom too fast. */
 	private static readonly WHEEL_ZOOM_MIN_INTERVAL_MS = 90;
 
@@ -76,6 +78,24 @@ export class TimelineView extends ItemView {
 		  }
 		| { mode: "reorder"; taskId: string }
 		| null = null;
+	/** OS-style drag box on empty timeline track; `phase` upgrades from pointer-down to drag. */
+	private marqueeState:
+		| null
+		| {
+				phase: "pending";
+				startX: number;
+				startY: number;
+				additive: boolean;
+		  }
+		| {
+				phase: "dragging";
+				startX: number;
+				startY: number;
+				curX: number;
+				curY: number;
+				additive: boolean;
+		  } = null;
+	private marqueeOverlayEl: HTMLElement | null = null;
 	/** Right-drag: vertical = scroll tasks; horizontal = shift visible day range. */
 	private panState: {
 		startX: number;
@@ -310,6 +330,11 @@ export class TimelineView extends ItemView {
 		this.registerDomEvent(window, "mouseup", () => this.onGlobalMouseUp());
 		this.registerDomEvent(window, "keydown", (ev: KeyboardEvent) => {
 			if (ev.key !== "Escape") return;
+			if (this.marqueeState) {
+				ev.preventDefault();
+				this.endMarqueeGesture();
+				return;
+			}
 			if (this.selectedTaskIds.size === 0) return;
 			ev.preventDefault();
 			this.selectedTaskIds.clear();
@@ -364,6 +389,7 @@ export class TimelineView extends ItemView {
 		this.resizeObserver?.disconnect();
 		this.resizeObserver = null;
 		this.panState = null;
+		this.endMarqueeGesture();
 		this.scrollEl = null;
 		this.clearDocumentCursorOverride();
 		this.containerEl.empty();
@@ -526,6 +552,9 @@ export class TimelineView extends ItemView {
 
 	private computeDesiredDocumentCursorClass(): string | null {
 		if (this.panState) return "timeline-planner-doc-cursor-grabbing";
+		if (this.marqueeState?.phase === "dragging") {
+			return "timeline-planner-doc-cursor-crosshair";
+		}
 		if (!this.dragState) return null;
 		const st = this.dragState;
 		if (st.mode === "pending-bar") return "timeline-planner-doc-cursor-grab";
@@ -553,6 +582,90 @@ export class TimelineView extends ItemView {
 		if (desired) {
 			root.classList.add(desired);
 		}
+	}
+
+	private ensureMarqueeOverlay(): void {
+		if (this.marqueeOverlayEl) return;
+		const el = document.createElement("div");
+		el.className = "timeline-planner-marquee";
+		el.style.position = "fixed";
+		el.style.zIndex = "99999";
+		el.style.pointerEvents = "none";
+		document.body.appendChild(el);
+		this.marqueeOverlayEl = el;
+	}
+
+	private updateMarqueeOverlay(): void {
+		const ms = this.marqueeState;
+		if (!ms || ms.phase !== "dragging" || !this.marqueeOverlayEl) return;
+		const l = Math.min(ms.startX, ms.curX);
+		const r = Math.max(ms.startX, ms.curX);
+		const t = Math.min(ms.startY, ms.curY);
+		const b = Math.max(ms.startY, ms.curY);
+		const el = this.marqueeOverlayEl;
+		el.style.left = `${l}px`;
+		el.style.top = `${t}px`;
+		el.style.width = `${Math.max(0, r - l)}px`;
+		el.style.height = `${Math.max(0, b - t)}px`;
+	}
+
+	private removeMarqueeOverlay(): void {
+		if (this.marqueeOverlayEl) {
+			this.marqueeOverlayEl.remove();
+			this.marqueeOverlayEl = null;
+		}
+	}
+
+	private endMarqueeGesture(): void {
+		this.removeMarqueeOverlay();
+		this.marqueeState = null;
+		this.syncDocumentCursorFromInteractionState();
+	}
+
+	private applyMarqueeSelection(ms: {
+		startX: number;
+		startY: number;
+		curX: number;
+		curY: number;
+		additive: boolean;
+	}): void {
+		const l = Math.min(ms.startX, ms.curX);
+		const r = Math.max(ms.startX, ms.curX);
+		const t = Math.min(ms.startY, ms.curY);
+		const b = Math.max(ms.startY, ms.curY);
+		if (!this.bodyEl) return;
+		const picked = new Set<string>();
+		this.bodyEl.querySelectorAll(".timeline-planner-bar").forEach((el) => {
+			const br = el.getBoundingClientRect();
+			if (br.right < l || br.left > r || br.bottom < t || br.top > b) return;
+			const id = (el as HTMLElement).dataset.taskId;
+			if (id) picked.add(id);
+		});
+		if (ms.additive) {
+			for (const id of picked) this.selectedTaskIds.add(id);
+		} else {
+			this.selectedTaskIds.clear();
+			for (const id of picked) this.selectedTaskIds.add(id);
+		}
+		this.redraw();
+	}
+
+	/** Drag a selection box on empty track (not on a task bar). */
+	private bindMarqueeOnTrack(track: HTMLElement): void {
+		track.addEventListener("mousedown", (ev) => {
+			if (ev.button !== 0) return;
+			if (!this.timelineFile) return;
+			if ((ev.target as HTMLElement).closest(".timeline-planner-bar")) return;
+			ev.preventDefault();
+			ev.stopPropagation();
+			this.marqueeState = {
+				phase: "pending",
+				startX: ev.clientX,
+				startY: ev.clientY,
+				additive: ev.shiftKey,
+			};
+			this.syncDocumentCursorFromInteractionState();
+		});
 	}
 
 	private redraw(): void {
@@ -677,6 +790,7 @@ export class TimelineView extends ItemView {
 
 		const track = row.createDiv({ cls: "timeline-planner-track" });
 		track.style.minWidth = `${this.data.dayCount * dayW}px`;
+		this.bindMarqueeOnTrack(track);
 
 		const ts = parseYmd(task.start);
 		const te = parseYmd(task.end);
@@ -702,11 +816,12 @@ export class TimelineView extends ItemView {
 				"timeline-planner-bar" +
 				(this.selectedTaskIds.has(task.id) ? " is-selected" : ""),
 		});
+		bar.dataset.taskId = task.id;
 		bar.style.left = `${i0 * dayW}px`;
 		bar.style.width = `${span * dayW - 4}px`;
 		bar.setAttr(
 			"title",
-			"Double-click to edit. Ctrl+click to multi-select. Drag horizontally to move in time; drag vertically to reorder (or use ⋮⋮)."
+			"Double-click to edit. Ctrl+click to multi-select, or drag on empty track to box-select. Drag horizontally to move in time; drag vertically to reorder (or use ⋮⋮)."
 		);
 		bar.createDiv({
 			cls: "timeline-planner-bar-text",
@@ -783,6 +898,38 @@ export class TimelineView extends ItemView {
 
 	private onGlobalMouseMove(ev: MouseEvent): void {
 		try {
+			if (this.marqueeState) {
+				const ms = this.marqueeState;
+				if (ms.phase === "pending") {
+					const d = Math.hypot(
+						ev.clientX - ms.startX,
+						ev.clientY - ms.startY
+					);
+					if (d < TimelineView.MARQUEE_DRAG_PX) {
+						ev.preventDefault();
+						return;
+					}
+					this.marqueeState = {
+						phase: "dragging",
+						startX: ms.startX,
+						startY: ms.startY,
+						curX: ev.clientX,
+						curY: ev.clientY,
+						additive: ms.additive,
+					};
+					this.ensureMarqueeOverlay();
+					this.updateMarqueeOverlay();
+				} else {
+					this.marqueeState = {
+						...ms,
+						curX: ev.clientX,
+						curY: ev.clientY,
+					};
+					this.updateMarqueeOverlay();
+				}
+				ev.preventDefault();
+				return;
+			}
 			if (this.panState && this.scrollEl) {
 				const p = this.panState;
 				const el = this.scrollEl;
@@ -920,6 +1067,7 @@ export class TimelineView extends ItemView {
 			if (
 				this.panState ||
 				this.dragState ||
+				this.marqueeState ||
 				this.appliedDocumentCursorClass !== null
 			) {
 				this.syncDocumentCursorFromInteractionState();
@@ -946,6 +1094,16 @@ export class TimelineView extends ItemView {
 				) {
 					void this.api.persist(this);
 				}
+			}
+			if (this.marqueeState) {
+				const ms = this.marqueeState;
+				if (ms.phase === "dragging") {
+					this.applyMarqueeSelection(ms);
+				} else if (ms.phase === "pending" && !ms.additive) {
+					this.selectedTaskIds.clear();
+					this.redraw();
+				}
+				this.endMarqueeGesture();
 			}
 			if (this.dragState) {
 				const wasPendingBar = this.dragState.mode === "pending-bar";
