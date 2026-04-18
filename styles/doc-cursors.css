@@ -1,0 +1,49 @@
+/*
+ * While panning or dragging, `html` gets a short-lived class (TimelineView.ts).
+ * Body sets the cursor; descendants use `inherit` so we don’t restyle every
+ * leaf with a fixed cursor. Class toggles only when the gesture mode changes.
+ */
+html.timeline-planner-doc-cursor-grab,
+html.timeline-planner-doc-cursor-grab body {
+	cursor: grab !important;
+}
+
+html.timeline-planner-doc-cursor-grab body * {
+	cursor: inherit !important;
+}
+
+html.timeline-planner-doc-cursor-grabbing,
+html.timeline-planner-doc-cursor-grabbing body {
+	cursor: grabbing !important;
+}
+
+html.timeline-planner-doc-cursor-grabbing body * {
+	cursor: inherit !important;
+}
+
+html.timeline-planner-doc-cursor-ew-resize,
+html.timeline-planner-doc-cursor-ew-resize body {
+	cursor: ew-resize !important;
+}
+
+html.timeline-planner-doc-cursor-ew-resize body * {
+	cursor: inherit !important;
+}
+
+html.timeline-planner-doc-cursor-ns-resize,
+html.timeline-planner-doc-cursor-ns-resize body {
+	cursor: ns-resize !important;
+}
+
+html.timeline-planner-doc-cursor-ns-resize body * {
+	cursor: inherit !important;
+}
+
+html.timeline-planner-doc-cursor-crosshair,
+html.timeline-planner-doc-cursor-crosshair body {
+	cursor: crosshair !important;
+}
+
+html.timeline-planner-doc-cursor-crosshair body * {
+	cursor: inherit !important;
+}

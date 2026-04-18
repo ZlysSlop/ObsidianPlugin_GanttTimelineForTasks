@@ -1,0 +1,72 @@
+/* Single task row + label column + title/meta/actions */
+
+.timeline-planner-row {
+	display: flex;
+	border-bottom: 1px solid var(--background-modifier-border);
+	min-height: 44px;
+}
+
+.timeline-planner-row-label {
+	width: 180px;
+	min-width: 180px;
+	flex-shrink: 0;
+	padding: 6px 6px 6px 4px;
+	border-right: 1px solid var(--background-modifier-border);
+	display: flex;
+	flex-direction: row;
+	align-items: center;
+	gap: 2px;
+}
+
+.timeline-planner-row-handle {
+	flex-shrink: 0;
+	width: 14px;
+	padding: 4px 0;
+	cursor: default;
+	color: var(--text-muted);
+	font-size: 9px;
+	line-height: 1;
+	letter-spacing: -1px;
+	user-select: none;
+	text-align: center;
+}
+
+.timeline-planner-row-handle:active {
+	cursor: default;
+}
+
+.timeline-planner-row-label-main {
+	flex: 1;
+	min-width: 0;
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
+	justify-content: center;
+}
+
+.timeline-planner-row-title {
+	font-weight: 500;
+	word-break: break-word;
+	cursor: default;
+}
+
+.timeline-planner-row-title:hover {
+	text-decoration: underline;
+	text-decoration-color: var(--text-muted);
+}
+
+.timeline-planner-row-meta {
+	font-size: var(--font-ui-smaller);
+	color: var(--text-muted);
+}
+
+.timeline-planner-row-actions {
+	display: flex;
+	gap: 4px;
+	margin-top: 4px;
+}
+
+.timeline-planner-row-actions button {
+	padding: 2px 6px;
+	font-size: var(--font-ui-smaller);
+}

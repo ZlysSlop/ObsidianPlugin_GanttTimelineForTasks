@@ -4,8 +4,9 @@
 	"description": "Timeline planning for Obsidian",
 	"main": "main.js",
 	"scripts": {
-		"dev": "node esbuild.config.mjs",
-		"build": "npx tsc -noEmit -skipLibCheck && node esbuild.config.mjs production"
+		"styles": "node scripts/merge-styles.mjs",
+		"dev": "node scripts/merge-styles.mjs && node esbuild.config.mjs",
+		"build": "node scripts/merge-styles.mjs && npx tsc -noEmit -skipLibCheck && node esbuild.config.mjs production"
 	},
 	"keywords": [],
 	"author": "",

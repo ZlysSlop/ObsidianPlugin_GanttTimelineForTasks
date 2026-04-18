@@ -1,0 +1,13 @@
+/* Empty state + modal textarea */
+
+.timeline-planner-empty {
+	padding: 24px;
+	text-align: center;
+	color: var(--text-muted);
+}
+
+.timeline-planner-modal-text {
+	min-height: 120px;
+	width: 100%;
+	font-family: var(--font-text);
+}

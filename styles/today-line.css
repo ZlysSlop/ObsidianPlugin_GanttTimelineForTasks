@@ -1,0 +1,14 @@
+/* “Now” vertical line */
+
+.timeline-planner-today-line {
+	position: absolute;
+	top: 0;
+	bottom: 0;
+	left: 0;
+	width: 2px;
+	transform: translateX(-50%);
+	background: #d32f2f;
+	pointer-events: none;
+	z-index: 4;
+	box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.35);
+}

@@ -1,0 +1,14 @@
+/* Day grid background behind task bars */
+
+.timeline-planner-track {
+	flex: 1;
+	position: relative;
+	min-height: 44px;
+	background: repeating-linear-gradient(
+		90deg,
+		var(--background-primary) 0,
+		var(--background-primary) calc(var(--tp-day-w, 32px) - 1px),
+		var(--background-modifier-border) calc(var(--tp-day-w, 32px) - 1px),
+		var(--background-modifier-border) var(--tp-day-w, 32px)
+	);
+}

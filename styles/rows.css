@@ -1,0 +1,6 @@
+/* Task row list container */
+
+.timeline-planner-rows {
+	display: flex;
+	flex-direction: column;
+}

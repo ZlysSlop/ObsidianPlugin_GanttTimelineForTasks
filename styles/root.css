@@ -1,0 +1,10 @@
+/* .timeline-planner-root */
+
+.timeline-planner-root {
+	display: flex;
+	flex-direction: column;
+	height: 100%;
+	background: var(--background-primary);
+	color: var(--text-normal);
+	font-size: var(--font-ui-small);
+}

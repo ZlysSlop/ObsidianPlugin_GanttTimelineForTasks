@@ -1,0 +1,58 @@
+/* Toolbar + title row + file label + zoom + selection strip */
+
+.timeline-planner-toolbar {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	padding: 8px 10px;
+	border-bottom: 1px solid var(--background-modifier-border);
+	flex-wrap: wrap;
+}
+
+.timeline-planner-title-row {
+	display: flex;
+	align-items: baseline;
+	gap: 8px;
+	flex-wrap: wrap;
+}
+
+.timeline-planner-file-label {
+	font-size: var(--font-ui-smaller);
+	color: var(--text-muted);
+	font-weight: 400;
+	max-width: 280px;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.timeline-planner-toolbar button {
+	margin: 0;
+}
+
+.timeline-planner-zoom {
+	display: flex;
+	align-items: center;
+	gap: 4px;
+	margin-left: auto;
+}
+
+.timeline-planner-zoom-label {
+	opacity: 0.8;
+	font-size: var(--font-ui-smaller);
+}
+
+.timeline-planner-selection-tools {
+	display: flex;
+	align-items: center;
+	gap: 4px;
+	margin-left: 8px;
+	padding-left: 8px;
+	border-left: 1px solid var(--background-modifier-border);
+}
+
+.timeline-planner-selection-label {
+	opacity: 0.85;
+	font-size: var(--font-ui-smaller);
+	margin-right: 2px;
+}

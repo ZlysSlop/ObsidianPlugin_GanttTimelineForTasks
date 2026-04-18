@@ -1,0 +1,54 @@
+/* Task bar + resize handles + label text */
+
+.timeline-planner-bar {
+	position: absolute;
+	top: 6px;
+	height: calc(100% - 12px);
+	min-width: 8px;
+	border-radius: 4px;
+	background: var(--interactive-accent);
+	color: var(--text-on-accent);
+	display: flex;
+	align-items: center;
+	padding: 0 6px;
+	box-sizing: border-box;
+	cursor: grab;
+	user-select: none;
+	overflow: hidden;
+	box-shadow: 0 1px 2px rgba(0, 0, 0, 0.15);
+}
+
+.timeline-planner-bar:active {
+	cursor: grabbing;
+}
+
+.timeline-planner-bar.is-selected {
+	box-shadow:
+		0 0 0 2px var(--background-primary),
+		0 0 0 4px var(--interactive-accent);
+}
+
+.timeline-planner-bar-text {
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	pointer-events: none;
+	font-size: var(--font-ui-smaller);
+}
+
+.timeline-planner-handle {
+	position: absolute;
+	top: 0;
+	width: 8px;
+	height: 100%;
+	cursor: ew-resize;
+	z-index: 2;
+}
+
+.timeline-planner-handle-left {
+	left: 0;
+}
+
+.timeline-planner-handle-right {
+	right: 0;
+}

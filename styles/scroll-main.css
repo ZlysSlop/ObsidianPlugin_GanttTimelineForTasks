@@ -1,0 +1,18 @@
+/* Scrollport + main content wrapper */
+
+.timeline-planner-scroll {
+	flex: 1;
+	overflow: auto;
+	position: relative;
+	cursor: grab;
+}
+
+.timeline-planner-scroll.timeline-planner-scroll--panning {
+	cursor: grabbing;
+	user-select: none;
+}
+
+.timeline-planner-main {
+	position: relative;
+	min-width: min-content;
+}

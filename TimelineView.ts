@@ -772,7 +772,7 @@ export class TimelineView extends ItemView {
 		const labelMain = label.createDiv({ cls: "timeline-planner-row-label-main" });
 		const titleEl = labelMain.createDiv({
 			cls: "timeline-planner-row-title",
-			text: task.title || "(untitled)",
+			text: task.title || "[untitled]",
 		});
 		titleEl.addEventListener("click", (e) => {
 			e.preventDefault();
@@ -783,8 +783,6 @@ export class TimelineView extends ItemView {
 		meta.setText(`${task.start} → ${task.end}`);
 
 		const actions = labelMain.createDiv({ cls: "timeline-planner-row-actions" });
-		const editBtn = actions.createEl("button", { text: "Edit" });
-		editBtn.addEventListener("click", () => this.openEditModal(task));
 		const delBtn = actions.createEl("button", { text: "Delete" });
 		delBtn.addEventListener("click", () => this.deleteTask(task.id));
 

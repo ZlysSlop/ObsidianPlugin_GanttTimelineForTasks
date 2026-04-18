@@ -1,0 +1,26 @@
+/* Header grid + day cells */
+
+.timeline-planner-grid {
+	display: grid;
+	min-width: min-content;
+	border-bottom: 1px solid var(--background-modifier-border);
+	align-items: stretch;
+}
+
+.timeline-planner-dayhead {
+	padding: 4px 2px;
+	text-align: center;
+	border-right: 1px solid var(--background-modifier-border);
+	min-width: 28px;
+	box-sizing: border-box;
+	font-variant-numeric: tabular-nums;
+}
+
+.timeline-planner-dayhead.is-weekend {
+	background: var(--background-modifier-hover);
+}
+
+.timeline-planner-dayhead.is-today {
+	background: var(--background-modifier-active-hover);
+	font-weight: 600;
+}
