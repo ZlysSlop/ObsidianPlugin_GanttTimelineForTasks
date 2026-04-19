@@ -23,14 +23,22 @@ export function createEmptyPlannerData(): TimelinePlannerData {
 }
 
 function normalizeTask(raw: unknown): TimelineTask | null {
-	if (!raw || typeof raw !== "object") return null;
+	if (!raw || typeof raw !== "object")
+	{
+		return null;
+	}
+	
 	const o = raw as Record<string, unknown>;
 	const id = typeof o.id === "string" ? o.id : "";
 	const title = typeof o.title === "string" ? o.title : "";
 	const text = typeof o.text === "string" ? o.text : "";
 	const start = typeof o.start === "string" ? o.start : "";
 	const end = typeof o.end === "string" ? o.end : "";
-	if (!id || !start || !end) return null;
+	
+	if (!id || !start || !end) {
+		return null;
+	}
+
 	const colorRaw = o.color;
 	const color =
 		typeof colorRaw === "string" && colorRaw.trim() !== ""
@@ -78,8 +86,15 @@ function plannerToPlain(data: TimelinePlannerData): Record<string, unknown> {
 				start: t.start,
 				end: t.end,
 			};
-			if (t.color?.trim()) row.color = t.color.trim();
-			if (t.emoji?.trim()) row.emoji = t.emoji.trim();
+			
+			if (t.color?.trim()) {
+				row.color = t.color.trim();
+			}
+			
+			if (t.emoji?.trim()) {
+				row.emoji = t.emoji.trim();
+			}
+			
 			return row;
 		}),
 	};
