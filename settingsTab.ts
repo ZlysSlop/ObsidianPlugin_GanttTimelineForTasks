@@ -62,6 +62,49 @@ export class TimelinePlannerSettingTab extends PluginSettingTab {
 				});
 			});
 
+		new Setting(containerEl)
+			.setName(DisplayedTexts.settings.taskBarStackBreakpointName)
+			.setDesc(DisplayedTexts.settings.taskBarStackBreakpointDesc)
+			.addText((tc) => {
+				const input = tc.inputEl;
+				input.type = "text";
+				input.inputMode = "numeric";
+				input.autocomplete = "off";
+				input.spellcheck = false;
+				const previous = (): number =>
+					this.plugin.settings.taskBarStackLayoutBreakpointPx;
+				const revert = (): void => {
+					tc.setValue(String(previous()));
+				};
+				tc.setValue(String(previous()));
+				const commit = async (): Promise<void> => {
+					const raw = tc.getValue().trim();
+					if (raw === "" || !/^\d+$/.test(raw)) {
+						revert();
+						return;
+					}
+					const n = parseInt(raw, 10);
+					if (!Number.isFinite(n)) {
+						revert();
+						return;
+					}
+					const clamped = Math.round(Math.min(600, Math.max(120, n)));
+					this.plugin.settings.taskBarStackLayoutBreakpointPx = clamped;
+					await this.plugin.saveSettings();
+					this.refreshOpenTimelineViews();
+					tc.setValue(String(clamped));
+				};
+				this.plugin.registerDomEvent(input, "blur", () => {
+					void commit();
+				});
+				this.plugin.registerDomEvent(input, "keydown", (ev: KeyboardEvent) => {
+					if (ev.key === "Enter") {
+						ev.preventDefault();
+						input.blur();
+					}
+				});
+			});
+
 		containerEl.createEl("h3", {
 			text: DisplayedTexts.settings.taskStatesHeading,
 		});

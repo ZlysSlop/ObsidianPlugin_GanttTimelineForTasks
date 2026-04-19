@@ -57,6 +57,7 @@ export class TimelineView extends FileView {
 		persist: (v: TimelineView) => Promise<void>;
 		getDefaultTaskBarColor: () => string;
 		getTaskStates: () => TaskStateDefinition[];
+		getTaskBarStackLayoutBreakpointPx: () => number;
 	};
 	/** Task ids selected with Ctrl/Cmd+click on bars — moved together when you drag or use nudge buttons. */
 	private readonly selectedTaskIds = new Set<string>();
@@ -122,8 +123,6 @@ export class TimelineView extends FileView {
 	private taskStateMenuAnchor: HTMLElement | null = null;
 	/** Cleared on each `redraw` so detached task bars don’t leak observers. */
 	private readonly taskBarStackObservers: ResizeObserver[] = [];
-	/** Bar width &lt; this (px) ⇒ stacked title / state layout; tied to day width. */
-	private static readonly TASK_BAR_STACK_THRESHOLD_DAY_FACTOR = 3.25;
 
 	constructor(
 		leaf: WorkspaceLeaf,
@@ -131,6 +130,7 @@ export class TimelineView extends FileView {
 			persist: (v: TimelineView) => Promise<void>;
 			getDefaultTaskBarColor: () => string;
 			getTaskStates: () => TaskStateDefinition[];
+			getTaskBarStackLayoutBreakpointPx: () => number;
 		}
 	) {
 		super(leaf);
@@ -1097,7 +1097,7 @@ export class TimelineView extends FileView {
 		});
 
 		this.applyTaskBarColor(bar, task);
-		this.bindTaskBarStackLayout(bar, dayW);
+		this.bindTaskBarStackLayout(bar);
 		bar.addEventListener("dblclick", (ev) => {
 			ev.preventDefault();
 			ev.stopPropagation();
@@ -1474,12 +1474,10 @@ export class TimelineView extends FileView {
 	 * Narrow bars: stack title + state (class mirrors CSS). Uses ResizeObserver
 	 * because `@container` is unreliable in Obsidian’s embedded Chromium.
 	 */
-	private bindTaskBarStackLayout(bar: HTMLElement, dayW: number): void {
-		const thresholdPx = Math.ceil(
-			dayW * TimelineView.TASK_BAR_STACK_THRESHOLD_DAY_FACTOR
-		);
+	private bindTaskBarStackLayout(bar: HTMLElement): void {
 		const apply = (): void => {
 			const w = bar.offsetWidth;
+			const thresholdPx = this.api.getTaskBarStackLayoutBreakpointPx();
 			bar.toggleClass(
 				"timeline-task-row-task-bar--stacked",
 				w > 0 && w < thresholdPx

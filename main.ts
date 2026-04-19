@@ -23,6 +23,10 @@ export default class TimelinePlannerPlugin extends Plugin {
 		if (!Array.isArray(this.settings.taskStates)) {
 			this.settings.taskStates = [];
 		}
+		this.settings.taskBarStackLayoutBreakpointPx =
+			this.clampTaskBarStackBreakpointPx(
+				this.settings.taskBarStackLayoutBreakpointPx
+			);
 	}
 
 	async saveSettings(): Promise<void> {
@@ -37,6 +41,10 @@ export default class TimelinePlannerPlugin extends Plugin {
 				persist: (v) => this.persistTimelineView(v),
 				getDefaultTaskBarColor: () => this.settings.defaultTaskBarColor,
 				getTaskStates: () => this.settings.taskStates,
+				getTaskBarStackLayoutBreakpointPx: () =>
+					this.clampTaskBarStackBreakpointPx(
+						this.settings.taskBarStackLayoutBreakpointPx
+					),
 			});
 		});
 
@@ -75,6 +83,14 @@ export default class TimelinePlannerPlugin extends Plugin {
 
 	onunload(): void {
 		this.app.workspace.detachLeavesOfType(TIMELINE_VIEW_TYPE);
+	}
+
+	private clampTaskBarStackBreakpointPx(value: unknown): number {
+		const n =
+			typeof value === "number" && Number.isFinite(value)
+				? value
+				: DEFAULT_TIMELINE_SETTINGS.taskBarStackLayoutBreakpointPx;
+		return Math.round(Math.min(600, Math.max(120, n)));
 	}
 
 	private async persistTimelineView(view: TimelineView): Promise<void> {

@@ -15,9 +15,15 @@ export interface TimelinePlannerSettings {
 	defaultTaskBarColor: string;
 	/** User-defined workflow states (name + color); tasks reference `stateId`. */
 	taskStates: TaskStateDefinition[];
+	/**
+	 * Task bars narrower than this width (CSS pixels) use stacked title + state.
+	 * Larger values keep the single-row layout longer when zoomed out.
+	 */
+	taskBarStackLayoutBreakpointPx: number;
 }
 
 export const DEFAULT_TIMELINE_SETTINGS: TimelinePlannerSettings = {
 	defaultTaskBarColor: "",
 	taskStates: [],
+	taskBarStackLayoutBreakpointPx: 260,
 };

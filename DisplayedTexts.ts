@@ -19,6 +19,9 @@ export const DisplayedTexts = {
 		defaultBarColorName: "Default task bar color",
 		defaultBarColorDesc: "Pick a color for bars that have no per-task color.\nClear (×) to use the theme accent (gradient bar).\nWhen accent is active, the swatch is a neutral preview until you choose a color.",
 		useThemeAccentTooltip: "Use theme accent",
+		taskBarStackBreakpointName: "Compact task bar breakpoint",
+		taskBarStackBreakpointDesc:
+			"When a bar is narrower than this many pixels, the title stacks above the state control (zoom affects bar width in px).\nHigher = stay on one row longer while zoomed out; lower = stack sooner.\nRange: 120–600.",
 		taskStatesHeading: "Task states",
 		taskStatesIntro: "Define states you can assign to tasks (shown on the bar and in the edit dialog). Each state has a name and color.",
 		taskStateNameLabel: "Name",
