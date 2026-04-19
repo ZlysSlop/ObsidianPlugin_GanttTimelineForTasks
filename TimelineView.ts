@@ -291,9 +291,12 @@ export class TimelineView extends ItemView {
 		this.registerDomEvent(scroll, "mousedown", (ev: MouseEvent) => {
 			if (ev.button !== 2) return;
 			if (!this.timelineFile || !this.scrollEl) return;
+
 			const t = ev.target as HTMLElement;
 			if (t.closest("button, a, input, textarea")) return;
+
 			ev.preventDefault();
+
 			const el = this.scrollEl;
 			this.panState = {
 				startX: ev.clientX,
@@ -301,7 +304,9 @@ export class TimelineView extends ItemView {
 				initialRangeStart: this.data.rangeStart,
 				initialScrollTop: el.scrollTop,
 			};
+			
 			el.classList.add("timeline-planner-scroll--panning");
+			
 			this.syncDocumentCursorFromInteractionState();
 		});
 		this.registerDomEvent(scroll, "contextmenu", (ev: MouseEvent) => {
@@ -605,11 +610,15 @@ export class TimelineView extends ItemView {
 
 	private updateMarqueeOverlay(): void {
 		const ms = this.marqueeState;
-		if (!ms || ms.phase !== "dragging" || !this.marqueeOverlayEl) return;
+		if (!ms || ms.phase !== "dragging" || !this.marqueeOverlayEl) {
+			return;
+		}
+		
 		const l = Math.min(ms.startX, ms.curX);
 		const r = Math.max(ms.startX, ms.curX);
 		const t = Math.min(ms.startY, ms.curY);
 		const b = Math.max(ms.startY, ms.curY);
+
 		const el = this.marqueeOverlayEl;
 		el.style.left = `${l}px`;
 		el.style.top = `${t}px`;
@@ -637,35 +646,58 @@ export class TimelineView extends ItemView {
 		curY: number;
 		additive: boolean;
 	}): void {
+		if (!this.bodyEl) {
+			return;
+		}
+
 		const l = Math.min(ms.startX, ms.curX);
 		const r = Math.max(ms.startX, ms.curX);
 		const t = Math.min(ms.startY, ms.curY);
 		const b = Math.max(ms.startY, ms.curY);
-		if (!this.bodyEl) return;
+
 		const picked = new Set<string>();
 		this.bodyEl.querySelectorAll(".timeline-task-row-task-bar").forEach((el) => {
 			const br = el.getBoundingClientRect();
-			if (br.right < l || br.left > r || br.bottom < t || br.top > b) return;
+			
+			if (br.right < l || br.left > r || br.bottom < t || br.top > b) {
+				return;
+			}
+
 			const id = (el as HTMLElement).dataset.taskId;
-			if (id) picked.add(id);
+			
+			if (id) {
+				picked.add(id);
+			}
 		});
 		if (ms.additive) {
-			for (const id of picked) this.selectedTaskIds.add(id);
+			for (const id of picked) {
+				this.selectedTaskIds.add(id);
+			}
 		} else {
 			this.selectedTaskIds.clear();
-			for (const id of picked) this.selectedTaskIds.add(id);
+			
+			for (const id of picked){
+				this.selectedTaskIds.add(id);
+			}
 		}
+
 		this.redraw();
 	}
 
 	/** Drag a selection box on empty track (not on a task bar). */
 	private bindMarqueeOnTrack(track: HTMLElement): void {
 		track.addEventListener("mousedown", (ev) => {
-			if (ev.button !== 0) return;
-			if (!this.timelineFile) return;
-			if ((ev.target as HTMLElement).closest(".timeline-task-row-task-bar")) return;
+			if (ev.button !== 0 || !this.timelineFile) {
+				return;
+			}
+
+			if ((ev.target as HTMLElement).closest(".timeline-task-row-task-bar")) {
+				return;
+			}
+
 			ev.preventDefault();
 			ev.stopPropagation();
+			
 			this.marqueeState = {
 				phase: "pending",
 				startX: ev.clientX,
@@ -741,11 +773,15 @@ export class TimelineView extends ItemView {
 
 	/** Vertical marker for “now” when today lies in the visible range; x = time within the day. */
 	private placeTodayLine(rangeStart: Date, dayW: number): void {
-		if (!this.mainWrapEl) return;
-		
+		if (!this.mainWrapEl) {
+			return;
+		}
+
 		const today = parseYmd(todayYmd());
 		const idx = daysBetweenInclusive(rangeStart, today);
-		if (idx < 0 || idx >= this.data.dayCount) return;
+		if (idx < 0 || idx >= this.data.dayCount) {
+			return;
+		}
 
 		const labelCol = TIMELINE_LABEL_COLUMN_PX;
 		const t = fractionOfLocalDayElapsed();
@@ -756,7 +792,10 @@ export class TimelineView extends ItemView {
 
 	/** Recompute cursor x from clock (no full redraw). */
 	private refreshTodayLinePosition(): void {
-		if (!this.mainWrapEl || !this.timelineFile) return;
+		if (!this.mainWrapEl || !this.timelineFile) {
+			return;
+		}
+
 		const rs = parseYmd(this.data.rangeStart);
 		const dayW = this.data.pixelsPerDay;
 		this.mainWrapEl
@@ -1101,12 +1140,14 @@ export class TimelineView extends ItemView {
 					this.redraw();
 					this.scrollEl.scrollTop = st;
 				}
+
 				const initialRange = this.panState.initialRangeStart;
 				this.panState = null;
 				this.scrollEl.classList.remove("timeline-planner-scroll--panning");
+				
 				if (
-					this.timelineFile &&
-					this.data.rangeStart !== initialRange
+					this.timelineFile
+					&& this.data.rangeStart !== initialRange
 				) {
 					void this.api.persist(this);
 				}
