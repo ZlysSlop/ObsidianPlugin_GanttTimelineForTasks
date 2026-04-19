@@ -6,6 +6,7 @@ import {
 } from "./colorUi";
 import { DisplayedTexts } from "./DisplayedTexts";
 import { EmojiSelectModal } from "./EmojiSelectModal";
+import type { TaskStateDefinition } from "./settingsData";
 import type { TimelineTask } from "./types";
 
 export class TaskEditModal extends Modal {
@@ -13,7 +14,8 @@ export class TaskEditModal extends Modal {
 		app: App,
 		private task: TimelineTask,
 		private onSubmit: (t: Partial<TimelineTask>) => void,
-		private readonly pluginDefaultBarColor: string = ""
+		private readonly pluginDefaultBarColor: string = "",
+		private readonly taskStates: TaskStateDefinition[] = []
 	) {
 		super(app);
 	}
@@ -71,12 +73,32 @@ export class TaskEditModal extends Modal {
 			});
 		});
 
-		new Setting(contentEl).setName("End date").addText((t) => {
-			t.inputEl.type = "date";
-			t.setValue(this.task.end).onChange((v) => {
-				this.task.end = v;
+		new Setting(contentEl)
+			.setName(DisplayedTexts.taskModal.fieldEndDate)
+			.addText((t) => {
+				t.inputEl.type = "date";
+				t.setValue(this.task.end).onChange((v) => {
+					this.task.end = v;
+				});
 			});
-		});
+
+		const initialStateId = this.task.stateId?.trim() ?? "";
+		let stateDraft: string | undefined = undefined;
+		new Setting(contentEl)
+			.setName(DisplayedTexts.taskModal.fieldTaskState)
+			.addDropdown((dd) => {
+				dd.addOption("", DisplayedTexts.taskModal.taskStateNone);
+				for (const s of this.taskStates) {
+					dd.addOption(s.id, s.name);
+				}
+				const valid =
+					initialStateId &&
+					this.taskStates.some((x) => x.id === initialStateId);
+				dd.setValue(valid ? initialStateId : "");
+				dd.onChange((v) => {
+					stateDraft = v;
+				});
+			});
 
 		const initialBarColor = this.task.color?.trim() ?? "";
 		let barColorDraft: string | undefined = undefined;
@@ -141,6 +163,10 @@ export class TaskEditModal extends Modal {
 					emojiDraft !== undefined
 						? emojiDraft.trim()
 						: initialEmoji;
+				const stateSubmit =
+					stateDraft !== undefined
+						? stateDraft.trim()
+						: initialStateId;
 				this.onSubmit({
 					title: this.task.title,
 					start: this.task.start,
@@ -148,6 +174,7 @@ export class TaskEditModal extends Modal {
 					text: this.task.text,
 					color: colorSubmit,
 					emoji: emojiSubmit,
+					stateId: stateSubmit,
 				});
 				this.close();
 			})

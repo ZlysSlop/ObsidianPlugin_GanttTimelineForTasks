@@ -12,6 +12,8 @@ export interface TimelineTask {
 	color?: string;
 	/** Optional emoji shown to the left of the title (one grapheme stored). */
 	emoji?: string;
+	/** Optional plugin task-state id (`TimelinePlannerSettings.taskStates`). */
+	stateId?: string;
 }
 
 export interface TimelinePlannerData {

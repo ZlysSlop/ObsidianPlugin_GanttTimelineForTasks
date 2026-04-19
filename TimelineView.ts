@@ -16,6 +16,7 @@ import {
 import { barAccentLikeGradient } from "./colorUi";
 import { firstGrapheme } from "./emojiUtils";
 import { TaskEditModal } from "./TaskEditModal";
+import type { TaskStateDefinition } from "./settingsData";
 import type { TimelinePlannerData, TimelineTask } from "./types";
 import { DisplayedTexts } from "./DisplayedTexts";
 import {
@@ -55,6 +56,7 @@ export class TimelineView extends FileView {
 	private readonly api: {
 		persist: (v: TimelineView) => Promise<void>;
 		getDefaultTaskBarColor: () => string;
+		getTaskStates: () => TaskStateDefinition[];
 	};
 	/** Task ids selected with Ctrl/Cmd+click on bars — moved together when you drag or use nudge buttons. */
 	private readonly selectedTaskIds = new Set<string>();
@@ -121,6 +123,7 @@ export class TimelineView extends FileView {
 		api: {
 			persist: (v: TimelineView) => Promise<void>;
 			getDefaultTaskBarColor: () => string;
+			getTaskStates: () => TaskStateDefinition[];
 		}
 	) {
 		super(leaf);
@@ -307,7 +310,7 @@ export class TimelineView extends FileView {
 			if (!this.file || !this.scrollEl) return;
 
 			const t = ev.target as HTMLElement;
-			if (t.closest("button, a, input, textarea")) return;
+			if (t.closest("button, a, input, textarea, select")) return;
 
 			ev.preventDefault();
 
@@ -985,7 +988,6 @@ export class TimelineView extends FileView {
 		bar.style.width = `${span * dayW - 4}px`;
 		bar.setAttr("title", DisplayedTexts.timeline.barTitle);
 
-		
 		if (titleEmoji) {
 			bar.createSpan({
 				cls: "timeline-task-row-task-bar-emoji",
@@ -996,6 +998,48 @@ export class TimelineView extends FileView {
 			cls: "timeline-task-row-task-bar-text",
 			text: task_title_bar,
 		});
+
+		const taskStates = this.api.getTaskStates();
+		const resolvedStateId =
+			task.stateId?.trim() &&
+			taskStates.some((s) => s.id === task.stateId!.trim())
+				? task.stateId!.trim()
+				: "";
+		const curState = taskStates.find((s) => s.id === resolvedStateId);
+		const stateSel = bar.createEl("select", {
+			cls: "timeline-task-row-task-bar-state-select",
+			attr: {
+				"aria-label": DisplayedTexts.timeline.taskStateSelectTitle,
+			},
+		});
+		stateSel.createEl("option", {
+			value: "",
+			text: DisplayedTexts.taskModal.taskStateNone,
+		});
+		for (const s of taskStates) {
+			stateSel.createEl("option", { value: s.id, text: s.name });
+		}
+		stateSel.value = resolvedStateId;
+		this.styleTaskStateSelect(stateSel, curState?.color ?? null);
+		stateSel.addEventListener("mousedown", (ev) => {
+			ev.stopPropagation();
+		});
+		stateSel.addEventListener("click", (ev) => {
+			ev.stopPropagation();
+		});
+		stateSel.addEventListener("change", () => {
+			const v = stateSel.value;
+			if (v) {
+				task.stateId = v;
+				const st = taskStates.find((x) => x.id === v);
+				this.styleTaskStateSelect(stateSel, st?.color ?? null);
+			} else {
+				delete task.stateId;
+				this.styleTaskStateSelect(stateSel, null);
+			}
+			void this.persistAndRedraw();
+		});
+
 		this.applyTaskBarColor(bar, task);
 		bar.addEventListener("dblclick", (ev) => {
 			ev.preventDefault();
@@ -1012,6 +1056,7 @@ export class TimelineView extends FileView {
 
 		bar.addEventListener("mousedown", (ev) => {
 			if (ev.button !== 0) return;
+			if ((ev.target as HTMLElement).closest("select")) return;
 			if (ev.target === hL || ev.target === hR) return;
 			if (ev.ctrlKey || ev.metaKey) {
 				ev.preventDefault();
@@ -1326,7 +1371,12 @@ export class TimelineView extends FileView {
 			this.app,
 			task,
 			(updated) => {
-				const { color: colorUp, emoji: emojiUp, ...rest } = updated;
+				const {
+					color: colorUp,
+					emoji: emojiUp,
+					stateId: stateIdUp,
+					...rest
+				} = updated;
 				Object.assign(task, rest);
 				if (colorUp !== undefined) {
 					if (!String(colorUp).trim()) delete task.color;
@@ -1337,9 +1387,15 @@ export class TimelineView extends FileView {
 					if (e) task.emoji = firstGrapheme(e);
 					else delete task.emoji;
 				}
+				if (stateIdUp !== undefined) {
+					const s = String(stateIdUp).trim();
+					if (s) task.stateId = s;
+					else delete task.stateId;
+				}
 				void this.persistAndRedraw();
 			},
-			this.api.getDefaultTaskBarColor()
+			this.api.getDefaultTaskBarColor(),
+			this.api.getTaskStates()
 		).open();
 	}
 
@@ -1350,6 +1406,23 @@ export class TimelineView extends FileView {
 		const core = notesTag + task.title;
 		const emoji = task.emoji?.trim() ? firstGrapheme(task.emoji) : "";
 		return { emoji, core };
+	}
+
+	/**
+	 * Filled state: full pill uses state color; hover/focus/active kept identical so
+	 * opening the native menu does not flash theme “unhovered” chrome.
+	 */
+	private styleTaskStateSelect(
+		sel: HTMLSelectElement,
+		fillHex: string | null
+	): void {
+		sel.removeClass("timeline-task-row-task-bar-state-select--filled");
+		if (!fillHex?.trim()) {
+			sel.style.removeProperty("--tp-state-fill");
+			return;
+		}
+		sel.style.setProperty("--tp-state-fill", fillHex.trim());
+		sel.addClass("timeline-task-row-task-bar-state-select--filled");
 	}
 
 	/** Uses theme bar CSS when both task and plugin default are empty. */

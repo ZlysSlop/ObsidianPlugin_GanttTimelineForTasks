@@ -17,11 +17,15 @@ export const DisplayedTexts = {
 		heading: "Timeline Planner",
 		intro: (ext: string) => `Timelines live in dedicated \`.${ext}\` files (JSON).\nDouble-click one in the vault to open the planner,\nor use the ribbon / command to create a new file next to the active note (or in the vault root if nothing is open).`,
 		defaultBarColorName: "Default task bar color",
-		defaultBarColorDesc:
-			"Pick a color for bars that have no per-task color."
-			"Clear (×) to use the theme accent (gradient bar)."
-			"When accent is active, the swatch is a neutral preview until you choose a color.",
+		defaultBarColorDesc: "Pick a color for bars that have no per-task color.\nClear (×) to use the theme accent (gradient bar).\nWhen accent is active, the swatch is a neutral preview until you choose a color.",
 		useThemeAccentTooltip: "Use theme accent",
+		taskStatesHeading: "Task states",
+		taskStatesIntro: "Define states you can assign to tasks (shown on the bar and in the edit dialog). Each state has a name and color.",
+		taskStateNameLabel: "Name",
+		taskStateColorLabel: "Color",
+		addTaskStateButton: "Add state",
+		newTaskStateDefaultName: "New state",
+		removeTaskStateTooltip: "Remove this state",
 	},
 
 	taskModal: {
@@ -36,6 +40,8 @@ export const DisplayedTexts = {
 		fieldBarColor: "Bar color",
 		clearBarColorTooltip: "Clear — use plugin default",
 		fieldNotes: "Notes",
+		fieldTaskState: "State",
+		taskStateNone: "None",
 		save: "Save",
 		barColorDescLead: "Obsidian color picker (#rrggbb).\nClear (×) to use the plugin default",
 		barColorDescWithPluginDefault: (c: string) => ` (${c})`,
@@ -81,10 +87,7 @@ export const DisplayedTexts = {
 		nudgeEarlierAria: "Selected tasks one day earlier",
 		nudgeLaterAria: "Selected tasks one day later",
 
-		scrollRegionTitle:
-			"Right Click-drag: move up/down through tasks,"
-			"left/right to change which days are visible."
-			"Wheel: scroll. Ctrl + Scroll: to zoom in or out.",
+		scrollRegionTitle: "Right Click-drag: move up/down through tasks,\nleft/right to change which days are visible.\nWheel: scroll. Ctrl + Scroll: to zoom in or out.",
 		noticeParseError: (ext: string) => `Could not parse this .${ext} file (invalid JSON?).\nUsing empty planner.`,
 		noticeNoFile: "No timeline file loaded.",
 		noticeNoSelection: "No tasks selected. Ctrl+click bars to select.",
@@ -98,16 +101,13 @@ export const DisplayedTexts = {
 		outsideRangeArrowTitleRight: (lastVisibleDay: string) => `Task is later — starts after ${lastVisibleDay} (right of the timeline).`,
 		jumpToTaskButton: "Jump to task",
 		jumpToTaskTitle: "Scroll the timeline so this task appears in the day grid",
-		barTitle:
-			"Double-click to edit."
-			"Ctrl+click to multi-select, or drag on empty track to box-select."
-			"Drag horizontally to move in time; drag vertically to reorder."
-			"Can also use ⋮⋮ on the task to reorder vertically.",
+		barTitle: "Double-click to edit.\nCtrl+click to multi-select, or drag on empty track to box-select.\nDrag horizontally to move in time; drag vertically to reorder.\nCan also use ⋮⋮ on the task to reorder vertically.",
 		untitledLabel: "[untitled]",
 		untitledBar: "(untitled)",
 		newTaskDefaultTitle: "New task",
 		noticeTaskAdded: "Task added — drag the bar or edges to plan.",
 		noticeTaskRemoved: "Task removed.",
 		dateRangeSeparator: " → ",
+		taskStateSelectTitle: "Task state",
 	},
 } as const;

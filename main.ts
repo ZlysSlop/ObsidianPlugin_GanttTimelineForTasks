@@ -20,6 +20,9 @@ export default class TimelinePlannerPlugin extends Plugin {
 	async loadSettings(): Promise<void> {
 		const data = (await this.loadData()) as Partial<TimelinePlannerSettings>;
 		this.settings = Object.assign({}, DEFAULT_TIMELINE_SETTINGS, data);
+		if (!Array.isArray(this.settings.taskStates)) {
+			this.settings.taskStates = [];
+		}
 	}
 
 	async saveSettings(): Promise<void> {
@@ -33,6 +36,7 @@ export default class TimelinePlannerPlugin extends Plugin {
 			return new TimelineView(leaf, {
 				persist: (v) => this.persistTimelineView(v),
 				getDefaultTaskBarColor: () => this.settings.defaultTaskBarColor,
+				getTaskStates: () => this.settings.taskStates,
 			});
 		});
 
