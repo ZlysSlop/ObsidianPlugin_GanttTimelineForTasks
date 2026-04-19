@@ -226,22 +226,30 @@ export class TimelineView extends FileView {
 				this.persistAndRedraw();
 			});
 	
+			toolbar.createDiv({ cls: "timeline-planner-spacer" });
+
 			const zoom = toolbar.createDiv({ cls: "timeline-planner-zoom" });
-			zoom.createSpan({ cls: "timeline-planner-zoom-label", text: "Zoom" });
-			const minus = zoom.createEl("button", { text: "−" });
-			minus.setAttr("aria-label", "Zoom out");
-			minus.addEventListener("click", () => {
-				this.applyZoomDelta(-TimelineView.ZOOM_STEP);
-			});
-			const plus = zoom.createEl("button", { text: "+" });
-			plus.setAttr("aria-label", "Zoom in");
-			plus.addEventListener("click", () => {
-				this.applyZoomDelta(TimelineView.ZOOM_STEP);
-			});
-			zoom.setAttr(
-				"title",
-				"Ctrl + Scroll on the timeline to zoom in or out."
-			);
+			if(zoom){
+				zoom.setAttr(
+					"title",
+					"Ctrl + Scroll on the timeline to zoom in or out."
+				);
+
+				zoom.createSpan({ cls: "timeline-planner-zoom-label", text: "Zoom" });
+
+				const minus = zoom.createEl("button", { text: "−" });
+				minus.setAttr("aria-label", "Zoom out");
+				minus.addEventListener("click", () => {
+					this.applyZoomDelta(-TimelineView.ZOOM_STEP);
+				});
+
+				const plus = zoom.createEl("button", { text: "+" });
+				plus.setAttr("aria-label", "Zoom in");
+				plus.addEventListener("click", () => {
+					this.applyZoomDelta(TimelineView.ZOOM_STEP);
+				});
+			}
+			
 	
 			const selTools = toolbar.createDiv({
 				cls: "timeline-planner-selection-tools",
