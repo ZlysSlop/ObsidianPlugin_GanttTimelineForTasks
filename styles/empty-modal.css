@@ -10,9 +10,34 @@
 	margin: 0 auto;
 }
 
+/* Notes field: own flex row so width isn’t recomputed while dragging resize handle */
+.timeline-planner-modal-notes {
+	flex-wrap: wrap;
+	align-items: flex-start;
+	column-gap: 12px;
+	row-gap: 6px;
+}
+
+.timeline-planner-modal-notes .setting-item-info {
+	flex: 0 0 auto;
+	min-width: 0;
+}
+
+.timeline-planner-modal-notes .setting-item-control {
+	flex: 1 1 100%;
+	min-width: 0;
+	width: 100%;
+	max-width: 100%;
+}
+
 .timeline-planner-modal-text {
+	display: block;
 	min-height: 120px;
 	width: 100%;
+	max-width: 100%;
+	box-sizing: border-box;
 	font-family: var(--font-text);
 	border-radius: var(--radius-s, 6px);
+	/* Horizontal resize + width:100% inside Obsidian’s flex Setting row causes jitter */
+	resize: vertical;
 }

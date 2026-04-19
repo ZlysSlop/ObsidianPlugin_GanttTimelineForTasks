@@ -37,6 +37,12 @@ export class TaskEditModal extends Modal {
 
 		new Setting(contentEl).setName("Notes").addTextArea((ta) => {
 			ta.inputEl.addClass("timeline-planner-modal-text");
+			/* Full-width row under label — avoids flex + two-axis resize fighting layout. */
+			let p: HTMLElement | null = ta.inputEl.parentElement;
+			while (p && !p.classList.contains("setting-item")) {
+				p = p.parentElement;
+			}
+			p?.addClass("timeline-planner-modal-notes");
 			ta.setValue(this.task.text).onChange((v) => {
 				this.task.text = v;
 			});
