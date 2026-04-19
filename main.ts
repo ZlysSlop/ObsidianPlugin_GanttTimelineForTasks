@@ -1,5 +1,6 @@
 import { Notice, Plugin, TFile, normalizePath } from "obsidian";
 import { TIMELINE_VIEW_TYPE, ZLY_TIMELINE_EXTENSION } from "./constants";
+import { DisplayedTexts } from "./DisplayedTexts";
 import {
 	DEFAULT_TIMELINE_SETTINGS,
 	type TimelinePlannerSettings,
@@ -53,7 +54,7 @@ export default class TimelinePlannerPlugin extends Plugin {
 
 		this.addRibbonIcon(
 			"calendar-range",
-			`New .${ZLY_TIMELINE_EXTENSION} file`,
+			DisplayedTexts.main.ribbonNewFile(ZLY_TIMELINE_EXTENSION),
 			() => {
 				void this.createNewTimelineFile();
 			}
@@ -61,7 +62,7 @@ export default class TimelinePlannerPlugin extends Plugin {
 
 		this.addCommand({
 			id: "timeline-planner-new-zly-file",
-			name: `New ${ZLY_TIMELINE_EXTENSION} timeline`,
+			name: DisplayedTexts.main.commandNewTimeline(ZLY_TIMELINE_EXTENSION),
 			callback: () => void this.createNewTimelineFile(),
 		});
 
@@ -79,7 +80,7 @@ export default class TimelinePlannerPlugin extends Plugin {
 		try {
 			await writeTimelineZlyFile(this.app, file, view.data);
 		} catch (e) {
-			new Notice("Could not save timeline file. See console.");
+			new Notice(DisplayedTexts.main.noticeSaveFailed);
 			console.error(e);
 		} finally {
 			window.setTimeout(() => {
@@ -112,19 +113,19 @@ export default class TimelinePlannerPlugin extends Plugin {
 
 	async createNewTimelineFile(): Promise<void> {
 		const folder = this.suggestedFolderPath();
-		const basename = "Timeline";
+		const basename = DisplayedTexts.main.newFileBasename;
 		const path = this.uniqueZlyPath(folder, basename);
 		try {
 			await ensureParentFolders(this.app.vault, path);
 			await this.app.vault.create(path, buildNewZlyTimelineFileContent());
 		} catch (e) {
-			new Notice("Could not create timeline file. See console.");
+			new Notice(DisplayedTexts.main.noticeCreateFailed);
 			console.error(e);
 			return;
 		}
 		const file = this.app.vault.getAbstractFileByPath(path);
 		if (!(file instanceof TFile)) {
-			new Notice("Timeline file was not created.");
+			new Notice(DisplayedTexts.main.noticeFileNotCreated);
 			return;
 		}
 		const leaf = this.app.workspace.getLeaf("tab");

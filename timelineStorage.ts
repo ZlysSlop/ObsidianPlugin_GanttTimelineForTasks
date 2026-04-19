@@ -4,6 +4,7 @@ import {
 	TIMELINE_FM_KEY,
 	ZLY_TIMELINE_FORMAT_VERSION,
 } from "./constants";
+import { legacyMarkdownNoteBody } from "./DisplayedTexts";
 import type { TimelinePlannerData, TimelineTask } from "./types";
 
 function pad2(n: number): string {
@@ -25,11 +26,6 @@ export function createEmptyPlannerData(): TimelinePlannerData {
 		pixelsPerDay: 32,
 	};
 }
-
-const DEFAULT_BODY = `# Timeline planner
-
-The timeline is stored in the \`${TIMELINE_FM_KEY}\` property in YAML frontmatter above.\nYou can write anything you want in this note below the frontmatter — links, context, meeting notes — it will not be overwritten by the plugin.
-`;
 
 function normalizeTask(raw: unknown): TimelineTask | null {
 	if (!raw || typeof raw !== "object") return null;
@@ -166,7 +162,7 @@ export async function writeTimelineZlyFile(
 
 export function buildNewNoteContent(data: TimelinePlannerData): string {
 	const fm = { [TIMELINE_FM_KEY]: plannerToPlain(data) };
-	return `---\n${stringifyYaml(fm)}---\n\n${DEFAULT_BODY}`;
+	return `---\n${stringifyYaml(fm)}---\n\n${legacyMarkdownNoteBody()}`;
 }
 
 export async function ensureParentFolders(vault: Vault, filePath: string): Promise<void> {

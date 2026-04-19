@@ -4,6 +4,7 @@ import {
 	isHex6,
 	PICKER_PLACEHOLDER_HEX,
 } from "./colorUi";
+import { DisplayedTexts } from "./DisplayedTexts";
 import { EmojiSelectModal } from "./EmojiSelectModal";
 import type { TimelineTask } from "./types";
 
@@ -20,9 +21,11 @@ export class TaskEditModal extends Modal {
 	onOpen(): void {
 		const { contentEl } = this;
 		contentEl.empty();
-		this.titleEl.setText("Edit task");
+		this.titleEl.setText(DisplayedTexts.taskModal.title);
 
-		new Setting(contentEl).setName("Title").addText((t) => {
+		new Setting(contentEl)
+			.setName(DisplayedTexts.taskModal.fieldTitle)
+			.addText((t) => {
 			t.setValue(this.task.title).onChange((v) => {
 				this.task.title = v;
 			});
@@ -32,28 +35,36 @@ export class TaskEditModal extends Modal {
 		let emojiDraft: string | undefined = undefined;
 		let emojiPickBtn: ButtonComponent | undefined;
 		new Setting(contentEl)
-			.setName("Emoji")
-			.setDesc("Optional icon before the task title on the timeline.")
+			.setName(DisplayedTexts.taskModal.fieldEmoji)
+			.setDesc(DisplayedTexts.taskModal.fieldEmojiDesc)
 			.addButton((b) => {
 				emojiPickBtn = b;
-				b.setButtonText(initialEmoji || "Choose emoji");
+				b.setButtonText(
+					initialEmoji || DisplayedTexts.taskModal.chooseEmoji
+				);
 				b.onClick(() => {
 					new EmojiSelectModal(this.app, (ch) => {
 						emojiDraft = ch;
-						emojiPickBtn?.setButtonText(ch || "Choose emoji");
+						emojiPickBtn?.setButtonText(
+							ch || DisplayedTexts.taskModal.chooseEmoji
+						);
 					}).open();
 				});
 			})
 			.addExtraButton((btn) => {
 				btn.setIcon("cross");
-				btn.setTooltip("Remove emoji");
+				btn.setTooltip(DisplayedTexts.taskModal.removeEmojiTooltip);
 				btn.onClick(() => {
 					emojiDraft = "";
-					emojiPickBtn?.setButtonText("Choose emoji");
+					emojiPickBtn?.setButtonText(
+						DisplayedTexts.taskModal.chooseEmoji
+					);
 				});
 			});
 
-		new Setting(contentEl).setName("Start date").addText((t) => {
+		new Setting(contentEl)
+			.setName(DisplayedTexts.taskModal.fieldStartDate)
+			.addText((t) => {
 			t.inputEl.type = "date";
 			t.setValue(this.task.start).onChange((v) => {
 				this.task.start = v;
@@ -72,14 +83,16 @@ export class TaskEditModal extends Modal {
 		let barColorCp: ColorComponent | undefined;
 		const barColorGate = { ignore: false };
 		const barColorDesc =
-			"Obsidian color picker (#rrggbb). Clear (×) to use the plugin default" +
+			DisplayedTexts.taskModal.barColorDescLead +
 			(this.pluginDefaultBarColor.trim()
-				? ` (${this.pluginDefaultBarColor.trim()})`
-				: " (or theme accent if none)") +
-			". Non-hex CSS colors are kept until you change the swatch.";
+				? DisplayedTexts.taskModal.barColorDescWithPluginDefault(
+						this.pluginDefaultBarColor.trim()
+					)
+				: DisplayedTexts.taskModal.barColorDescNoDefault) +
+			DisplayedTexts.taskModal.barColorDescTail;
 
 		new Setting(contentEl)
-			.setName("Bar color")
+			.setName(DisplayedTexts.taskModal.fieldBarColor)
 			.setDesc(barColorDesc)
 			.addColorPicker((cp) => {
 				barColorCp = cp;
@@ -95,7 +108,7 @@ export class TaskEditModal extends Modal {
 			})
 			.addExtraButton((btn) => {
 				btn.setIcon("cross");
-				btn.setTooltip("Clear — use plugin default");
+				btn.setTooltip(DisplayedTexts.taskModal.clearBarColorTooltip);
 				btn.onClick(() => {
 					barColorDraft = "";
 					armColorPickerGate(barColorGate);
@@ -103,7 +116,9 @@ export class TaskEditModal extends Modal {
 				});
 			});
 
-		new Setting(contentEl).setName("Notes").addTextArea((ta) => {
+		new Setting(contentEl)
+			.setName(DisplayedTexts.taskModal.fieldNotes)
+			.addTextArea((ta) => {
 			ta.inputEl.addClass("timeline-planner-modal-text");
 			/* Full-width row under label — avoids flex + two-axis resize fighting layout. */
 			let p: HTMLElement | null = ta.inputEl.parentElement;
@@ -117,7 +132,7 @@ export class TaskEditModal extends Modal {
 		});
 
 		new Setting(contentEl).addButton((b) =>
-			b.setButtonText("Save").setCta().onClick(() => {
+			b.setButtonText(DisplayedTexts.taskModal.save).setCta().onClick(() => {
 				const colorSubmit =
 					barColorDraft !== undefined
 						? barColorDraft.trim()

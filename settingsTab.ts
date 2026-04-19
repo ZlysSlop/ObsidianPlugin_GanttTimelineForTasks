@@ -6,6 +6,7 @@ import {
 	PICKER_PLACEHOLDER_HEX,
 } from "./colorUi";
 import { TIMELINE_VIEW_TYPE, ZLY_TIMELINE_EXTENSION } from "./constants";
+import { DisplayedTexts } from "./DisplayedTexts";
 import type { TimelinePlannerSettings } from "./settingsData";
 import { TimelineView } from "./TimelineView";
 
@@ -25,17 +26,15 @@ export class TimelinePlannerSettingTab extends PluginSettingTab {
 	display(): void {
 		const { containerEl } = this;
 		containerEl.empty();
-		containerEl.createEl("h2", { text: "Timeline Planner" });
+		containerEl.createEl("h2", { text: DisplayedTexts.settings.heading });
 		containerEl.createEl("p", {
-			text: `Timelines live in dedicated \`.${ZLY_TIMELINE_EXTENSION}\` files (JSON). Double‑click one in the vault to open the planner, or use the ribbon / command to create a new file next to the active note (or in the vault root if nothing is open).\n\nOlder setups stored data in markdown frontmatter; that format is no longer opened by this view — use new \`.${ZLY_TIMELINE_EXTENSION}\` files for the visual timeline.`,
+			text: DisplayedTexts.settings.intro(ZLY_TIMELINE_EXTENSION),
 		});
 
 		const defaultGate = { ignore: false };
 		new Setting(containerEl)
-			.setName("Default task bar color")
-			.setDesc(
-				"Pick a color for bars that have no per-task color. Clear (×) to use the theme accent (gradient bar). When accent is active, the swatch is a neutral preview until you choose a color."
-			)
+			.setName(DisplayedTexts.settings.defaultBarColorName)
+			.setDesc(DisplayedTexts.settings.defaultBarColorDesc)
 			.addColorPicker((cp) => {
 				const stored = this.plugin.settings.defaultTaskBarColor.trim();
 				const shown = isHex6(stored) ? stored : PICKER_PLACEHOLDER_HEX;
@@ -50,7 +49,7 @@ export class TimelinePlannerSettingTab extends PluginSettingTab {
 			})
 			.addExtraButton((btn) => {
 				btn.setIcon("cross");
-				btn.setTooltip("Use theme accent");
+				btn.setTooltip(DisplayedTexts.settings.useThemeAccentTooltip);
 				btn.onClick(async () => {
 					this.plugin.settings.defaultTaskBarColor = "";
 					await this.plugin.saveSettings();

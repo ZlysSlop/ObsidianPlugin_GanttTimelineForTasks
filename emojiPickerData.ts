@@ -1,3 +1,5 @@
+import { DisplayedTexts } from "./DisplayedTexts";
+
 /** Category + emoji + lowercase search tokens (English). */
 export type EmojiPickerItem = {
 	emoji: string;
@@ -15,7 +17,7 @@ function I(emoji: string, tags: string): EmojiPickerItem {
 
 export const EMOJI_PICKER_CATEGORIES: EmojiPickerCategory[] = [
 	{
-		label: "Smileys",
+		label: DisplayedTexts.emojiCategories.smileys,
 		items: [
 			I("😀", "smile grin happy"),
 			I("😃", "smile eyes mouth open happy"),
@@ -73,7 +75,7 @@ export const EMOJI_PICKER_CATEGORIES: EmojiPickerCategory[] = [
 		],
 	},
 	{
-		label: "Gestures & people",
+		label: DisplayedTexts.emojiCategories.gesturesPeople,
 		items: [
 			I("👋", "wave hand hello bye"),
 			I("🤚", "raised hand"),
@@ -114,7 +116,7 @@ export const EMOJI_PICKER_CATEGORIES: EmojiPickerCategory[] = [
 		],
 	},
 	{
-		label: "Nature",
+		label: DisplayedTexts.emojiCategories.nature,
 		items: [
 			I("🐶", "dog puppy"),
 			I("🐱", "cat kitten"),
@@ -164,7 +166,7 @@ export const EMOJI_PICKER_CATEGORIES: EmojiPickerCategory[] = [
 		],
 	},
 	{
-		label: "Food & drink",
+		label: DisplayedTexts.emojiCategories.foodDrink,
 		items: [
 			I("🍎", "apple fruit red"),
 			I("🍊", "orange"),
@@ -199,7 +201,7 @@ export const EMOJI_PICKER_CATEGORIES: EmojiPickerCategory[] = [
 		],
 	},
 	{
-		label: "Activity",
+		label: DisplayedTexts.emojiCategories.activity,
 		items: [
 			I("⚽", "soccer football ball"),
 			I("🏀", "basketball"),
@@ -230,7 +232,7 @@ export const EMOJI_PICKER_CATEGORIES: EmojiPickerCategory[] = [
 		],
 	},
 	{
-		label: "Travel & places",
+		label: DisplayedTexts.emojiCategories.travelPlaces,
 		items: [
 			I("🚗", "car auto"),
 			I("🚕", "taxi"),
@@ -259,7 +261,7 @@ export const EMOJI_PICKER_CATEGORIES: EmojiPickerCategory[] = [
 		],
 	},
 	{
-		label: "Objects",
+		label: DisplayedTexts.emojiCategories.objects,
 		items: [
 			I("⌚", "watch time"),
 			I("📱", "phone mobile iphone"),
@@ -300,7 +302,7 @@ export const EMOJI_PICKER_CATEGORIES: EmojiPickerCategory[] = [
 		],
 	},
 	{
-		label: "Symbols",
+		label: DisplayedTexts.emojiCategories.symbols,
 		items: [
 			I("❤️", "heart love red"),
 			I("🧡", "orange heart"),

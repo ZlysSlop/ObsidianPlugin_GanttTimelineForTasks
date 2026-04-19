@@ -1,4 +1,5 @@
 import { App, Modal } from "obsidian";
+import { DisplayedTexts } from "./DisplayedTexts";
 import { EMOJI_PICKER_CATEGORIES } from "./emojiPickerData";
 
 export class EmojiSelectModal extends Modal {
@@ -13,14 +14,14 @@ export class EmojiSelectModal extends Modal {
 		const { contentEl } = this;
 		contentEl.empty();
 		contentEl.addClass("timeline-planner-emoji-modal");
-		this.titleEl.setText("Choose emoji");
+		this.titleEl.setText(DisplayedTexts.emojiModal.title);
 
 		const searchWrap = contentEl.createDiv({
 			cls: "timeline-planner-emoji-search",
 		});
 		const search = searchWrap.createEl("input", {
 			type: "search",
-			attr: { placeholder: "Search by keyword or category…" },
+			attr: { placeholder: DisplayedTexts.emojiModal.searchPlaceholder },
 		});
 
 		const gridHost = contentEl.createDiv({
@@ -61,7 +62,7 @@ export class EmojiSelectModal extends Modal {
 			if (!gridHost.childElementCount) {
 				gridHost.createDiv({
 					cls: "timeline-planner-emoji-empty",
-					text: "No matches — try another word.",
+					text: DisplayedTexts.emojiModal.noMatches,
 				});
 			}
 		};

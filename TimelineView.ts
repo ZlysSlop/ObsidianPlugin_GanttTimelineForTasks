@@ -17,6 +17,7 @@ import { barAccentLikeGradient } from "./colorUi";
 import { firstGrapheme } from "./emojiUtils";
 import { TaskEditModal } from "./TaskEditModal";
 import type { TimelinePlannerData, TimelineTask } from "./types";
+import { DisplayedTexts } from "./DisplayedTexts";
 import {
 	createEmptyPlannerData,
 	readTimelineZlyFile,
@@ -145,7 +146,7 @@ export class TimelineView extends FileView {
 	}
 
 	getDisplayText(): string {
-		return this.file ? this.file.basename : "Timeline";
+		return this.file ? this.file.basename : DisplayedTexts.timeline.viewTitle;
 	}
 
 	getIcon(): string {
@@ -154,7 +155,9 @@ export class TimelineView extends FileView {
 
 	private updateToolbarPath(): void {
 		if (!this.filePathLabelEl) return;
-		this.filePathLabelEl.setText(this.file?.path ?? "—");
+		this.filePathLabelEl.setText(
+			this.file?.path ?? DisplayedTexts.timeline.filePathPlaceholder
+		);
 	}
 
 	private async loadDataFromFile(file: TFile): Promise<void> {
@@ -165,7 +168,7 @@ export class TimelineView extends FileView {
 		} else {
 			this.data = createEmptyPlannerData();
 			new Notice(
-				"Could not parse this .zly-timeline file (invalid JSON?). Using empty planner."
+				DisplayedTexts.timeline.noticeParseError(ZLY_TIMELINE_EXTENSION)
 			);
 		}
 	}
@@ -198,16 +201,20 @@ export class TimelineView extends FileView {
 		const toolbar = this.rootEl.createDiv({ cls: "timeline-planner-toolbar" });
 		if(toolbar){
 			const titleRow = toolbar.createDiv({ cls: "timeline-planner-title-row" });
-			titleRow.createEl("span", { text: "Timeline" });
+			titleRow.createEl("span", { text: DisplayedTexts.timeline.toolbarHeading });
 			this.filePathLabelEl = titleRow.createEl("span", {
 				cls: "timeline-planner-file-label",
 			});
 			this.updateToolbarPath();
 	
-			const addBtn = toolbar.createEl("button", { text: "New task" });
+			const addBtn = toolbar.createEl("button", {
+				text: DisplayedTexts.timeline.newTask,
+			});
 			addBtn.addEventListener("click", () => this.addTask());
 	
-			const todayBtn = toolbar.createEl("button", { text: "Jump to today" });
+			const todayBtn = toolbar.createEl("button", {
+				text: DisplayedTexts.timeline.jumpToToday,
+			});
 			todayBtn.addEventListener("click", () => {
 				const t = parseYmd(todayYmd());
 				this.data.rangeStart = formatYmd(addDays(t, -7));
@@ -215,7 +222,7 @@ export class TimelineView extends FileView {
 			});
 	
 			const backBtn = toolbar.createEl("button", { text: "◀" });
-			backBtn.setAttr("aria-label", "Earlier");
+			backBtn.setAttr("aria-label", DisplayedTexts.timeline.navEarlierAria);
 			backBtn.addEventListener("click", () => {
 				this.data.rangeStart = formatYmd(
 					addDays(parseYmd(this.data.rangeStart), -14)
@@ -224,7 +231,7 @@ export class TimelineView extends FileView {
 			});
 	
 			const fwdBtn = toolbar.createEl("button", { text: "▶" });
-			fwdBtn.setAttr("aria-label", "Later");
+			fwdBtn.setAttr("aria-label", DisplayedTexts.timeline.navLaterAria);
 			fwdBtn.addEventListener("click", () => {
 				this.data.rangeStart = formatYmd(
 					addDays(parseYmd(this.data.rangeStart), 14)
@@ -236,21 +243,21 @@ export class TimelineView extends FileView {
 
 			const zoom = toolbar.createDiv({ cls: "timeline-planner-zoom" });
 			if(zoom){
-				zoom.setAttr(
-					"title",
-					"Ctrl + Scroll on the timeline to zoom in or out."
-				);
+				zoom.setAttr("title", DisplayedTexts.timeline.zoomTitle);
 
-				zoom.createSpan({ cls: "timeline-planner-zoom-label", text: "Zoom" });
+				zoom.createSpan({
+					cls: "timeline-planner-zoom-label",
+					text: DisplayedTexts.timeline.zoomLabel,
+				});
 
 				const minus = zoom.createEl("button", { text: "−" });
-				minus.setAttr("aria-label", "Zoom out");
+				minus.setAttr("aria-label", DisplayedTexts.timeline.zoomOutAria);
 				minus.addEventListener("click", () => {
 					this.applyZoomDelta(-TimelineView.ZOOM_STEP);
 				});
 
 				const plus = zoom.createEl("button", { text: "+" });
-				plus.setAttr("aria-label", "Zoom in");
+				plus.setAttr("aria-label", DisplayedTexts.timeline.zoomInAria);
 				plus.addEventListener("click", () => {
 					this.applyZoomDelta(TimelineView.ZOOM_STEP);
 				});
@@ -264,33 +271,36 @@ export class TimelineView extends FileView {
 			if(selTools){
 				selTools.createSpan({
 					cls: "timeline-planner-selection-label",
-					text: "Shift selection",
+					text: DisplayedTexts.timeline.shiftSelectionLabel,
 				});
 
 				const nudgeLeft = selTools.createEl("button", { text: "◀" });
 				nudgeLeft.setAttr(
 					"title",
-					"Move all selected tasks one day earlier (Ctrl+click bars to select)"
+					DisplayedTexts.timeline.nudgeEarlierTitle
 				);
-				nudgeLeft.setAttr("aria-label", "Selected tasks one day earlier");
+				nudgeLeft.setAttr(
+					"aria-label",
+					DisplayedTexts.timeline.nudgeEarlierAria
+				);
 				nudgeLeft.addEventListener("click", () => this.shiftSelectedTasksByDays(-1));
 				
 				const nudgeRight = selTools.createEl("button", { text: "▶" });
 				nudgeRight.setAttr(
 					"title",
-					"Move all selected tasks one day later (Ctrl+click bars to select)"
+					DisplayedTexts.timeline.nudgeLaterTitle
 				);
-				nudgeRight.setAttr("aria-label", "Selected tasks one day later");
+				nudgeRight.setAttr(
+					"aria-label",
+					DisplayedTexts.timeline.nudgeLaterAria
+				);
 				nudgeRight.addEventListener("click", () => this.shiftSelectedTasksByDays(1));
 			}
 		}
 
 		const scroll = this.rootEl.createDiv({ cls: "timeline-planner-scroll" });
 		this.scrollEl = scroll;
-		scroll.setAttr(
-			"title",
-			"Right Click-drag: move up/down through tasks, left/right to change which days are visible.\nWheel: scroll. Ctrl + Scroll: to zoom in or out."
-		);
+		scroll.setAttr("title", DisplayedTexts.timeline.scrollRegionTitle);
 
 		this.registerDomEvent(scroll, "mousedown", (ev: MouseEvent) => {
 			if (ev.button !== 2) return;
@@ -448,11 +458,11 @@ export class TimelineView extends FileView {
 
 	private shiftSelectedTasksByDays(delta: number): void {
 		if (!this.file) {
-			new Notice("No timeline file loaded.");
+			new Notice(DisplayedTexts.timeline.noticeNoFile);
 			return;
 		}
 		if (this.selectedTaskIds.size === 0) {
-			new Notice("No tasks selected. Ctrl+click bars to select.");
+			new Notice(DisplayedTexts.timeline.noticeNoSelection);
 			return;
 		}
 		for (const id of Array.from(this.selectedTaskIds)) {
@@ -741,7 +751,7 @@ export class TimelineView extends FileView {
 		if (!this.file) {
 			this.bodyEl.createDiv({
 				cls: "timeline-planner-empty",
-				text: "No .zly-timeline file loaded.",
+				text: DisplayedTexts.timeline.emptyNoFileLoaded,
 			});
 			return;
 		}
@@ -778,7 +788,7 @@ export class TimelineView extends FileView {
 		if (this.data.tasks.length === 0) {
 			this.bodyEl.createDiv({
 				cls: "timeline-planner-empty",
-				text: 'No tasks yet. Click "New task" to add one.',
+				text: DisplayedTexts.timeline.emptyNoTasks,
 			});
 		} else {
 			for (const task of this.data.tasks) {
@@ -828,13 +838,10 @@ export class TimelineView extends FileView {
 		const label = row.createDiv({ cls: "timeline-task-row-label" });
 		const handle = label.createDiv({
 			cls: "timeline-task-row-movehandle",
-			text: "⋮⋮",
+			text: DisplayedTexts.timeline.reorderHandleGlyph,
 		});
-		handle.setAttr("aria-label", "Drag to reorder");
-		handle.setAttr(
-			"title",
-			"Drag up or down to reorder (or drag the bar vertically on the timeline)"
-		);
+		handle.setAttr("aria-label", DisplayedTexts.timeline.reorderAria);
+		handle.setAttr("title", DisplayedTexts.timeline.reorderTitle);
 		handle.addEventListener("mousedown", (ev) => {
 			if (ev.button !== 0) return;
 			ev.preventDefault();
@@ -845,8 +852,10 @@ export class TimelineView extends FileView {
 		});
 
 		const { emoji: titleEmoji, core: titleCore } = this.taskLabelParts(task);
-		const task_title_label = titleCore || "[untitled]";
-		const task_title_bar = titleCore || "(untitled)";
+		const task_title_label =
+			titleCore || DisplayedTexts.timeline.untitledLabel;
+		const task_title_bar =
+			titleCore || DisplayedTexts.timeline.untitledBar;
 
 		const labelMain = label.createDiv({ cls: "timeline-task-row-info-panel" });
 		const titleEl = labelMain.createDiv({
@@ -868,10 +877,14 @@ export class TimelineView extends FileView {
 		});
 
 		const meta = labelMain.createDiv({ cls: "timeline-task-row-info-panel-meta" });
-		meta.setText(`${task.start} → ${task.end}`);
+		meta.setText(
+			`${task.start}${DisplayedTexts.timeline.dateRangeSeparator}${task.end}`
+		);
 
 		const actions = labelMain.createDiv({ cls: "timeline-task-row-info-panel-actions" });
-		const delBtn = actions.createEl("button", { text: "x" });
+		const delBtn = actions.createEl("button", {
+			text: DisplayedTexts.timeline.deleteTask,
+		});
 		delBtn.addEventListener("click", () => this.deleteTask(task.id));
 
 		const track = row.createDiv({ cls: "timeline-task-row-track" });
@@ -889,17 +902,14 @@ export class TimelineView extends FileView {
 			});
 			hint.createDiv({
 				cls: "timeline-planner-outside-range-msg",
-				text: "This task is outside the visible dates — use ◀ ▶ or Jump to today, or jump straight to the task.",
+				text: DisplayedTexts.timeline.outsideRangeMsg,
 			});
 			const jumpBtn = hint.createEl("button", {
 				type: "button",
 				cls: "timeline-planner-jump-task-btn",
-				text: "Show this task",
+				text: DisplayedTexts.timeline.jumpToTaskButton,
 			});
-			jumpBtn.setAttr(
-				"title",
-				"Scroll the timeline so this task appears in the day grid"
-			);
+			jumpBtn.setAttr("title", DisplayedTexts.timeline.jumpToTaskTitle);
 			jumpBtn.addEventListener("mousedown", (ev) => {
 				ev.preventDefault();
 				ev.stopPropagation();
@@ -926,10 +936,7 @@ export class TimelineView extends FileView {
 		bar.dataset.taskId = task.id;
 		bar.style.left = `${i0 * dayW}px`;
 		bar.style.width = `${span * dayW - 4}px`;
-		bar.setAttr(
-			"title",
-			"Double-click to edit. Ctrl+click to multi-select, or drag on empty track to box-select. Drag horizontally to move in time; drag vertically to reorder (or use ⋮⋮)."
-		);
+		bar.setAttr("title", DisplayedTexts.timeline.barTitle);
 
 		
 		if (titleEmoji) {
@@ -1242,20 +1249,20 @@ export class TimelineView extends FileView {
 
 	private addTask(): void {
 		if (!this.file) {
-			new Notice("No timeline file loaded.");
+			new Notice(DisplayedTexts.timeline.noticeNoFile);
 			return;
 		}
 		const t0 = parseYmd(todayYmd());
 		const id = `t-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 		const task: TimelineTask = {
 			id,
-			title: "New task",
+			title: DisplayedTexts.timeline.newTaskDefaultTitle,
 			text: "",
 			start: formatYmd(t0),
 			end: formatYmd(addDays(t0, 2)),
 		};
 		this.data.tasks.push(task);
-		new Notice("Task added — drag the bar or edges to plan.");
+		new Notice(DisplayedTexts.timeline.noticeTaskAdded);
 		void this.persistAndRedraw();
 		this.openEditModal(task);
 	}
@@ -1263,7 +1270,7 @@ export class TimelineView extends FileView {
 	private deleteTask(id: string): void {
 		this.selectedTaskIds.delete(id);
 		this.data.tasks = this.data.tasks.filter((t) => t.id !== id);
-		new Notice("Task removed.");
+		new Notice(DisplayedTexts.timeline.noticeTaskRemoved);
 		void this.persistAndRedraw();
 	}
 
