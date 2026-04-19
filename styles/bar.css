@@ -64,21 +64,33 @@
 	pointer-events: none;
 }
 
-/* State dropdown: right-aligned after title; “none” = neutral pill */
+/* State control: button + theme Menu (not native select) for readable list. */
 .timeline-task-row-task-bar-state-select {
 	flex-shrink: 0;
-	max-width: 42%;
+	max-width: 30%;
 	min-width: 5.5rem;
-	margin-left: auto;
-	margin-right: 0;
-	padding: 2px 8px 2px 6px;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	margin: 0;
+	font: inherit;
+	letter-spacing: inherit;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+	appearance: none;
+	-webkit-appearance: none;
+	padding: 3px 1.65rem;
 	font-size: var(--font-ui-smaller);
-	font-weight: 500;
-	line-height: 1.3;
-	border-radius: var(--radius-s, 5px);
+	font-weight: 800;
+	text-align: center;
+	border-radius: 50px;
 	border: 1px solid
 		color-mix(in srgb, var(--background-primary) 35%, var(--text-muted));
-	background: color-mix(in srgb, var(--background-primary) 28%, transparent);
+	background-color: color-mix(in srgb, var(--background-primary) 28%, transparent);
+	background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 10 10'%3E%3Cpath fill='%23666' fill-opacity='0.85' d='M2 3.5L5 7l3-3.5' stroke='%23666' stroke-opacity='0.45' stroke-width='0.8' fill='none'/%3E%3C/svg%3E");
+	background-repeat: no-repeat;
+	background-position: right 5px center;
 	color: var(--text-normal);
 	cursor: pointer;
 	box-sizing: border-box;
@@ -88,15 +100,48 @@
 .timeline-task-row-task-bar--custom .timeline-task-row-task-bar-state-select:not(
 		.timeline-task-row-task-bar-state-select--filled
 	) {
-	background: color-mix(in srgb, var(--background-primary) 38%, transparent);
+	background-color: color-mix(in srgb, var(--background-primary) 38%, transparent);
 }
 
-/* Assigned state: entire control is the state color; locked across hover/focus/active */
+/* None: same neutral face when hovered/focused/open — list stays OS default */
+.timeline-task-row-task-bar-state-select:not(
+		.timeline-task-row-task-bar-state-select--filled
+	):hover,
+.timeline-task-row-task-bar-state-select:not(
+		.timeline-task-row-task-bar-state-select--filled
+	):focus,
+.timeline-task-row-task-bar-state-select:not(
+		.timeline-task-row-task-bar-state-select--filled
+	):active {
+	background-color: color-mix(in srgb, var(--background-primary) 28%, transparent);
+	color: var(--text-normal);
+	border-color: color-mix(
+		in srgb,
+		var(--background-primary) 35%,
+		var(--text-muted)
+	);
+	background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 10 10'%3E%3Cpath fill='%23666' fill-opacity='0.85' d='M2 3.5L5 7l3-3.5' stroke='%23666' stroke-opacity='0.45' stroke-width='0.8' fill='none'/%3E%3C/svg%3E");
+}
+
+.timeline-task-row-task-bar--custom
+	.timeline-task-row-task-bar-state-select:not(
+		.timeline-task-row-task-bar-state-select--filled
+	):hover,
+.timeline-task-row-task-bar--custom
+	.timeline-task-row-task-bar-state-select:not(
+		.timeline-task-row-task-bar-state-select--filled
+	):focus,
+.timeline-task-row-task-bar--custom
+	.timeline-task-row-task-bar-state-select:not(
+		.timeline-task-row-task-bar-state-select--filled
+	):active {
+	background-color: color-mix(in srgb, var(--background-primary) 38%, transparent);
+}
+
+/* Assigned state: colored pill; list still native/OS */
 .timeline-task-row-task-bar-state-select--filled {
-	appearance: none;
-	-webkit-appearance: none;
-	padding-right: 1.65rem;
 	background-color: var(--tp-state-fill) !important;
+	background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 10 10'%3E%3Cpath fill='%23ffffff' fill-opacity='0.92' d='M2 3.5L5 7l3-3.5' stroke='%23ffffff' stroke-opacity='0.5' stroke-width='0.8' fill='none'/%3E%3C/svg%3E") !important;
 	color: #fff !important;
 	text-shadow: 0 1px 2px rgba(0, 0, 0, 0.35);
 	border-color: color-mix(
@@ -104,15 +149,13 @@
 		var(--tp-state-fill) 55%,
 		black
 	) !important;
-	background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 10 10'%3E%3Cpath fill='%23ffffff' fill-opacity='0.92' d='M2 3.5L5 7l3-3.5' stroke='%23ffffff' stroke-opacity='0.5' stroke-width='0.8' fill='none'/%3E%3C/svg%3E");
-	background-repeat: no-repeat;
-	background-position: right 5px center;
 }
 
 .timeline-task-row-task-bar-state-select--filled:hover,
 .timeline-task-row-task-bar-state-select--filled:focus,
 .timeline-task-row-task-bar-state-select--filled:active {
 	background-color: var(--tp-state-fill) !important;
+	background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 10 10'%3E%3Cpath fill='%23ffffff' fill-opacity='0.92' d='M2 3.5L5 7l3-3.5' stroke='%23ffffff' stroke-opacity='0.5' stroke-width='0.8' fill='none'/%3E%3C/svg%3E") !important;
 	color: #fff !important;
 	border-color: color-mix(
 		in srgb,

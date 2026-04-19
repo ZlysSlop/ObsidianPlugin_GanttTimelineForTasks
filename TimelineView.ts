@@ -1,4 +1,4 @@
-import { FileView, Notice, TFile, WorkspaceLeaf } from "obsidian";
+import { FileView, Menu, Notice, TFile, WorkspaceLeaf } from "obsidian";
 import {
 	TIMELINE_LABEL_COLUMN_PX,
 	TIMELINE_VIEW_TYPE,
@@ -117,6 +117,9 @@ export class TimelineView extends FileView {
 	private dragRedrawRafId: number | null = null;
 	/** Single `html` class for document cursor override; only mutate when this changes. */
 	private appliedDocumentCursorClass: string | null = null;
+	/** Task-state picker: at most one menu; same-button click toggles closed. */
+	private taskStateMenu: Menu | null = null;
+	private taskStateMenuAnchor: HTMLElement | null = null;
 
 	constructor(
 		leaf: WorkspaceLeaf,
@@ -726,6 +729,12 @@ export class TimelineView extends FileView {
 				return;
 			}
 
+			/* Let mousedown bubble so Obsidian can dismiss open `Menu`s; don’t start marquee. */
+			if (this.taskStateMenu) {
+				this.taskStateMenu.hide();
+				return;
+			}
+
 			ev.preventDefault();
 			ev.stopPropagation();
 			
@@ -1006,38 +1015,73 @@ export class TimelineView extends FileView {
 				? task.stateId!.trim()
 				: "";
 		const curState = taskStates.find((s) => s.id === resolvedStateId);
-		const stateSel = bar.createEl("select", {
+		const stateBtn = bar.createEl("button", {
+			type: "button",
 			cls: "timeline-task-row-task-bar-state-select",
 			attr: {
 				"aria-label": DisplayedTexts.timeline.taskStateSelectTitle,
+				"aria-haspopup": "menu",
 			},
+			text: curState?.name ?? DisplayedTexts.taskModal.taskStateNone,
 		});
-		stateSel.createEl("option", {
-			value: "",
-			text: DisplayedTexts.taskModal.taskStateNone,
-		});
-		for (const s of taskStates) {
-			stateSel.createEl("option", { value: s.id, text: s.name });
-		}
-		stateSel.value = resolvedStateId;
-		this.styleTaskStateSelect(stateSel, curState?.color ?? null);
-		stateSel.addEventListener("mousedown", (ev) => {
+		this.styleTaskStateSelect(stateBtn, curState?.color ?? null);
+		stateBtn.addEventListener("mousedown", (ev) => {
 			ev.stopPropagation();
 		});
-		stateSel.addEventListener("click", (ev) => {
+		stateBtn.addEventListener("click", (ev) => {
 			ev.stopPropagation();
-		});
-		stateSel.addEventListener("change", () => {
-			const v = stateSel.value;
-			if (v) {
-				task.stateId = v;
-				const st = taskStates.find((x) => x.id === v);
-				this.styleTaskStateSelect(stateSel, st?.color ?? null);
-			} else {
-				delete task.stateId;
-				this.styleTaskStateSelect(stateSel, null);
+			if (
+				this.taskStateMenu &&
+				this.taskStateMenuAnchor === stateBtn
+			) {
+				this.taskStateMenu.hide();
+				return;
 			}
-			void this.persistAndRedraw();
+			this.taskStateMenu?.hide();
+
+			const currentId =
+				task.stateId?.trim() &&
+				taskStates.some((s) => s.id === task.stateId!.trim())
+					? task.stateId!.trim()
+					: "";
+			const menu = new Menu();
+			this.taskStateMenu = menu;
+			this.taskStateMenuAnchor = stateBtn;
+			menu.onHide(() => {
+				if (this.taskStateMenu === menu) {
+					this.taskStateMenu = null;
+					this.taskStateMenuAnchor = null;
+				}
+			});
+			menu.setUseNativeMenu(false);
+			menu.addItem((item) => {
+				item.setTitle(DisplayedTexts.taskModal.taskStateNone);
+				item.setChecked(currentId === "");
+				item.onClick(() => {
+					const had = task.stateId?.trim();
+					if (had) {
+						delete task.stateId;
+						stateBtn.textContent = DisplayedTexts.taskModal.taskStateNone;
+						this.styleTaskStateSelect(stateBtn, null);
+						void this.persistAndRedraw();
+					}
+				});
+			});
+			for (const s of taskStates) {
+				menu.addItem((item) => {
+					item.setTitle(s.name);
+					item.setChecked(currentId === s.id);
+					item.onClick(() => {
+						if (task.stateId !== s.id) {
+							task.stateId = s.id;
+							stateBtn.textContent = s.name;
+							this.styleTaskStateSelect(stateBtn, s.color);
+							void this.persistAndRedraw();
+						}
+					});
+				});
+			}
+			menu.showAtMouseEvent(ev);
 		});
 
 		this.applyTaskBarColor(bar, task);
@@ -1056,7 +1100,12 @@ export class TimelineView extends FileView {
 
 		bar.addEventListener("mousedown", (ev) => {
 			if (ev.button !== 0) return;
-			if ((ev.target as HTMLElement).closest("select")) return;
+			if (
+				(ev.target as HTMLElement).closest(
+					".timeline-task-row-task-bar-state-select"
+				)
+			)
+				return;
 			if (ev.target === hL || ev.target === hR) return;
 			if (ev.ctrlKey || ev.metaKey) {
 				ev.preventDefault();
@@ -1413,16 +1462,16 @@ export class TimelineView extends FileView {
 	 * opening the native menu does not flash theme “unhovered” chrome.
 	 */
 	private styleTaskStateSelect(
-		sel: HTMLSelectElement,
+		el: HTMLElement,
 		fillHex: string | null
 	): void {
-		sel.removeClass("timeline-task-row-task-bar-state-select--filled");
+		el.removeClass("timeline-task-row-task-bar-state-select--filled");
 		if (!fillHex?.trim()) {
-			sel.style.removeProperty("--tp-state-fill");
+			el.style.removeProperty("--tp-state-fill");
 			return;
 		}
-		sel.style.setProperty("--tp-state-fill", fillHex.trim());
-		sel.addClass("timeline-task-row-task-bar-state-select--filled");
+		el.style.setProperty("--tp-state-fill", fillHex.trim());
+		el.addClass("timeline-task-row-task-bar-state-select--filled");
 	}
 
 	/** Uses theme bar CSS when both task and plugin default are empty. */
