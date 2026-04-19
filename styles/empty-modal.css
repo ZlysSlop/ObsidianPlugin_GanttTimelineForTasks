@@ -1,13 +1,18 @@
 /* Empty state + modal textarea */
 
 .timeline-planner-empty {
-	padding: 24px;
+	padding: 32px 20px;
 	text-align: center;
 	color: var(--text-muted);
+	font-size: var(--font-ui-small);
+	line-height: 1.55;
+	max-width: 420px;
+	margin: 0 auto;
 }
 
 .timeline-planner-modal-text {
 	min-height: 120px;
 	width: 100%;
 	font-family: var(--font-text);
+	border-radius: var(--radius-s, 6px);
 }

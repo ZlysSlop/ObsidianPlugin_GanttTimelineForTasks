@@ -7,8 +7,16 @@
 	left: 0;
 	width: 2px;
 	transform: translateX(-50%);
-	background: #d32f2f;
+	background: linear-gradient(
+		180deg,
+		color-mix(in srgb, #e53935 85%, var(--interactive-accent)) 0%,
+		#c62828 50%,
+		color-mix(in srgb, #e53935 75%, var(--interactive-accent)) 100%
+	);
 	pointer-events: none;
 	z-index: 4;
-	box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.35);
+	border-radius: 1px;
+	box-shadow:
+		0 0 0 1px color-mix(in srgb, white 35%, transparent),
+		0 0 10px color-mix(in srgb, #e53935 45%, transparent);
 }

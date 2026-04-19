@@ -4,15 +4,17 @@
 	flex: 1;
 	overflow: auto;
 	position: relative;
-	cursor: default;
+	cursor: grab;
+	scrollbar-gutter: stable;
 }
 
 .timeline-planner-scroll.timeline-planner-scroll--panning {
-	cursor: default;
+	cursor: grabbing;
 	user-select: none;
 }
 
 .timeline-planner-main {
 	position: relative;
 	min-width: min-content;
+	background: var(--background-primary);
 }

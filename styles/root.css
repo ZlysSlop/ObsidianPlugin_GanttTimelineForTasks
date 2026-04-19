@@ -1,4 +1,4 @@
-/* .timeline-planner-root */
+/* Root view — full-height timeline shell */
 
 .timeline-planner-root {
 	display: flex;
@@ -7,4 +7,6 @@
 	background: var(--background-primary);
 	color: var(--text-normal);
 	font-size: var(--font-ui-small);
+	-webkit-font-smoothing: antialiased;
+	-moz-osx-font-smoothing: grayscale;
 }

@@ -3,4 +3,5 @@
 .timeline-planner-rows {
 	display: flex;
 	flex-direction: column;
+	background: var(--background-primary);
 }

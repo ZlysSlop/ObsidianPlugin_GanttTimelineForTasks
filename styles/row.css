@@ -1,57 +1,83 @@
-/* Day grid background behind task bars */
+/* Task row: track (day grid) + label column + info panel */
 
 .timeline-task-row-track {
 	flex: 1;
 	position: relative;
-	min-height: 44px;
+	min-height: 48px;
 	background: repeating-linear-gradient(
 		90deg,
-		var(--background-primary) 0,
-		var(--background-primary) calc(var(--tp-day-w, 32px) - 1px),
-		var(--background-modifier-border) calc(var(--tp-day-w, 32px) - 1px),
-		var(--background-modifier-border) var(--tp-day-w, 32px)
+		color-mix(in srgb, var(--background-primary) 92%, var(--background-secondary)) 0,
+		color-mix(in srgb, var(--background-primary) 92%, var(--background-secondary)) calc(var(--tp-day-w, 32px) - 1px),
+		color-mix(in srgb, var(--background-modifier-border) 65%, transparent) calc(var(--tp-day-w, 32px) - 1px),
+		color-mix(in srgb, var(--background-modifier-border) 65%, transparent) var(--tp-day-w, 32px)
 	);
 }
 
-/* Single task row + label column + title/meta/actions */
-
 .timeline-task-row {
 	display: flex;
-	border-bottom: 1px solid var(--background-modifier-border);
-	min-height: 44px;
+	border-bottom: 1px solid color-mix(in srgb, var(--background-modifier-border) 75%, transparent);
+	min-height: 48px;
+	transition: background 0.12s ease;
 }
 
+.timeline-task-row:hover {
+	background: color-mix(in srgb, var(--background-modifier-hover) 22%, var(--background-primary));
+}
+
+/* -------------------------------------------------------------------- */
+
 .timeline-task-row-label {
-	width: 180px;
-	min-width: 180px;
+	width: 200px;
 	flex-shrink: 0;
-	padding: 6px 6px 6px 4px;
-	border-right: 1px solid var(--background-modifier-border);
+	padding: 8px 8px 8px 6px;
+	border-right: 1px solid color-mix(in srgb, var(--background-modifier-border) 80%, transparent);
 	display: flex;
 	flex-direction: row;
-	align-items: center;
-	gap: 2px;
+	align-items: stretch;
+	gap: 6px;
+	background: linear-gradient(
+		90deg,
+		var(--background-secondary) 0%,
+		color-mix(in srgb, var(--background-secondary) 88%, var(--background-primary)) 100%
+	);
 }
+
+/* -------------------------------------------------------------------- */
 
 .timeline-task-row-movehandle {
 	flex-shrink: 0;
-	width: 15px;
-	height: 50px;
-	padding: 4px 1px 4px 0px;
+	width: 16px;
+	min-height: 44px;
+	align-self: center;
+	padding: 6px 2px;
 	cursor: grab;
-	color: var(--text-muted);
-	font-size: 15px;
+	color: var(--text-faint, var(--text-muted));
+	font-size: 18px;
+	font-weight: 1000;
 	line-height: 2.5;
-	letter-spacing: -1px;
+	letter-spacing: -0.5px;
 	user-select: none;
 	text-align: center;
-	border-radius: 3px;
-	background: rgb(255 255 255 / 15%)
+	border-radius: var(--radius-s, 6px);
+	background: color-mix(in srgb, var(--background-modifier-hover) 45%, transparent);
+	border: 1px solid color-mix(in srgb, var(--background-modifier-border) 50%, transparent);
+	transition:
+		background 0.12s ease,
+		color 0.12s ease,
+		border-color 0.12s ease;
+}
+
+.timeline-task-row-movehandle:hover {
+	color: var(--text-muted);
+	background: var(--background-modifier-hover);
+	border-color: var(--background-modifier-border-hover);
 }
 
 .timeline-task-row-movehandle:active {
-	cursor: default;
+	cursor: grabbing;
 }
+
+/* -------------------------------------------------------------------- */
 
 .timeline-task-row-info-panel {
 	flex: 1;
@@ -60,33 +86,62 @@
 	flex-direction: column;
 	gap: 4px;
 	justify-content: center;
-	padding: 0px 2px;
+	padding: 2px 4px;
+	overflow: hidden;
 }
 
+/* -------------------------------------------------------------------- */
+
 .timeline-task-row-info-panel-title {
-	font-weight: 500;
-	word-break: break-word;
+	font-weight: 600;
+	font-size: var(--font-ui-small);
 	cursor: default;
+	letter-spacing: -0.01em;
+	line-height: 1.35;
+	color: var(--text-normal);
 }
 
 .timeline-task-row-info-panel-title:hover {
 	text-decoration: underline;
-	text-decoration-color: var(--text-muted);
+	text-decoration-color: color-mix(in srgb, var(--text-muted) 70%, transparent);
+	text-underline-offset: 2px;
 }
+
+/* -------------------------------------------------------------------- */
 
 .timeline-task-row-info-panel-meta {
 	font-size: var(--font-ui-smaller);
 	color: var(--text-muted);
+	font-variant-numeric: tabular-nums;
+	opacity: 0.95;
 }
+
+/* -------------------------------------------------------------------- */
 
 .timeline-task-row-info-panel-actions {
 	display: flex;
-	margin-top: 4px;
-	align-self: end;
+	gap: 6px;
+	margin-top: 2px;
+	align-self: flex-end;
+	flex-wrap: wrap;
 }
 
 .timeline-task-row-info-panel-actions button {
-	padding: 2px 6px;
+	padding: 3px 8px;
 	font-size: var(--font-ui-smaller);
-	height: fit-content
+	height: fit-content;
+	border-radius: var(--radius-s, 5px);
+	border: 1px solid var(--background-modifier-border);
+	background: var(--background-modifier-form-field);
+	color: var(--text-muted);
+	transition:
+		background 0.1s ease,
+		color 0.1s ease,
+		border-color 0.1s ease;
+}
+
+.timeline-task-row-info-panel-actions button:hover {
+	background: var(--background-modifier-hover);
+	color: var(--text-normal);
+	border-color: var(--background-modifier-border-hover);
 }

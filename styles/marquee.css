@@ -1,7 +1,12 @@
 /* Rubber-band selection (empty timeline track drag). Appended to document.body (fixed, viewport coords). */
 .timeline-planner-marquee {
 	box-sizing: border-box;
-	border: 1px solid color-mix(in srgb, var(--interactive-accent) 70%, #2563eb);
-	background: color-mix(in srgb, var(--interactive-accent) 18%, transparent);
+	border-radius: var(--radius-s, 4px);
+	border: 1px solid color-mix(in srgb, var(--interactive-accent) 55%, #2563eb);
+	background: color-mix(in srgb, var(--interactive-accent) 14%, transparent);
+	box-shadow:
+		0 0 0 1px color-mix(in srgb, var(--background-primary) 80%, transparent),
+		inset 0 0 20px color-mix(in srgb, var(--interactive-accent) 8%, transparent);
 	pointer-events: none;
+	backdrop-filter: blur(0.5px);
 }
