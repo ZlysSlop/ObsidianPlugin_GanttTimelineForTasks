@@ -897,28 +897,75 @@ export class TimelineView extends FileView {
 
 		const rangeEnd = addDays(rangeStart, this.data.dayCount - 1);
 		if (end < rangeStart || start > rangeEnd) {
-			const hint = track.createDiv({
-				cls: "timeline-planner-outside-range",
+			const pastLeft = end < rangeStart;
+			const row = track.createDiv({
+				cls:
+					"timeline-planner-outside-range timeline-planner-outside-range--track " +
+					(pastLeft
+						? "timeline-planner-outside-range--past-left"
+						: "timeline-planner-outside-range--past-right"),
 			});
-			hint.createDiv({
-				cls: "timeline-planner-outside-range-msg",
-				text: DisplayedTexts.timeline.outsideRangeMsg,
+
+			const onJumpMouseDown = (ev: MouseEvent): void => {
+				ev.preventDefault();
+				ev.stopPropagation();
+			};
+			const onJumpClick = (ev: MouseEvent): void => {
+				ev.preventDefault();
+				ev.stopPropagation();
+				this.jumpRangeToShowTask(start, end);
+			};
+
+			const leftArrow = row.createEl("button", {
+				type: "button",
+				cls: "timeline-planner-outside-range-arrow timeline-planner-outside-range-arrow--left",
+				text: pastLeft ? "◀" : "",
 			});
-			const jumpBtn = hint.createEl("button", {
+			if (pastLeft) {
+				const tip = DisplayedTexts.timeline.outsideRangeArrowTitleLeft(
+					formatYmd(rangeStart)
+				);
+				leftArrow.setAttr("title", tip);
+				leftArrow.setAttr("aria-label", tip);
+				leftArrow.addEventListener("mousedown", onJumpMouseDown);
+				leftArrow.addEventListener("click", onJumpClick);
+			} else {
+				leftArrow.disabled = true;
+				leftArrow.setAttr("aria-hidden", "true");
+				leftArrow.addClass("is-inactive");
+			}
+
+			const center = row.createDiv({
+				cls: "timeline-planner-outside-range-center",
+			});
+			const jumpBtn = center.createEl("button", {
 				type: "button",
 				cls: "timeline-planner-jump-task-btn",
 				text: DisplayedTexts.timeline.jumpToTaskButton,
 			});
 			jumpBtn.setAttr("title", DisplayedTexts.timeline.jumpToTaskTitle);
-			jumpBtn.addEventListener("mousedown", (ev) => {
-				ev.preventDefault();
-				ev.stopPropagation();
+			jumpBtn.addEventListener("mousedown", onJumpMouseDown);
+			jumpBtn.addEventListener("click", onJumpClick);
+
+			const rightArrow = row.createEl("button", {
+				type: "button",
+				cls: "timeline-planner-outside-range-arrow timeline-planner-outside-range-arrow--right",
+				text: pastLeft ? "" : "▶",
 			});
-			jumpBtn.addEventListener("click", (ev) => {
-				ev.preventDefault();
-				ev.stopPropagation();
-				this.jumpRangeToShowTask(start, end);
-			});
+			if (!pastLeft) {
+				const tip = DisplayedTexts.timeline.outsideRangeArrowTitleRight(
+					formatYmd(rangeEnd)
+				);
+				rightArrow.setAttr("title", tip);
+				rightArrow.setAttr("aria-label", tip);
+				rightArrow.addEventListener("mousedown", onJumpMouseDown);
+				rightArrow.addEventListener("click", onJumpClick);
+			} else {
+				rightArrow.disabled = true;
+				rightArrow.setAttr("aria-hidden", "true");
+				rightArrow.addClass("is-inactive");
+			}
+
 			return;
 		}
 
