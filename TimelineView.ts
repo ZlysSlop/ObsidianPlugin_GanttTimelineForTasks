@@ -412,6 +412,26 @@ export class TimelineView extends FileView {
 		this.redraw();
 	}
 
+	/**
+	 * Moves `rangeStart` so the task interval is visible: centered when the task is
+	 * shorter than the viewport, otherwise aligned to the task start.
+	 */
+	private jumpRangeToShowTask(taskStart: Date, taskEnd: Date): void {
+		if (!this.file) return;
+		const { start, end } = clampDateOrder(taskStart, taskEnd);
+		const n = Math.max(1, this.data.dayCount);
+		const span = daysBetweenInclusive(start, end) + 1;
+		let rs: Date;
+		if (span >= n) {
+			rs = new Date(start.getTime());
+		} else {
+			const pad = Math.floor((n - span) / 2);
+			rs = addDays(start, -pad);
+		}
+		this.data.rangeStart = formatYmd(rs);
+		void this.persistAndRedraw();
+	}
+
 	private applyZoomDelta(delta: number): void {
 		if (!this.file) return;
 		const next = Math.min(
@@ -864,9 +884,30 @@ export class TimelineView extends FileView {
 
 		const rangeEnd = addDays(rangeStart, this.data.dayCount - 1);
 		if (end < rangeStart || start > rangeEnd) {
-			track.createDiv({
-				cls: "timeline-planner-empty",
-				text: "Outside visible range — use ◀ ▶ or Jump to today.",
+			const hint = track.createDiv({
+				cls: "timeline-planner-outside-range",
+			});
+			hint.createDiv({
+				cls: "timeline-planner-outside-range-msg",
+				text: "This task is outside the visible dates — use ◀ ▶ or Jump to today, or jump straight to the task.",
+			});
+			const jumpBtn = hint.createEl("button", {
+				type: "button",
+				cls: "timeline-planner-jump-task-btn",
+				text: "Show this task",
+			});
+			jumpBtn.setAttr(
+				"title",
+				"Scroll the timeline so this task appears in the day grid"
+			);
+			jumpBtn.addEventListener("mousedown", (ev) => {
+				ev.preventDefault();
+				ev.stopPropagation();
+			});
+			jumpBtn.addEventListener("click", (ev) => {
+				ev.preventDefault();
+				ev.stopPropagation();
+				this.jumpRangeToShowTask(start, end);
 			});
 			return;
 		}
