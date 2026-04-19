@@ -74,7 +74,7 @@
 }
 
 .timeline-task-row-movehandle:active {
-	cursor: grabbing;
+	cursor: default;
 }
 
 /* -------------------------------------------------------------------- */
@@ -126,13 +126,16 @@
 	flex-wrap: wrap;
 }
 
+/* Delete button style. */
 .timeline-task-row-info-panel-actions button {
-	padding: 3px 8px;
+	padding: 5px 5px 10px 5px;
+	line-height: 0;
 	font-size: var(--font-ui-smaller);
+	font-weight: 700;
 	height: fit-content;
 	border-radius: var(--radius-s, 5px);
-	border: 1px solid var(--background-modifier-border);
-	background: var(--background-modifier-form-field);
+	border: 1px solid #741414;
+	background: #431919;
 	color: var(--text-muted);
 	transition:
 		background 0.1s ease,
