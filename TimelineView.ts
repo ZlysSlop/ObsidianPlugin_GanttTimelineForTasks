@@ -783,7 +783,7 @@ export class TimelineView extends ItemView {
 		meta.setText(`${task.start} → ${task.end}`);
 
 		const actions = labelMain.createDiv({ cls: "timeline-task-row-info-panel-actions" });
-		const delBtn = actions.createEl("button", { text: "Delete" });
+		const delBtn = actions.createEl("button", { text: "x" });
 		delBtn.addEventListener("click", () => this.deleteTask(task.id));
 
 		const track = row.createDiv({ cls: "timeline-task-row-track" });
