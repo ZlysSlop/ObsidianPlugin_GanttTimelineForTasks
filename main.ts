@@ -1,5 +1,9 @@
 import { Notice, Plugin, TFile, normalizePath } from "obsidian";
 import { TIMELINE_VIEW_TYPE, ZLY_TIMELINE_EXTENSION } from "./constants";
+import {
+	DEFAULT_TIMELINE_SETTINGS,
+	type TimelinePlannerSettings,
+} from "./settingsData";
 import { TimelinePlannerSettingTab } from "./settingsTab";
 import { TimelineView } from "./TimelineView";
 import {
@@ -10,11 +14,24 @@ import {
 
 export default class TimelinePlannerPlugin extends Plugin {
 	private saveIgnorePaths = new Set<string>();
+	settings: TimelinePlannerSettings = { ...DEFAULT_TIMELINE_SETTINGS };
+
+	async loadSettings(): Promise<void> {
+		const data = (await this.loadData()) as Partial<TimelinePlannerSettings>;
+		this.settings = Object.assign({}, DEFAULT_TIMELINE_SETTINGS, data);
+	}
+
+	async saveSettings(): Promise<void> {
+		await this.saveData(this.settings);
+	}
 
 	async onload(): Promise<void> {
+		await this.loadSettings();
+
 		this.registerView(TIMELINE_VIEW_TYPE, (leaf) => {
 			return new TimelineView(leaf, {
 				persist: (v) => this.persistTimelineView(v),
+				getDefaultTaskBarColor: () => this.settings.defaultTaskBarColor,
 			});
 		});
 

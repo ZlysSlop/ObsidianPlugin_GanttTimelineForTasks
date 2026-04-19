@@ -8,6 +8,8 @@ export interface TimelineTask {
 	start: string;
 	/** YYYY-MM-DD inclusive */
 	end: string;
+	/** Optional CSS color (#hex, rgb(), etc.) for the bar; omit or empty = plugin default. */
+	color?: string;
 }
 
 export interface TimelinePlannerData {

@@ -30,6 +30,11 @@
 		transform 0.12s ease;
 }
 
+/* User/plugin fill: inline gradient (same stops as default, accent swapped); label contrast. */
+.timeline-task-row-task-bar--custom {
+	color: #fff;
+}
+
 .timeline-task-row-task-bar:hover {
 	box-shadow:
 		0 2px 8px color-mix(in srgb, var(--interactive-accent) 35%, transparent),
@@ -45,6 +50,10 @@
 		0 0 0 2px var(--background-primary),
 		0 0 0 4px var(--interactive-accent),
 		0 2px 12px color-mix(in srgb, var(--interactive-accent) 40%, transparent);
+}
+
+.timeline-task-row-task-bar--custom .timeline-task-row-task-bar-text {
+	text-shadow: 0 1px 2px rgba(0, 0, 0, 0.45);
 }
 
 .timeline-task-row-task-bar-text {

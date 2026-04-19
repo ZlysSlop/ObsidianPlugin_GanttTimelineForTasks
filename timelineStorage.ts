@@ -40,7 +40,14 @@ function normalizeTask(raw: unknown): TimelineTask | null {
 	const start = typeof o.start === "string" ? o.start : "";
 	const end = typeof o.end === "string" ? o.end : "";
 	if (!id || !start || !end) return null;
-	return { id, title, text, start, end };
+	const colorRaw = o.color;
+	const color =
+		typeof colorRaw === "string" && colorRaw.trim() !== ""
+			? colorRaw.trim()
+			: undefined;
+	const task: TimelineTask = { id, title, text, start, end };
+	if (color !== undefined) task.color = color;
+	return task;
 }
 
 export function normalizePlannerData(raw: unknown): TimelinePlannerData | null {
@@ -66,13 +73,17 @@ function plannerToPlain(data: TimelinePlannerData): Record<string, unknown> {
 		rangeStart: data.rangeStart,
 		dayCount: data.dayCount,
 		pixelsPerDay: data.pixelsPerDay,
-		tasks: data.tasks.map((t) => ({
-			id: t.id,
-			title: t.title,
-			text: t.text,
-			start: t.start,
-			end: t.end,
-		})),
+		tasks: data.tasks.map((t) => {
+			const row: Record<string, unknown> = {
+				id: t.id,
+				title: t.title,
+				text: t.text,
+				start: t.start,
+				end: t.end,
+			};
+			if (t.color?.trim()) row.color = t.color.trim();
+			return row;
+		}),
 	};
 }
 

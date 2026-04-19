@@ -13,6 +13,7 @@ import {
 	parseYmd,
 	todayYmd,
 } from "./dateUtils";
+import { barAccentLikeGradient } from "./colorUi";
 import { TaskEditModal } from "./TaskEditModal";
 import type { TimelinePlannerData, TimelineTask } from "./types";
 import {
@@ -51,6 +52,7 @@ export class TimelineView extends FileView {
 	private bodyEl!: HTMLElement;
 	private readonly api: {
 		persist: (v: TimelineView) => Promise<void>;
+		getDefaultTaskBarColor: () => string;
 	};
 	/** Task ids selected with Ctrl/Cmd+click on bars — moved together when you drag or use nudge buttons. */
 	private readonly selectedTaskIds = new Set<string>();
@@ -114,7 +116,10 @@ export class TimelineView extends FileView {
 
 	constructor(
 		leaf: WorkspaceLeaf,
-		api: { persist: (v: TimelineView) => Promise<void> }
+		api: {
+			persist: (v: TimelineView) => Promise<void>;
+			getDefaultTaskBarColor: () => string;
+		}
 	) {
 		super(leaf);
 		this.api = api;
@@ -878,6 +883,7 @@ export class TimelineView extends FileView {
 			cls: "timeline-task-row-task-bar-text",
 			text: task_title || "(untitled)",
 		});
+		this.applyTaskBarColor(bar, task);
 		bar.addEventListener("dblclick", (ev) => {
 			ev.preventDefault();
 			ev.stopPropagation();
@@ -1203,9 +1209,33 @@ export class TimelineView extends FileView {
 	}
 
 	private openEditModal(task: TimelineTask): void {
-		new TaskEditModal(this.app, task, (updated) => {
-			Object.assign(task, updated);
-			void this.persistAndRedraw();
-		}).open();
+		new TaskEditModal(
+			this.app,
+			task,
+			(updated) => {
+				Object.assign(task, updated);
+				if (!task.color?.trim()) delete task.color;
+				else task.color = task.color.trim();
+				void this.persistAndRedraw();
+			},
+			this.api.getDefaultTaskBarColor()
+		).open();
+	}
+
+	/** Uses theme bar CSS when both task and plugin default are empty. */
+	private applyTaskBarColor(bar: HTMLElement, task: TimelineTask): void {
+		const fallback = this.api.getDefaultTaskBarColor().trim();
+		const rawColor = (task.color?.trim() || fallback) || "";
+		const useCustom = rawColor.length > 0;
+		
+		bar.classList.toggle("timeline-task-row-task-bar--custom", useCustom);
+
+		if (useCustom) {
+			bar.style.background = barAccentLikeGradient(rawColor);
+			bar.style.borderColor = `color-mix(in srgb, ${rawColor} 55%, black)`;
+		} else {
+			bar.style.removeProperty("background");
+			bar.style.removeProperty("border-color");
+		}
 	}
 }
