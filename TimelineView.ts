@@ -826,10 +826,12 @@ export class TimelineView extends ItemView {
 			this.syncDocumentCursorFromInteractionState();
 		});
 
+		const task_title: string = (task.text.length > 0 && task.title.length > 0 ? "[~] " : "") + task.title;
+
 		const labelMain = label.createDiv({ cls: "timeline-task-row-info-panel" });
 		const titleEl = labelMain.createDiv({
 			cls: "timeline-task-row-info-panel-title",
-			text: task.title || "[untitled]",
+			text: task_title || "[untitled]",
 		});
 		titleEl.addEventListener("click", (e) => {
 			e.preventDefault();
@@ -878,9 +880,11 @@ export class TimelineView extends ItemView {
 			"title",
 			"Double-click to edit. Ctrl+click to multi-select, or drag on empty track to box-select. Drag horizontally to move in time; drag vertically to reorder (or use ⋮⋮)."
 		);
+
+		
 		bar.createDiv({
 			cls: "timeline-task-row-task-bar-text",
-			text: task.title || "(untitled)",
+			text: task_title || "(untitled)",
 		});
 		bar.addEventListener("dblclick", (ev) => {
 			ev.preventDefault();
