@@ -198,81 +198,88 @@ export class TimelineView extends ItemView {
 		this.rootEl = this.containerEl.createDiv({ cls: "timeline-planner-root" });
 
 		const toolbar = this.rootEl.createDiv({ cls: "timeline-planner-toolbar" });
-		const titleRow = toolbar.createDiv({ cls: "timeline-planner-title-row" });
-		titleRow.createEl("span", { text: "Timeline" });
-		if (this.timelineFile) {
-			titleRow.createEl("span", {
-				cls: "timeline-planner-file-label",
-				text: this.timelineFile.path,
+		if(toolbar){
+			const titleRow = toolbar.createDiv({ cls: "timeline-planner-title-row" });
+			titleRow.createEl("span", { text: "Timeline" });
+			if (this.timelineFile) {
+				titleRow.createEl("span", {
+					cls: "timeline-planner-file-label",
+					text: this.timelineFile.path,
+				});
+			}
+	
+			const addBtn = toolbar.createEl("button", { text: "New task" });
+			addBtn.addEventListener("click", () => this.addTask());
+	
+			const todayBtn = toolbar.createEl("button", { text: "Jump to today" });
+			todayBtn.addEventListener("click", () => {
+				const t = parseYmd(todayYmd());
+				this.data.rangeStart = formatYmd(addDays(t, -7));
+				this.persistAndRedraw();
 			});
+	
+			const backBtn = toolbar.createEl("button", { text: "◀" });
+			backBtn.setAttr("aria-label", "Earlier");
+			backBtn.addEventListener("click", () => {
+				this.data.rangeStart = formatYmd(
+					addDays(parseYmd(this.data.rangeStart), -14)
+				);
+				this.persistAndRedraw();
+			});
+	
+			const fwdBtn = toolbar.createEl("button", { text: "▶" });
+			fwdBtn.setAttr("aria-label", "Later");
+			fwdBtn.addEventListener("click", () => {
+				this.data.rangeStart = formatYmd(
+					addDays(parseYmd(this.data.rangeStart), 14)
+				);
+				this.persistAndRedraw();
+			});
+	
+			const zoom = toolbar.createDiv({ cls: "timeline-planner-zoom" });
+			zoom.createSpan({ cls: "timeline-planner-zoom-label", text: "Zoom" });
+			const minus = zoom.createEl("button", { text: "−" });
+			minus.setAttr("aria-label", "Zoom out");
+			minus.addEventListener("click", () => {
+				this.applyZoomDelta(-TimelineView.ZOOM_STEP);
+			});
+			const plus = zoom.createEl("button", { text: "+" });
+			plus.setAttr("aria-label", "Zoom in");
+			plus.addEventListener("click", () => {
+				this.applyZoomDelta(TimelineView.ZOOM_STEP);
+			});
+			zoom.setAttr(
+				"title",
+				"Ctrl + Scroll on the timeline to zoom in or out."
+			);
+	
+			const selTools = toolbar.createDiv({
+				cls: "timeline-planner-selection-tools",
+			});
+
+			if(selTools){
+				selTools.createSpan({
+					cls: "timeline-planner-selection-label",
+					text: "Shift selection",
+				});
+
+				const nudgeLeft = selTools.createEl("button", { text: "◀" });
+				nudgeLeft.setAttr(
+					"title",
+					"Move all selected tasks one day earlier (Ctrl+click bars to select)"
+				);
+				nudgeLeft.setAttr("aria-label", "Selected tasks one day earlier");
+				nudgeLeft.addEventListener("click", () => this.shiftSelectedTasksByDays(-1));
+				
+				const nudgeRight = selTools.createEl("button", { text: "▶" });
+				nudgeRight.setAttr(
+					"title",
+					"Move all selected tasks one day later (Ctrl+click bars to select)"
+				);
+				nudgeRight.setAttr("aria-label", "Selected tasks one day later");
+				nudgeRight.addEventListener("click", () => this.shiftSelectedTasksByDays(1));
+			}
 		}
-
-		const addBtn = toolbar.createEl("button", { text: "New task" });
-		addBtn.addEventListener("click", () => this.addTask());
-
-		const todayBtn = toolbar.createEl("button", { text: "Jump to today" });
-		todayBtn.addEventListener("click", () => {
-			const t = parseYmd(todayYmd());
-			this.data.rangeStart = formatYmd(addDays(t, -7));
-			this.persistAndRedraw();
-		});
-
-		const backBtn = toolbar.createEl("button", { text: "◀" });
-		backBtn.setAttr("aria-label", "Earlier");
-		backBtn.addEventListener("click", () => {
-			this.data.rangeStart = formatYmd(
-				addDays(parseYmd(this.data.rangeStart), -14)
-			);
-			this.persistAndRedraw();
-		});
-
-		const fwdBtn = toolbar.createEl("button", { text: "▶" });
-		fwdBtn.setAttr("aria-label", "Later");
-		fwdBtn.addEventListener("click", () => {
-			this.data.rangeStart = formatYmd(
-				addDays(parseYmd(this.data.rangeStart), 14)
-			);
-			this.persistAndRedraw();
-		});
-
-		const zoom = toolbar.createDiv({ cls: "timeline-planner-zoom" });
-		zoom.createSpan({ cls: "timeline-planner-zoom-label", text: "Zoom" });
-		const minus = zoom.createEl("button", { text: "−" });
-		minus.setAttr("aria-label", "Zoom out");
-		minus.addEventListener("click", () => {
-			this.applyZoomDelta(-TimelineView.ZOOM_STEP);
-		});
-		const plus = zoom.createEl("button", { text: "+" });
-		plus.setAttr("aria-label", "Zoom in");
-		plus.addEventListener("click", () => {
-			this.applyZoomDelta(TimelineView.ZOOM_STEP);
-		});
-		zoom.setAttr(
-			"title",
-			"Ctrl + Scroll on the timeline to zoom in or out."
-		);
-
-		const selTools = toolbar.createDiv({
-			cls: "timeline-planner-selection-tools",
-		});
-		selTools.createSpan({
-			cls: "timeline-planner-selection-label",
-			text: "Selection:",
-		});
-		const nudgeLeft = selTools.createEl("button", { text: "◀ day" });
-		nudgeLeft.setAttr(
-			"title",
-			"Move all selected tasks one day earlier (Ctrl+click bars to select)"
-		);
-		nudgeLeft.setAttr("aria-label", "Selected tasks one day earlier");
-		nudgeLeft.addEventListener("click", () => this.shiftSelectedTasksByDays(-1));
-		const nudgeRight = selTools.createEl("button", { text: "day ▶" });
-		nudgeRight.setAttr(
-			"title",
-			"Move all selected tasks one day later (Ctrl+click bars to select)"
-		);
-		nudgeRight.setAttr("aria-label", "Selected tasks one day later");
-		nudgeRight.addEventListener("click", () => this.shiftSelectedTasksByDays(1));
 
 		const scroll = this.rootEl.createDiv({ cls: "timeline-planner-scroll" });
 		this.scrollEl = scroll;
@@ -280,6 +287,7 @@ export class TimelineView extends ItemView {
 			"title",
 			"Right Click-drag: move up/down through tasks, left/right to change which days are visible.\nWheel: scroll. Ctrl + Scroll: to zoom in or out."
 		);
+
 		this.registerDomEvent(scroll, "mousedown", (ev: MouseEvent) => {
 			if (ev.button !== 2) return;
 			if (!this.timelineFile || !this.scrollEl) return;
@@ -695,16 +703,25 @@ export class TimelineView extends ItemView {
 		const grid = this.headerRowEl;
 		grid.style.gridTemplateColumns = `${TIMELINE_LABEL_COLUMN_PX}px repeat(${this.data.dayCount}, ${dayW}px)`;
 
-		grid.createDiv({ cls: "timeline-planner-dayhead" });
+		grid.createDiv({ cls: "timeline-planner-spacer" });
+
 		for (let i = 0; i < this.data.dayCount; i++) {
 			const d = addDays(rs, i);
 			const w = d.getDay();
+
 			const head = grid.createDiv({
 				cls: "timeline-planner-dayhead",
 				text: `${d.getDate()}`,
 			});
-			if (w === 0 || w === 6) head.addClass("is-weekend");
-			if (formatYmd(d) === todayYmd()) head.addClass("is-today");
+
+			if (w === 0 || w === 6) {
+				head.addClass("is-weekend");
+			}
+			
+			if (formatYmd(d) === todayYmd()) {
+				head.addClass("is-today");
+			}
+			
 			head.setAttr("title", formatYmd(d));
 		}
 
@@ -725,6 +742,7 @@ export class TimelineView extends ItemView {
 	/** Vertical marker for “now” when today lies in the visible range; x = time within the day. */
 	private placeTodayLine(rangeStart: Date, dayW: number): void {
 		if (!this.mainWrapEl) return;
+		
 		const today = parseYmd(todayYmd());
 		const idx = daysBetweenInclusive(rangeStart, today);
 		if (idx < 0 || idx >= this.data.dayCount) return;

@@ -5,4 +5,4 @@ export const TIMELINE_VIEW_TYPE = "timeline-planner-view";
 export const TIMELINE_FM_KEY = "timeline";
 
 /** Must match `.timeline-task-row-label` width in `styles/row.css`. */
-export const TIMELINE_LABEL_COLUMN_PX = 180;
+export const TIMELINE_LABEL_COLUMN_PX = 200;
