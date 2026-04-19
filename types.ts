@@ -1,4 +1,4 @@
-/** Timeline planner data stored under frontmatter `timeline` and in the view. */
+/** Timeline planner data in `.zly-timeline` JSON and in the view. */
 
 export interface TimelineTask {
 	id: string;
