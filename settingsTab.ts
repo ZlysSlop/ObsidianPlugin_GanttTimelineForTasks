@@ -1,5 +1,6 @@
 import type { App } from "obsidian";
 import { Plugin, PluginSettingTab } from "obsidian";
+import { ZLY_TIMELINE_EXTENSION } from "./constants";
 
 export class TimelinePlannerSettingTab extends PluginSettingTab {
 	plugin: Plugin;
@@ -14,7 +15,7 @@ export class TimelinePlannerSettingTab extends PluginSettingTab {
 		containerEl.empty();
 		containerEl.createEl("h2", { text: "Timeline Planner" });
 		containerEl.createEl("p", {
-			text: "Each markdown note can store its own timeline in YAML frontmatter under the key timeline.\nUse the ribbon calendar (or the command) while a note is focused to open that note's timeline.\nYou can also right-click a note in the file list and choose Open as timeline.",
+			text: `Timelines live in dedicated \`.${ZLY_TIMELINE_EXTENSION}\` files (JSON). Double‑click one in the vault to open the planner, or use the ribbon / command to create a new file next to the active note (or in the vault root if nothing is open).\n\nOlder setups stored data in markdown frontmatter; that format is no longer opened by this view — use new \`.${ZLY_TIMELINE_EXTENSION}\` files for the visual timeline.`,
 		});
 	}
 }

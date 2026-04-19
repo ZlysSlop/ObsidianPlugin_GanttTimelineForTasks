@@ -1,8 +1,12 @@
-import { Notice, Plugin, TFile } from "obsidian";
-import { TIMELINE_VIEW_TYPE } from "./constants";
+import { Notice, Plugin, TFile, normalizePath } from "obsidian";
+import { TIMELINE_VIEW_TYPE, ZLY_TIMELINE_EXTENSION } from "./constants";
 import { TimelinePlannerSettingTab } from "./settingsTab";
 import { TimelineView } from "./TimelineView";
-import { writeTimelineToFile } from "./timelineStorage";
+import {
+	buildNewZlyTimelineFileContent,
+	ensureParentFolders,
+	writeTimelineZlyFile,
+} from "./timelineStorage";
 
 export default class TimelinePlannerPlugin extends Plugin {
 	private saveIgnorePaths = new Set<string>();
@@ -13,6 +17,8 @@ export default class TimelinePlannerPlugin extends Plugin {
 				persist: (v) => this.persistTimelineView(v),
 			});
 		});
+
+		this.registerExtensions([ZLY_TIMELINE_EXTENSION], TIMELINE_VIEW_TYPE);
 
 		this.registerEvent(
 			this.app.vault.on("modify", (file) => {
@@ -28,32 +34,18 @@ export default class TimelinePlannerPlugin extends Plugin {
 			})
 		);
 
-		this.registerEvent(
-			this.app.workspace.on("file-menu", (menu, file) => {
-				if (!(file instanceof TFile)) return;
-				if (file.extension !== "md") return;
-				menu.addItem((item) => {
-					item.setTitle("Open as timeline")
-						.setIcon("calendar-range")
-						.onClick(() => {
-							void this.openTimelineForFile(file);
-						});
-				});
-			})
-		);
-
 		this.addRibbonIcon(
 			"calendar-range",
-			"Timeline for active note",
+			`New .${ZLY_TIMELINE_EXTENSION} file`,
 			() => {
-				void this.openTimelineForActiveNote();
+				void this.createNewTimelineFile();
 			}
 		);
 
 		this.addCommand({
-			id: "open-timeline-for-active-note",
-			name: "Open timeline for active note",
-			callback: () => void this.openTimelineForActiveNote(),
+			id: "timeline-planner-new-zly-file",
+			name: `New ${ZLY_TIMELINE_EXTENSION} timeline`,
+			callback: () => void this.createNewTimelineFile(),
 		});
 
 		this.addSettingTab(new TimelinePlannerSettingTab(this.app, this));
@@ -65,12 +57,12 @@ export default class TimelinePlannerPlugin extends Plugin {
 
 	private async persistTimelineView(view: TimelineView): Promise<void> {
 		const file = view.getTimelineFile();
-		if (!file) return;
+		if (!file || file.extension !== ZLY_TIMELINE_EXTENSION) return;
 		this.saveIgnorePaths.add(file.path);
 		try {
-			await writeTimelineToFile(this.app, file, view.data);
+			await writeTimelineZlyFile(this.app, file, view.data);
 		} catch (e) {
-			new Notice("Could not save timeline (YAML error?). See console.");
+			new Notice("Could not save timeline file. See console.");
 			console.error(e);
 		} finally {
 			window.setTimeout(() => {
@@ -79,30 +71,46 @@ export default class TimelinePlannerPlugin extends Plugin {
 		}
 	}
 
-	async openTimelineForActiveNote(): Promise<void> {
-		const file = this.app.workspace.getActiveFile();
-		if (!file || file.extension !== "md") {
-			new Notice("Open a markdown note first, then use the calendar.");
-			return;
-		}
-		await this.openTimelineForFile(file);
+	/** Puts the new file next to the active note when possible; otherwise vault root. */
+	private suggestedFolderPath(): string {
+		const active = this.app.workspace.getActiveFile();
+		const p = active?.parent?.path ?? "";
+		return p ? normalizePath(p) : "";
 	}
 
-	async openTimelineForFile(file: TFile): Promise<void> {
-		const leaves = this.app.workspace.getLeavesOfType(TIMELINE_VIEW_TYPE);
-		for (const leaf of leaves) {
-			const v = leaf.view;
-			if (v instanceof TimelineView && v.ownsFilePath(file.path)) {
-				await this.app.workspace.revealLeaf(leaf);
-				return;
-			}
+	private uniqueZlyPath(folder: string, basename: string): string {
+		const ext = `.${ZLY_TIMELINE_EXTENSION}`;
+		let path = folder
+			? normalizePath(`${folder}/${basename}${ext}`)
+			: normalizePath(`${basename}${ext}`);
+		let n = 2;
+		while (this.app.vault.getAbstractFileByPath(path)) {
+			path = folder
+				? normalizePath(`${folder}/${basename} ${n}${ext}`)
+				: normalizePath(`${basename} ${n}${ext}`);
+			n++;
 		}
-		const leaf = this.app.workspace.getLeaf(false);
-		await leaf.setViewState({
-			type: TIMELINE_VIEW_TYPE,
-			active: true,
-			state: { filePath: file.path },
-		});
-		await this.app.workspace.revealLeaf(leaf);
+		return path;
+	}
+
+	async createNewTimelineFile(): Promise<void> {
+		const folder = this.suggestedFolderPath();
+		const basename = "Timeline";
+		const path = this.uniqueZlyPath(folder, basename);
+		try {
+			await ensureParentFolders(this.app.vault, path);
+			await this.app.vault.create(path, buildNewZlyTimelineFileContent());
+		} catch (e) {
+			new Notice("Could not create timeline file. See console.");
+			console.error(e);
+			return;
+		}
+		const file = this.app.vault.getAbstractFileByPath(path);
+		if (!(file instanceof TFile)) {
+			new Notice("Timeline file was not created.");
+			return;
+		}
+		const leaf = this.app.workspace.getLeaf("tab");
+		await leaf.openFile(file);
 	}
 }

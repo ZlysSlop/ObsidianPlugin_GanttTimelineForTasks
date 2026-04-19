@@ -1,6 +1,9 @@
 import type { App, TFile, Vault } from "obsidian";
 import { getFrontMatterInfo, parseYaml, stringifyYaml } from "obsidian";
-import { TIMELINE_FM_KEY } from "./constants";
+import {
+	TIMELINE_FM_KEY,
+	ZLY_TIMELINE_FORMAT_VERSION,
+} from "./constants";
 import type { TimelinePlannerData, TimelineTask } from "./types";
 
 function pad2(n: number): string {
@@ -100,6 +103,47 @@ export async function writeTimelineToFile(
 	await app.fileManager.processFrontMatter(file, (fm) => {
 		fm[TIMELINE_FM_KEY] = plain;
 	});
+}
+
+/** Initial contents for a new `.zly-timeline` file. */
+export function buildNewZlyTimelineFileContent(): string {
+	return JSON.stringify(
+		{ version: ZLY_TIMELINE_FORMAT_VERSION, ...plannerToPlain(createEmptyPlannerData()) },
+		null,
+		"\t"
+	);
+}
+
+export async function readTimelineZlyFile(
+	app: App,
+	file: TFile
+): Promise<TimelinePlannerData | null> {
+	const raw = (await app.vault.read(file)).trim();
+	if (!raw) {
+		return createEmptyPlannerData();
+	}
+	try {
+		const o = JSON.parse(raw) as Record<string, unknown>;
+		if (!o || typeof o !== "object") {
+			return createEmptyPlannerData();
+		}
+		const { version: _ver, ...rest } = o;
+		return normalizePlannerData(rest) ?? createEmptyPlannerData();
+	} catch {
+		return null;
+	}
+}
+
+export async function writeTimelineZlyFile(
+	app: App,
+	file: TFile,
+	data: TimelinePlannerData
+): Promise<void> {
+	const payload = {
+		version: ZLY_TIMELINE_FORMAT_VERSION,
+		...plannerToPlain(data),
+	};
+	await app.vault.modify(file, JSON.stringify(payload, null, "\t"));
 }
 
 export function buildNewNoteContent(data: TimelinePlannerData): string {

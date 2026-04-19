@@ -1,13 +1,9 @@
+import { FileView, Notice, TFile, WorkspaceLeaf } from "obsidian";
 import {
-	App,
-	ItemView,
-	Notice,
-	TFile,
-	ViewStateResult,
-	WorkspaceLeaf,
-	normalizePath,
-} from "obsidian";
-import { TIMELINE_LABEL_COLUMN_PX, TIMELINE_VIEW_TYPE } from "./constants";
+	TIMELINE_LABEL_COLUMN_PX,
+	TIMELINE_VIEW_TYPE,
+	ZLY_TIMELINE_EXTENSION,
+} from "./constants";
 import {
 	addDays,
 	clampDateOrder,
@@ -19,7 +15,10 @@ import {
 } from "./dateUtils";
 import { TaskEditModal } from "./TaskEditModal";
 import type { TimelinePlannerData, TimelineTask } from "./types";
-import { createEmptyPlannerData, readTimelineFromFile } from "./timelineStorage";
+import {
+	createEmptyPlannerData,
+	readTimelineZlyFile,
+} from "./timelineStorage";
 
 export { TIMELINE_VIEW_TYPE };
 
@@ -31,7 +30,7 @@ function moveInArray<T>(arr: T[], from: number, to: number): void {
 	arr.splice(to, 0, item);
 }
 
-export class TimelineView extends ItemView {
+export class TimelineView extends FileView {
 	private static readonly ZOOM_MIN = 16;
 	private static readonly ZOOM_MAX = 80;
 	private static readonly ZOOM_STEP = 4;
@@ -43,7 +42,7 @@ export class TimelineView extends ItemView {
 	private static readonly WHEEL_ZOOM_MIN_INTERVAL_MS = 90;
 
 	data: TimelinePlannerData;
-	private timelineFile: TFile | null = null;
+	private filePathLabelEl: HTMLElement | null = null;
 	private rootEl!: HTMLElement;
 	/** Scrollport for the grid + task rows (right-drag pans this element). */
 	private scrollEl: HTMLElement | null = null;
@@ -123,75 +122,68 @@ export class TimelineView extends ItemView {
 		this.navigation = true;
 	}
 
-	getTimelineFile(): TFile | null {
-		return this.timelineFile;
-	}
-
-	ownsFilePath(path: string): boolean {
-		return this.timelineFile?.path === path;
-	}
-
 	getViewType(): string {
 		return TIMELINE_VIEW_TYPE;
 	}
 
+	canAcceptExtension(extension: string): boolean {
+		return extension === ZLY_TIMELINE_EXTENSION;
+	}
+
+	getTimelineFile(): TFile | null {
+		return this.file;
+	}
+
+	ownsFilePath(path: string): boolean {
+		return this.file?.path === path;
+	}
+
 	getDisplayText(): string {
-		return this.timelineFile
-			? `Timeline: ${this.timelineFile.basename}`
-			: "Timeline";
+		return this.file ? this.file.basename : "Timeline";
 	}
 
 	getIcon(): string {
 		return "calendar-range";
 	}
 
-	getState(): Record<string, unknown> {
-		return { filePath: this.timelineFile?.path ?? "" };
+	private updateToolbarPath(): void {
+		if (!this.filePathLabelEl) return;
+		this.filePathLabelEl.setText(this.file?.path ?? "—");
 	}
 
-	async setState(state: unknown, result: ViewStateResult): Promise<void> {
-		const s = state as { filePath?: string } | null;
-		if (s?.filePath) {
-			await this.attachFileByPath(s.filePath);
-			if (this.headerRowEl) {
-				this.redraw();
-			}
-		}
-	}
-
-	private async attachFileByPath(path: string): Promise<void> {
-		const f = this.app.vault.getAbstractFileByPath(normalizePath(path));
-		if (!(f instanceof TFile)) return;
-		this.timelineFile = f;
-		await this.loadFromFileIntoData();
-	}
-
-	private async resolveFileFromLeaf(): Promise<void> {
-		if (this.timelineFile) return;
-		const vs = this.leaf.getViewState();
-		const fp = (vs.state as { filePath?: string } | undefined)?.filePath;
-		if (fp) await this.attachFileByPath(fp);
-	}
-
-	private async loadFromFileIntoData(): Promise<void> {
-		if (!this.timelineFile) return;
-		const fromMd = await readTimelineFromFile(this.app, this.timelineFile);
-		if (fromMd) {
-			Object.assign(this.data, fromMd);
-			this.data.tasks = fromMd.tasks.slice();
+	private async loadDataFromFile(file: TFile): Promise<void> {
+		const parsed = await readTimelineZlyFile(this.app, file);
+		if (parsed) {
+			Object.assign(this.data, parsed);
+			this.data.tasks = parsed.tasks.slice();
 		} else {
 			this.data = createEmptyPlannerData();
+			new Notice(
+				"Could not parse this .zly-timeline file (invalid JSON?). Using empty planner."
+			);
 		}
+	}
+
+	async onLoadFile(file: TFile): Promise<void> {
+		await this.loadDataFromFile(file);
+		this.updateToolbarPath();
+		if (this.headerRowEl) {
+			this.redraw();
+		}
+	}
+
+	async onUnloadFile(_file: TFile): Promise<void> {
+		this.selectedTaskIds.clear();
+		this.endMarqueeGesture();
 	}
 
 	async reloadFromDisk(): Promise<void> {
-		await this.loadFromFileIntoData();
+		if (!this.file) return;
+		await this.loadDataFromFile(this.file);
 		this.redraw();
 	}
 
 	async onOpen(): Promise<void> {
-		await this.resolveFileFromLeaf();
-
 		this.containerEl.empty();
 		this.containerEl.addClass("timeline-planner-container");
 
@@ -201,12 +193,10 @@ export class TimelineView extends ItemView {
 		if(toolbar){
 			const titleRow = toolbar.createDiv({ cls: "timeline-planner-title-row" });
 			titleRow.createEl("span", { text: "Timeline" });
-			if (this.timelineFile) {
-				titleRow.createEl("span", {
-					cls: "timeline-planner-file-label",
-					text: this.timelineFile.path,
-				});
-			}
+			this.filePathLabelEl = titleRow.createEl("span", {
+				cls: "timeline-planner-file-label",
+			});
+			this.updateToolbarPath();
 	
 			const addBtn = toolbar.createEl("button", { text: "New task" });
 			addBtn.addEventListener("click", () => this.addTask());
@@ -290,7 +280,7 @@ export class TimelineView extends ItemView {
 
 		this.registerDomEvent(scroll, "mousedown", (ev: MouseEvent) => {
 			if (ev.button !== 2) return;
-			if (!this.timelineFile || !this.scrollEl) return;
+			if (!this.file || !this.scrollEl) return;
 
 			const t = ev.target as HTMLElement;
 			if (t.closest("button, a, input, textarea")) return;
@@ -323,7 +313,7 @@ export class TimelineView extends ItemView {
 			const prev = this.data.dayCount;
 			this.redraw();
 			if (
-				this.timelineFile &&
+				this.file &&
 				this.data.dayCount !== prev
 			) {
 				if (this.resizePersistTimer !== null) {
@@ -356,8 +346,8 @@ export class TimelineView extends ItemView {
 
 		this.registerEvent(
 			this.app.vault.on("rename", (file, oldPath) => {
-				if (this.timelineFile?.path === oldPath && file instanceof TFile) {
-					this.timelineFile = file;
+				if (oldPath === this.file?.path && file instanceof TFile) {
+					this.updateToolbarPath();
 				}
 			})
 		);
@@ -375,14 +365,7 @@ export class TimelineView extends ItemView {
 			{ passive: false }
 		);
 
-		if (!this.timelineFile) {
-			this.bodyEl.createDiv({
-				cls: "timeline-planner-empty",
-				text: "No note linked.\nClose this tab and use the calendar ribbon while a markdown note is open.",
-			});
-			return;
-		}
-
+		this.updateToolbarPath();
 		this.redraw();
 	}
 
@@ -405,17 +388,18 @@ export class TimelineView extends ItemView {
 		this.endMarqueeGesture();
 		this.scrollEl = null;
 		this.clearDocumentCursorOverride();
+		this.filePathLabelEl = null;
 		this.containerEl.empty();
 	}
 
 	private async persistAndRedraw(): Promise<void> {
-		if (!this.timelineFile) return;
+		if (!this.file) return;
 		await this.api.persist(this);
 		this.redraw();
 	}
 
 	private applyZoomDelta(delta: number): void {
-		if (!this.timelineFile) return;
+		if (!this.file) return;
 		const next = Math.min(
 			TimelineView.ZOOM_MAX,
 			Math.max(
@@ -429,8 +413,8 @@ export class TimelineView extends ItemView {
 	}
 
 	private shiftSelectedTasksByDays(delta: number): void {
-		if (!this.timelineFile) {
-			new Notice("No note linked to this timeline.");
+		if (!this.file) {
+			new Notice("No timeline file loaded.");
 			return;
 		}
 		if (this.selectedTaskIds.size === 0) {
@@ -454,7 +438,7 @@ export class TimelineView extends ItemView {
 
 	/** Ctrl+scroll (⌘+scroll on macOS) — same as the +/− zoom buttons. */
 	private onWheelZoom(ev: WheelEvent): void {
-		if (!this.timelineFile) return;
+		if (!this.file) return;
 		if (!ev.ctrlKey && !ev.metaKey) return;
 		const now = Date.now();
 		if (
@@ -687,7 +671,7 @@ export class TimelineView extends ItemView {
 	/** Drag a selection box on empty track (not on a task bar). */
 	private bindMarqueeOnTrack(track: HTMLElement): void {
 		track.addEventListener("mousedown", (ev) => {
-			if (ev.button !== 0 || !this.timelineFile) {
+			if (ev.button !== 0 || !this.file) {
 				return;
 			}
 
@@ -720,10 +704,10 @@ export class TimelineView extends ItemView {
 		this.headerRowEl.empty();
 		this.bodyEl.empty();
 
-		if (!this.timelineFile) {
+		if (!this.file) {
 			this.bodyEl.createDiv({
 				cls: "timeline-planner-empty",
-				text: "No note linked.",
+				text: "No .zly-timeline file loaded.",
 			});
 			return;
 		}
@@ -792,7 +776,7 @@ export class TimelineView extends ItemView {
 
 	/** Recompute cursor x from clock (no full redraw). */
 	private refreshTodayLinePosition(): void {
-		if (!this.mainWrapEl || !this.timelineFile) {
+		if (!this.mainWrapEl || !this.file) {
 			return;
 		}
 
@@ -1150,7 +1134,7 @@ export class TimelineView extends ItemView {
 				this.scrollEl.classList.remove("timeline-planner-scroll--panning");
 				
 				if (
-					this.timelineFile
+					this.file
 					&& this.data.rangeStart !== initialRange
 				) {
 					void this.api.persist(this);
@@ -1184,8 +1168,8 @@ export class TimelineView extends ItemView {
 	}
 
 	private addTask(): void {
-		if (!this.timelineFile) {
-			new Notice("No note linked to this timeline.");
+		if (!this.file) {
+			new Notice("No timeline file loaded.");
 			return;
 		}
 		const t0 = parseYmd(todayYmd());
