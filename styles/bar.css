@@ -15,7 +15,9 @@
 	);
 	color: var(--text-on-accent);
 	display: flex;
+	flex-direction: row;
 	align-items: center;
+	gap: 4px;
 	padding: 0 10px;
 	box-sizing: border-box;
 	cursor: grab;
@@ -28,6 +30,15 @@
 	transition:
 		box-shadow 0.15s ease,
 		transform 0.12s ease;
+}
+
+.timeline-task-row-task-bar-labelrow {
+	display: flex;
+	flex-direction: row;
+	align-items: center;
+	min-width: 0;
+	flex: 1;
+	gap: 2px;
 }
 
 /* User/plugin fill: inline gradient (same stops as default, accent swapped); label contrast. */
@@ -66,9 +77,10 @@
 
 /* State control: button + theme Menu (not native select) for readable list. */
 .timeline-task-row-task-bar-state-select {
-	flex-shrink: 0;
-	max-width: 30%;
-	min-width: 5.5rem;
+	flex-shrink: 1;
+	align-self: center;
+	min-width: 0;
+	max-width: 34%;
 	display: inline-flex;
 	align-items: center;
 	justify-content: center;
@@ -95,6 +107,13 @@
 	cursor: pointer;
 	box-sizing: border-box;
 	z-index: 3;
+}
+
+.timeline-task-row-task-bar:not(.timeline-task-row-task-bar--stacked)
+	.timeline-task-row-task-bar-state-select {
+	flex-shrink: 0;
+	min-width: 5.5rem;
+	max-width: 30%;
 }
 
 .timeline-task-row-task-bar--custom .timeline-task-row-task-bar-state-select:not(
@@ -187,6 +206,47 @@
 	font-weight: 500;
 	letter-spacing: 0.01em;
 	text-shadow: 0 1px 1px color-mix(in srgb, black 18%, transparent);
+}
+
+/* Set by TimelineView ResizeObserver when bar width &lt; ~3.25× day column. */
+.timeline-task-row-task-bar--stacked {
+	flex-direction: column;
+	align-items: stretch;
+	justify-content: center;
+	gap: 2px;
+	top: 4px;
+	height: calc(100% - 8px);
+	padding: 2px 6px;
+}
+
+.timeline-task-row-task-bar--stacked .timeline-task-row-task-bar-labelrow {
+	flex: 0 1 auto;
+	width: 100%;
+	min-width: 0;
+}
+
+.timeline-task-row-task-bar--stacked .timeline-task-row-task-bar-emoji {
+	font-size: 1em;
+}
+
+.timeline-task-row-task-bar--stacked .timeline-task-row-task-bar-text {
+	font-size: var(--font-ui-small);
+	line-height: 1.2;
+}
+
+.timeline-task-row-task-bar--stacked .timeline-task-row-task-bar-state-select {
+	align-self: stretch;
+	width: 100%;
+	max-width: none;
+	min-width: 0;
+	min-height: 0;
+	padding: 1px 1.35rem 1px 6px;
+	font-size: var(--font-ui-smaller);
+	font-weight: 700;
+	border-radius: var(--radius-s, 5px);
+	line-height: 1.25;
+	background-position: right 4px center;
+	background-size: 9px 9px;
 }
 
 .timeline-task-row-task-bar-handle {

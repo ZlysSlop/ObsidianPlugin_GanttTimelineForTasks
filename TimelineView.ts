@@ -120,6 +120,10 @@ export class TimelineView extends FileView {
 	/** Task-state picker: at most one menu; same-button click toggles closed. */
 	private taskStateMenu: Menu | null = null;
 	private taskStateMenuAnchor: HTMLElement | null = null;
+	/** Cleared on each `redraw` so detached task bars don’t leak observers. */
+	private readonly taskBarStackObservers: ResizeObserver[] = [];
+	/** Bar width &lt; this (px) ⇒ stacked title / state layout; tied to day width. */
+	private static readonly TASK_BAR_STACK_THRESHOLD_DAY_FACTOR = 3.25;
 
 	constructor(
 		leaf: WorkspaceLeaf,
@@ -751,6 +755,11 @@ export class TimelineView extends FileView {
 	private redraw(): void {
 		if (!this.headerRowEl || !this.bodyEl) return;
 
+		for (const ro of this.taskBarStackObservers) {
+			ro.disconnect();
+		}
+		this.taskBarStackObservers.length = 0;
+
 		this.data.dayCount = this.computeVisibleDayCount();
 
 		this.mainWrapEl
@@ -997,13 +1006,16 @@ export class TimelineView extends FileView {
 		bar.style.width = `${span * dayW - 4}px`;
 		bar.setAttr("title", DisplayedTexts.timeline.barTitle);
 
+		const labelRow = bar.createDiv({
+			cls: "timeline-task-row-task-bar-labelrow",
+		});
 		if (titleEmoji) {
-			bar.createSpan({
+			labelRow.createSpan({
 				cls: "timeline-task-row-task-bar-emoji",
 				text: titleEmoji,
 			});
 		}
-		bar.createDiv({
+		labelRow.createDiv({
 			cls: "timeline-task-row-task-bar-text",
 			text: task_title_bar,
 		});
@@ -1085,6 +1097,7 @@ export class TimelineView extends FileView {
 		});
 
 		this.applyTaskBarColor(bar, task);
+		this.bindTaskBarStackLayout(bar, dayW);
 		bar.addEventListener("dblclick", (ev) => {
 			ev.preventDefault();
 			ev.stopPropagation();
@@ -1455,6 +1468,28 @@ export class TimelineView extends FileView {
 		const core = notesTag + task.title;
 		const emoji = task.emoji?.trim() ? firstGrapheme(task.emoji) : "";
 		return { emoji, core };
+	}
+
+	/**
+	 * Narrow bars: stack title + state (class mirrors CSS). Uses ResizeObserver
+	 * because `@container` is unreliable in Obsidian’s embedded Chromium.
+	 */
+	private bindTaskBarStackLayout(bar: HTMLElement, dayW: number): void {
+		const thresholdPx = Math.ceil(
+			dayW * TimelineView.TASK_BAR_STACK_THRESHOLD_DAY_FACTOR
+		);
+		const apply = (): void => {
+			const w = bar.offsetWidth;
+			bar.toggleClass(
+				"timeline-task-row-task-bar--stacked",
+				w > 0 && w < thresholdPx
+			);
+		};
+		apply();
+		requestAnimationFrame(apply);
+		const ro = new ResizeObserver(apply);
+		ro.observe(bar);
+		this.taskBarStackObservers.push(ro);
 	}
 
 	/**
