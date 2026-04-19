@@ -45,8 +45,14 @@ function normalizeTask(raw: unknown): TimelineTask | null {
 		typeof colorRaw === "string" && colorRaw.trim() !== ""
 			? colorRaw.trim()
 			: undefined;
+	const emojiRaw = o.emoji;
+	const emoji =
+		typeof emojiRaw === "string" && emojiRaw.trim() !== ""
+			? emojiRaw.trim()
+			: undefined;
 	const task: TimelineTask = { id, title, text, start, end };
 	if (color !== undefined) task.color = color;
+	if (emoji !== undefined) task.emoji = emoji;
 	return task;
 }
 
@@ -82,6 +88,7 @@ function plannerToPlain(data: TimelinePlannerData): Record<string, unknown> {
 				end: t.end,
 			};
 			if (t.color?.trim()) row.color = t.color.trim();
+			if (t.emoji?.trim()) row.emoji = t.emoji.trim();
 			return row;
 		}),
 	};

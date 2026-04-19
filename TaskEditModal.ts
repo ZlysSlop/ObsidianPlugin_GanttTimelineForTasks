@@ -1,9 +1,10 @@
-import { App, Modal, Setting, type ColorComponent } from "obsidian";
+import { App, Modal, Setting, type ButtonComponent, type ColorComponent } from "obsidian";
 import {
 	armColorPickerGate,
 	isHex6,
 	PICKER_PLACEHOLDER_HEX,
 } from "./colorUi";
+import { EmojiSelectModal } from "./EmojiSelectModal";
 import type { TimelineTask } from "./types";
 
 export class TaskEditModal extends Modal {
@@ -26,6 +27,31 @@ export class TaskEditModal extends Modal {
 				this.task.title = v;
 			});
 		});
+
+		const initialEmoji = this.task.emoji?.trim() ?? "";
+		let emojiDraft: string | undefined = undefined;
+		let emojiPickBtn: ButtonComponent | undefined;
+		new Setting(contentEl)
+			.setName("Emoji")
+			.setDesc("Optional icon before the task title on the timeline.")
+			.addButton((b) => {
+				emojiPickBtn = b;
+				b.setButtonText(initialEmoji || "Choose emoji");
+				b.onClick(() => {
+					new EmojiSelectModal(this.app, (ch) => {
+						emojiDraft = ch;
+						emojiPickBtn?.setButtonText(ch || "Choose emoji");
+					}).open();
+				});
+			})
+			.addExtraButton((btn) => {
+				btn.setIcon("cross");
+				btn.setTooltip("Remove emoji");
+				btn.onClick(() => {
+					emojiDraft = "";
+					emojiPickBtn?.setButtonText("Choose emoji");
+				});
+			});
 
 		new Setting(contentEl).setName("Start date").addText((t) => {
 			t.inputEl.type = "date";
@@ -96,12 +122,17 @@ export class TaskEditModal extends Modal {
 					barColorDraft !== undefined
 						? barColorDraft.trim()
 						: initialBarColor;
+				const emojiSubmit =
+					emojiDraft !== undefined
+						? emojiDraft.trim()
+						: initialEmoji;
 				this.onSubmit({
 					title: this.task.title,
 					start: this.task.start,
 					end: this.task.end,
 					text: this.task.text,
 					color: colorSubmit,
+					emoji: emojiSubmit,
 				});
 				this.close();
 			})

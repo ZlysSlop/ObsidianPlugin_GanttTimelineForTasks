@@ -14,6 +14,7 @@ import {
 	todayYmd,
 } from "./dateUtils";
 import { barAccentLikeGradient } from "./colorUi";
+import { firstGrapheme } from "./emojiUtils";
 import { TaskEditModal } from "./TaskEditModal";
 import type { TimelinePlannerData, TimelineTask } from "./types";
 import {
@@ -823,12 +824,23 @@ export class TimelineView extends FileView {
 			this.syncDocumentCursorFromInteractionState();
 		});
 
-		const task_title: string = (task.text.length > 0 && task.title.length > 0 ? "[~] " : "") + task.title;
+		const { emoji: titleEmoji, core: titleCore } = this.taskLabelParts(task);
+		const task_title_label = titleCore || "[untitled]";
+		const task_title_bar = titleCore || "(untitled)";
 
 		const labelMain = label.createDiv({ cls: "timeline-task-row-info-panel" });
 		const titleEl = labelMain.createDiv({
 			cls: "timeline-task-row-info-panel-title",
-			text: task_title || "[untitled]",
+		});
+		if (titleEmoji) {
+			titleEl.createSpan({
+				cls: "timeline-task-row-title-emoji",
+				text: titleEmoji,
+			});
+		}
+		titleEl.createSpan({
+			cls: "timeline-task-row-title-text",
+			text: task_title_label,
 		});
 		titleEl.addEventListener("click", (e) => {
 			e.preventDefault();
@@ -879,9 +891,15 @@ export class TimelineView extends FileView {
 		);
 
 		
+		if (titleEmoji) {
+			bar.createSpan({
+				cls: "timeline-task-row-task-bar-emoji",
+				text: titleEmoji,
+			});
+		}
 		bar.createDiv({
 			cls: "timeline-task-row-task-bar-text",
-			text: task_title || "(untitled)",
+			text: task_title_bar,
 		});
 		this.applyTaskBarColor(bar, task);
 		bar.addEventListener("dblclick", (ev) => {
@@ -1213,13 +1231,30 @@ export class TimelineView extends FileView {
 			this.app,
 			task,
 			(updated) => {
-				Object.assign(task, updated);
-				if (!task.color?.trim()) delete task.color;
-				else task.color = task.color.trim();
+				const { color: colorUp, emoji: emojiUp, ...rest } = updated;
+				Object.assign(task, rest);
+				if (colorUp !== undefined) {
+					if (!String(colorUp).trim()) delete task.color;
+					else task.color = String(colorUp).trim();
+				}
+				if (emojiUp !== undefined) {
+					const e = String(emojiUp).trim();
+					if (e) task.emoji = firstGrapheme(e);
+					else delete task.emoji;
+				}
 				void this.persistAndRedraw();
 			},
 			this.api.getDefaultTaskBarColor()
 		).open();
+	}
+
+	/** Notes tag + title (no emoji); emoji is separate for layout. */
+	private taskLabelParts(task: TimelineTask): { emoji: string; core: string } {
+		const notesTag =
+			task.text.length > 0 && task.title.length > 0 ? "[~] " : "";
+		const core = notesTag + task.title;
+		const emoji = task.emoji?.trim() ? firstGrapheme(task.emoji) : "";
+		return { emoji, core };
 	}
 
 	/** Uses theme bar CSS when both task and plugin default are empty. */

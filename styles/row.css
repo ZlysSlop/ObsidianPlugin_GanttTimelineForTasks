@@ -93,12 +93,29 @@
 /* -------------------------------------------------------------------- */
 
 .timeline-task-row-info-panel-title {
+	display: flex;
+	align-items: baseline;
+	gap: 4px;
+	min-width: 0;
 	font-weight: 600;
 	font-size: var(--font-ui-small);
 	cursor: default;
 	letter-spacing: -0.01em;
 	line-height: 1.35;
 	color: var(--text-normal);
+}
+
+.timeline-task-row-title-emoji {
+	flex-shrink: 0;
+	font-size: 1.15em;
+	line-height: 1;
+}
+
+.timeline-task-row-title-text {
+	min-width: 0;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
 }
 
 .timeline-task-row-info-panel-title:hover {

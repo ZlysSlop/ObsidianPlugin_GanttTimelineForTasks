@@ -10,6 +10,8 @@ export interface TimelineTask {
 	end: string;
 	/** Optional CSS color (#hex, rgb(), etc.) for the bar; omit or empty = plugin default. */
 	color?: string;
+	/** Optional emoji shown to the left of the title (one grapheme stored). */
+	emoji?: string;
 }
 
 export interface TimelinePlannerData {

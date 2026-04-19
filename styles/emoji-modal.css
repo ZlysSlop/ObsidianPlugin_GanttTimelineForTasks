@@ -1,0 +1,70 @@
+/* Emoji picker (TaskEditModal → EmojiSelectModal) */
+
+.timeline-planner-emoji-modal {
+	padding-bottom: var(--size-4-4, 16px);
+}
+
+.timeline-planner-emoji-search {
+	margin-bottom: var(--size-4-3, 12px);
+}
+
+.timeline-planner-emoji-search input[type="search"] {
+	width: 100%;
+}
+
+.timeline-planner-emoji-grid-host {
+	max-height: min(52vh, 360px);
+	overflow-y: auto;
+	padding-right: 4px;
+}
+
+.timeline-planner-emoji-section {
+	margin-bottom: var(--size-4-3, 12px);
+}
+
+.timeline-planner-emoji-section-label {
+	font-size: var(--font-ui-smaller);
+	font-weight: 600;
+	color: var(--text-muted);
+	text-transform: uppercase;
+	letter-spacing: 0.04em;
+	margin-bottom: 6px;
+}
+
+.timeline-planner-emoji-grid {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 4px;
+}
+
+.timeline-planner-emoji-cell {
+	font-size: 1.35em;
+	line-height: 1;
+	padding: 6px 8px;
+	min-width: 2.25em;
+	min-height: 2.25em;
+	border-radius: var(--radius-s, 6px);
+	border: 1px solid var(--background-modifier-border);
+	background: var(--background-secondary);
+	cursor: pointer;
+	transition:
+		background 0.1s ease,
+		border-color 0.1s ease,
+		transform 0.08s ease;
+}
+
+.timeline-planner-emoji-cell:hover {
+	background: var(--background-modifier-hover);
+	border-color: var(--background-modifier-border-hover);
+}
+
+.timeline-planner-emoji-cell:active {
+	transform: scale(0.94);
+}
+
+.timeline-planner-emoji-empty {
+	font-size: var(--font-ui-small);
+	color: var(--text-muted);
+	padding: var(--size-4-4, 16px) 0;
+	text-align: center;
+}
