@@ -45,12 +45,8 @@ export function appendTimelineTaskLabel(
 		ctx.beginReorder(task.id);
 	});
 
-	const element_labelMain = element_label.createDiv({
-		cls: "timeline-task-row-info-panel",
-	});
-	const element_titleEl = element_labelMain.createDiv({
-		cls: "timeline-task-row-info-panel-title",
-	});
+	const element_labelMain = element_label.createDiv({ cls: "timeline-task-row-info-panel" });
+	const element_titleEl = element_labelMain.createDiv({ cls: "timeline-task-row-info-panel-title" });
 	if (display.emoji) {
 		element_titleEl.createSpan({
 			cls: "timeline-task-row-title-emoji",
@@ -66,17 +62,11 @@ export function appendTimelineTaskLabel(
 		ctx.openEditModal(task);
 	});
 
-	const element_meta = element_labelMain.createDiv({
-		cls: "timeline-task-row-info-panel-meta",
-	});
+	const element_meta = element_labelMain.createDiv({cls: "timeline-task-row-info-panel-meta" });
 	element_meta.setText(`${task.start} → ${task.end}`);
 
-	const element_actions = element_labelMain.createDiv({
-		cls: "timeline-task-row-info-panel-actions",
-	});
-	const delBtn = element_actions.createEl("button", {
-		text: DisplayedTexts.timeline.deleteTaskSymbol,
-	});
-	delBtn.setAttr("aria-label", DisplayedTexts.timeline.deleteTask);
-	delBtn.addEventListener("click", () => ctx.deleteTask(task.id));
+	const element_actions = element_labelMain.createDiv({ cls: "timeline-task-row-info-panel-actions" });
+	const element_button_deleteTask = element_actions.createEl("button", { text: DisplayedTexts.timeline.deleteTaskSymbol });
+	element_button_deleteTask.setAttr("aria-label", DisplayedTexts.timeline.deleteTask);
+	element_button_deleteTask.addEventListener("click", () => ctx.deleteTask(task.id));
 }

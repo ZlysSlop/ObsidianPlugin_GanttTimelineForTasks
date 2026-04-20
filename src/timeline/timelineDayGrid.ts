@@ -1,7 +1,6 @@
 import { TIMELINE_LABEL_COLUMN_PX } from "../constants";
 import { addDays, daysBetweenInclusive, formatYmd, fractionOfLocalDayElapsed, parseYmd, todayYmd } from "../dateUtils";
 import { DisplayedTexts } from "../DisplayedTexts";
-import {TimelineView} from "./TimelineView"
 
 export function removeTodayLineElements(mainWrapEl: HTMLElement): void {
 	mainWrapEl
@@ -65,6 +64,14 @@ export function placeTodayLine(
 	const labelCol = TIMELINE_LABEL_COLUMN_PX;
 	const t = fractionOfLocalDayElapsed();
 	const leftPx = labelCol + idx * dayW + t * dayW;
+
+	/* Sticky: bar + arrow stay aligned with the top of the scrollport while rows scroll. */
 	const line = mainWrapEl.createDiv({ cls: "timeline-planner-today-line" });
 	line.style.left = `${leftPx}px`;
+	const h = mainWrapEl.clientHeight;
+	line.style.setProperty(
+		"--tp-today-line-sticky-h",
+		`${Math.max(1, h)}px`
+	);
+	mainWrapEl.prepend(line);
 }

@@ -32,10 +32,7 @@ export function createTimelineToolbar(
 		{ text: "◀" }
 	);
 	element_button_shiftDaysbackToLeft.setAttr("title", "");
-	element_button_shiftDaysbackToLeft.setAttr(
-		"aria-label",
-		DisplayedTexts.timeline.navEarlierAria
-	);
+	element_button_shiftDaysbackToLeft.setAttr("aria-label", DisplayedTexts.timeline.navEarlierAria);
 	element_button_shiftDaysbackToLeft.addEventListener("click", () =>
 		view.toolbarShiftVisibleRangeByDays(-14)
 	);

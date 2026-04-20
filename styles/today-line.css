@@ -1,12 +1,26 @@
-/* “Now” vertical line */
+/* “Now” marker: sticky in the scrollport so it doesn’t drift when panning/scrolling vertically */
 
 .timeline-planner-today-line {
-	position: absolute;
+	position: sticky;
 	top: 0;
-	bottom: 0;
-	left: 0;
-	width: 2px;
+	z-index: 6;
+	width: 0;
+	height: 0;
+	overflow: visible;
+	pointer-events: none;
 	transform: translateX(-50%);
+}
+
+/* Vertical segment — height = scrollport (set in JS) */
+.timeline-planner-today-line::after {
+	content: "";
+	position: absolute;
+	left: 0;
+	top: 0;
+	transform: translateX(-50%);
+	z-index: 1;
+	width: 2px;
+	height: var(--tp-today-line-sticky-h, 400px);
 	background: linear-gradient(
 		180deg,
 		color-mix(in srgb, #e53935 85%, var(--interactive-accent)) 0%,
@@ -14,21 +28,16 @@
 		color-mix(in srgb, #e53935 75%, var(--interactive-accent)) 100%
 	);
 	pointer-events: none;
-	/* Above `.timeline-planner-grid` (z-index 5) so the line and top arrow show in the header */
-	z-index: 6;
-	border-radius: 1px;
-	box-shadow:
-		0 0 0 1px color-mix(in srgb, white 35%, transparent),
-		0 0 10px color-mix(in srgb, #e53935 45%, transparent);
 }
 
-/* Down-pointing arrow at the top of the “now” line */
+/* Down-pointing arrow above the bar */
 .timeline-planner-today-line::before {
 	content: "";
 	position: absolute;
-	left: 50%;
+	left: 0;
 	top: 0;
-	transform: translate(-50%, 0);
+	transform: translateX(-50%);
+	z-index: 2;
 	width: 0;
 	height: 0;
 	border-left: 5px solid transparent;
