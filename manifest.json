@@ -5,5 +5,5 @@
 	"minAppVersion": "1.5.0",
 	"description": "Gantt Timeline planning for Obsidian. It's Vibe coded, but managed by an actual programmer, just not from the Web-dev field.",
 	"author": "Zly",
-	"isDesktopOnly": true
+	"isDesktopOnly": false
 }
