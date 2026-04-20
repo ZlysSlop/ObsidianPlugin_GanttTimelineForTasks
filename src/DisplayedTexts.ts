@@ -23,7 +23,7 @@ export const DisplayedTexts = {
 		taskBarStackBreakpointDesc: "When a bar is narrower than this many pixels, the title stacks above the state control (zoom affects bar width in px).\nHigher = stay on one row longer while zoomed out; lower = stack sooner.\nRange: 120-600.",
 		timelineZoomDayStepName: "Timeline zoom step (days)",
 		timelineZoomDayStepDesc:
-			"How many days are added or removed from the visible range with each zoom action (timeline +/− buttons or Ctrl/⌘+scroll on the timeline).\nRange: 1–30.",
+			"Total days added or removed per zoom (timeline +/− or Ctrl/⌘+scroll). The change is split across both ends of the visible range (centered zoom); odd steps alternate which side gets the extra day.\nRange: 1–30.",
 		taskStatesHeading: "Task states",
 		taskStatesSummaryDesc: "Workflow states (name + color) for tasks on the bar and in the editor. Opens in a separate window.",
 		openTaskStatesSettingsButton: "Configure task states...",
@@ -101,7 +101,7 @@ export const DisplayedTexts = {
 		navLaterAria: "Later",
 
 		zoomTitle:
-			"Ctrl + Scroll on the timeline to change how many days fit the pane (columns always fill the width).",
+			"Ctrl + Scroll on the timeline to change how many days fit the pane (columns fill the width). Zoom grows or shrinks the range from both ends (see plugin setting: zoom step).",
 		zoomLabel: "Zoom",
 		zoomOutAria: "Show more days (zoom out)",
 		zoomInAria: "Show fewer days (zoom in)",

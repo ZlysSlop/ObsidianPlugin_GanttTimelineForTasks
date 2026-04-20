@@ -44,7 +44,7 @@ export interface TimelinePlannerSettings {
 export const DEFAULT_TIMELINE_SETTINGS: TimelinePlannerSettings = {
 	defaultTaskBarColor: "",
 	taskStates: [],
-	taskBarStackLayoutBreakpointPx: 260,
-	timelineZoomDayStep: 1,
+	taskBarStackLayoutBreakpointPx: 200,
+	timelineZoomDayStep: 6,
 	emojiPickerCategories: [],
 };

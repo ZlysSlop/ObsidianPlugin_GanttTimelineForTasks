@@ -112,6 +112,11 @@ export class TimelineView extends FileView {
 		initialScrollTop: number;
 	} | null = null;
 	private lastWheelZoomAt = 0;
+	/**
+	 * Zoom in/out splits the day delta across both ends of the visible range; when the
+	 * split is uneven, this toggles so the larger half alternates between start and end.
+	 */
+	private zoomSplitAlternate = false;
 	private resizeObserver: ResizeObserver | null = null;
 	private resizePersistTimer: number | null = null;
 	/** Coalesce horizontal pan repaints to one per animation frame. */
@@ -457,18 +462,58 @@ export class TimelineView extends FileView {
 		void this.persistAndRedraw();
 	}
 
+	/**
+	 * How many days to add/remove at the start vs end of the range for a zoom step `s`
+	 * (start = earlier boundary, end = later). Even `s`: equal halves. Odd `s`≥3: ⌊s/2⌋, ⌈s/2⌉.
+	 * `s === 1`: {1,0} vs {0,1} via `zoomSplitAlternate`.
+	 */
+	private pickZoomSideDeltas(s: number): [number, number] {
+		const lo = Math.floor(s / 2);
+		const hi = s - lo;
+		let startSide: number;
+		let endSide: number;
+		if (s === 1) {
+			startSide = hi;
+			endSide = lo;
+		} else {
+			startSide = lo;
+			endSide = hi;
+		}
+		if (this.zoomSplitAlternate) {
+			const t = startSide;
+			startSide = endSide;
+			endSide = t;
+		}
+		return [startSide, endSide];
+	}
+
 	/** Positive = more days visible (zoom out); negative = fewer days (zoom in). */
 	private applyZoomDayDelta(dayDelta: number): void {
 		if (!this.file) return;
-		const next = Math.min(
-			TIMELINE_VISIBLE_DAYS_MAX,
-			Math.max(
-				TIMELINE_VISIBLE_DAYS_MIN,
-				this.data.dayCount + dayDelta
-			)
-		);
-		if (next === this.data.dayCount) return;
-		this.data.dayCount = next;
+		if (dayDelta === 0) return;
+		const zoomOut = dayDelta > 0;
+		let s = Math.abs(Math.round(dayDelta));
+		if (s < 1) return;
+
+		const rs = parseYmd(this.data.rangeStart);
+
+		if (zoomOut) {
+			const maxAdd = TIMELINE_VISIBLE_DAYS_MAX - this.data.dayCount;
+			if (maxAdd <= 0) return;
+			s = Math.min(s, maxAdd);
+			const [startSide, endSide] = this.pickZoomSideDeltas(s);
+			this.data.rangeStart = formatYmd(addDays(rs, -startSide));
+			this.data.dayCount += s;
+		} else {
+			const maxRemove = this.data.dayCount - TIMELINE_VISIBLE_DAYS_MIN;
+			if (maxRemove <= 0) return;
+			s = Math.min(s, maxRemove);
+			const [startSide, endSide] = this.pickZoomSideDeltas(s);
+			this.data.rangeStart = formatYmd(addDays(rs, startSide));
+			this.data.dayCount -= s;
+		}
+
+		this.zoomSplitAlternate = !this.zoomSplitAlternate;
 		void this.persistAndRedraw();
 	}
 
