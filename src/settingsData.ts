@@ -32,6 +32,11 @@ export interface TimelinePlannerSettings {
 	 * Larger values keep the single-row layout longer when zoomed out.
 	 */
 	taskBarStackLayoutBreakpointPx: number;
+	/**
+	 * How many days are added or removed from the visible range per zoom action
+	 * (+/− on the timeline or Ctrl/⌘+scroll).
+	 */
+	timelineZoomDayStep: number;
 	/** Custom emoji picker categories; empty on disk until first load seeds built-ins. */
 	emojiPickerCategories: EmojiPickerCategoryDefinition[];
 }
@@ -40,5 +45,6 @@ export const DEFAULT_TIMELINE_SETTINGS: TimelinePlannerSettings = {
 	defaultTaskBarColor: "",
 	taskStates: [],
 	taskBarStackLayoutBreakpointPx: 260,
+	timelineZoomDayStep: 1,
 	emojiPickerCategories: [],
 };

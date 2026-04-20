@@ -38,8 +38,6 @@ function moveInArray<T>(arr: T[], from: number, to: number): void {
 }
 
 export class TimelineView extends FileView {
-	/** Zoom adjusts how many days fit the pane: +1 = zoom out (more days). */
-	private static readonly ZOOM_DAY_STEP = 1;
 	/** Bar drag: movement past this picks vertical reorder vs horizontal date move. */
 	private static readonly PENDING_BAR_DRAG_PX = 6;
 	/** Empty track: movement past this starts a rubber-band (marquee) selection. */
@@ -60,6 +58,7 @@ export class TimelineView extends FileView {
 		getDefaultTaskBarColor: () => string;
 		getTaskStates: () => TaskStateDefinition[];
 		getTaskBarStackLayoutBreakpointPx: () => number;
+		getTimelineZoomDayStep: () => number;
 		getEmojiPickerCategories: () => EmojiPickerCategoryForModal[];
 	};
 	/** Task ids selected with Ctrl/Cmd+click on bars — moved together when you drag or use nudge buttons. */
@@ -134,6 +133,7 @@ export class TimelineView extends FileView {
 			getDefaultTaskBarColor: () => string;
 			getTaskStates: () => TaskStateDefinition[];
 			getTaskBarStackLayoutBreakpointPx: () => number;
+			getTimelineZoomDayStep: () => number;
 			getEmojiPickerCategories: () => EmojiPickerCategoryForModal[];
 		}
 	) {
@@ -271,14 +271,14 @@ export class TimelineView extends FileView {
 				minus.setAttr("title", "");
 				minus.setAttr("aria-label", DisplayedTexts.timeline.zoomOutAria);
 				minus.addEventListener("click", () => {
-					this.applyZoomDayDelta(TimelineView.ZOOM_DAY_STEP);
+					this.applyZoomDayDelta(this.api.getTimelineZoomDayStep());
 				});
 
 				const plus = zoom.createEl("button", { text: "+" });
 				plus.setAttr("title", "");
 				plus.setAttr("aria-label", DisplayedTexts.timeline.zoomInAria);
 				plus.addEventListener("click", () => {
-					this.applyZoomDayDelta(-TimelineView.ZOOM_DAY_STEP);
+					this.applyZoomDayDelta(-this.api.getTimelineZoomDayStep());
 				});
 			}
 			
@@ -510,7 +510,8 @@ export class TimelineView extends FileView {
 		}
 		this.lastWheelZoomAt = now;
 		ev.preventDefault();
-		const dayDelta = ev.deltaY < 0 ? -1 : 1;
+		const step = this.api.getTimelineZoomDayStep();
+		const dayDelta = (ev.deltaY < 0 ? -1 : 1) * step;
 		this.applyZoomDayDelta(dayDelta);
 	}
 

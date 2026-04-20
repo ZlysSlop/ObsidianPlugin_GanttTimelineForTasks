@@ -21,6 +21,9 @@ export const DisplayedTexts = {
 		useThemeAccentTooltip: "Use theme accent",
 		taskBarStackBreakpointName: "Compact task bar breakpoint",
 		taskBarStackBreakpointDesc: "When a bar is narrower than this many pixels, the title stacks above the state control (zoom affects bar width in px).\nHigher = stay on one row longer while zoomed out; lower = stack sooner.\nRange: 120-600.",
+		timelineZoomDayStepName: "Timeline zoom step (days)",
+		timelineZoomDayStepDesc:
+			"How many days are added or removed from the visible range with each zoom action (timeline +/− buttons or Ctrl/⌘+scroll on the timeline).\nRange: 1–30.",
 		taskStatesHeading: "Task states",
 		taskStatesSummaryDesc: "Workflow states (name + color) for tasks on the bar and in the editor. Opens in a separate window.",
 		openTaskStatesSettingsButton: "Configure task states...",

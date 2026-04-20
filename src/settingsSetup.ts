@@ -13,6 +13,14 @@ export function clampTaskBarStackBreakpointPx(value: unknown): number {
 	return Math.round(Math.min(600, Math.max(120, n)));
 }
 
+export function clampTimelineZoomDayStep(value: unknown): number {
+	const n =
+		typeof value === "number" && Number.isFinite(value)
+			? value
+			: DEFAULT_TIMELINE_SETTINGS.timelineZoomDayStep;
+	return Math.round(Math.min(30, Math.max(1, n)));
+}
+
 /** Merge `data.json` payload with defaults and normalize arrays / emoji config. */
 export function mergeLoadedTimelineSettings(
 	raw: unknown
@@ -28,6 +36,9 @@ export function mergeLoadedTimelineSettings(
 	}
 	settings.taskBarStackLayoutBreakpointPx = clampTaskBarStackBreakpointPx(
 		settings.taskBarStackLayoutBreakpointPx
+	);
+	settings.timelineZoomDayStep = clampTimelineZoomDayStep(
+		settings.timelineZoomDayStep
 	);
 	if (!Array.isArray(settings.emojiPickerCategories)) {
 		settings.emojiPickerCategories = [];

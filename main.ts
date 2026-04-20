@@ -4,6 +4,7 @@ import { DisplayedTexts } from "./src/DisplayedTexts";
 import type { TimelinePlannerSettings } from "./src/settingsData";
 import {
 	clampTaskBarStackBreakpointPx,
+	clampTimelineZoomDayStep,
 	mergeLoadedTimelineSettings,
 } from "./src/settingsSetup";
 import { TimelinePlannerSettingTab } from "./src/settingsTab";
@@ -40,6 +41,8 @@ export default class TimelinePlannerPlugin extends Plugin {
 					clampTaskBarStackBreakpointPx(
 						this.settings.taskBarStackLayoutBreakpointPx
 					),
+				getTimelineZoomDayStep: () =>
+					clampTimelineZoomDayStep(this.settings.timelineZoomDayStep),
 				getEmojiPickerCategories: () => {
 					const runtime = definitionsToRuntimeCategories(
 						this.settings.emojiPickerCategories

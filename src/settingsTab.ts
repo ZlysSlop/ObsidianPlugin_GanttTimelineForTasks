@@ -13,6 +13,7 @@ import type {
 	TaskStateDefinition,
 	TimelinePlannerSettings,
 } from "./settingsData";
+import { clampTimelineZoomDayStep } from "./settingsSetup";
 import type { TimelinePlannerPluginLike } from "./emojiPickerSettingsUi";
 import { TimelineView } from "./TimelineView";
 
@@ -89,6 +90,48 @@ export class TimelinePlannerSettingTab extends PluginSettingTab {
 					this.plugin.settings.taskBarStackLayoutBreakpointPx = clamped;
 					await this.plugin.saveSettings();
 					this.refreshOpenTimelineViews();
+					tc.setValue(String(clamped));
+				};
+				this.plugin.registerDomEvent(input, "blur", () => {
+					void commit();
+				});
+				this.plugin.registerDomEvent(input, "keydown", (ev: KeyboardEvent) => {
+					if (ev.key === "Enter") {
+						ev.preventDefault();
+						input.blur();
+					}
+				});
+			});
+
+		new Setting(containerEl)
+			.setName(DisplayedTexts.settings.timelineZoomDayStepName)
+			.setDesc(DisplayedTexts.settings.timelineZoomDayStepDesc)
+			.addText((tc) => {
+				const input = tc.inputEl;
+				input.type = "text";
+				input.inputMode = "numeric";
+				input.autocomplete = "off";
+				input.spellcheck = false;
+				const previous = (): number =>
+					this.plugin.settings.timelineZoomDayStep;
+				const revert = (): void => {
+					tc.setValue(String(previous()));
+				};
+				tc.setValue(String(previous()));
+				const commit = async (): Promise<void> => {
+					const raw = tc.getValue().trim();
+					if (raw === "" || !/^\d+$/.test(raw)) {
+						revert();
+						return;
+					}
+					const n = parseInt(raw, 10);
+					if (!Number.isFinite(n)) {
+						revert();
+						return;
+					}
+					const clamped = clampTimelineZoomDayStep(n);
+					this.plugin.settings.timelineZoomDayStep = clamped;
+					await this.plugin.saveSettings();
 					tc.setValue(String(clamped));
 				};
 				this.plugin.registerDomEvent(input, "blur", () => {
