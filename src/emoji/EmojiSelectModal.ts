@@ -3,6 +3,8 @@ import { DisplayedTexts } from "../DisplayedTexts";
 import type { EmojiPickerCategoryForModal } from "./emojiPickerRuntime";
 
 export class EmojiSelectModal extends Modal {
+	private gridHost: HTMLElement;
+
 	constructor(
 		app: App,
 		private readonly categories: EmojiPickerCategoryForModal[],
@@ -11,66 +13,66 @@ export class EmojiSelectModal extends Modal {
 		super(app);
 	}
 
+
 	onOpen(): void {
 		const { contentEl } = this;
 		contentEl.empty();
 		contentEl.addClass("timeline-planner-emoji-modal");
 		this.titleEl.setText(DisplayedTexts.emojiModal.title);
 
-		const searchWrap = contentEl.createDiv({
-			cls: "timeline-planner-emoji-search",
-		});
+		const searchWrap = contentEl.createDiv({ cls: "timeline-planner-emoji-search" });
 		const search = searchWrap.createEl("input", {
 			type: "search",
 			attr: { placeholder: DisplayedTexts.emojiModal.searchPlaceholder },
 		});
 
-		const gridHost = contentEl.createDiv({
-			cls: "timeline-planner-emoji-grid-host",
-		});
+		this.gridHost = contentEl.createDiv({ cls: "timeline-planner-emoji-grid-host" });
 
-		const render = (query: string): void => {
-			gridHost.empty();
-			const q = query.trim().toLowerCase();
-			for (const cat of this.categories) {
-				const items = cat.items.filter(
-					(it) =>
-						!q ||
-						it.tags.includes(q) ||
-						cat.label.toLowerCase().includes(q)
-				);
-				if (items.length === 0) continue;
-				const sec = gridHost.createDiv({
-					cls: "timeline-planner-emoji-section",
-				});
-				sec.createDiv({
-					cls: "timeline-planner-emoji-section-label",
-					text: cat.label,
-				});
-				const grid = sec.createDiv({ cls: "timeline-planner-emoji-grid" });
-				for (const it of items) {
-					const btn = grid.createEl("button", {
-						type: "button",
-						cls: "timeline-planner-emoji-cell",
-						text: it.emoji,
-					});
-					btn.addEventListener("click", () => {
-						this.onChoose(it.emoji);
-						this.close();
-					});
-				}
-			}
-			if (!gridHost.childElementCount) {
-				gridHost.createDiv({
-					cls: "timeline-planner-emoji-empty",
-					text: DisplayedTexts.emojiModal.noMatches,
-				});
-			}
-		};
-
-		search.addEventListener("input", () => render(search.value));
-		render("");
+		search.addEventListener("input", () => this.renderEmojiGrid(search.value));
+		this.renderEmojiGrid("");
 	}
+
+
+	private renderEmojiGrid(query: string): void {
+		this.gridHost.empty();
+
+		const q = query.trim().toLowerCase();
+		for (const cat of this.categories) {
+			const items = cat.items.filter(
+				(it) =>
+					!q ||
+					it.tags.includes(q) ||
+					cat.label.toLowerCase().includes(q)
+			);
+			if (items.length === 0) continue;
+			const sec = this.gridHost.createDiv({
+				cls: "timeline-planner-emoji-section",
+			});
+			sec.createDiv({
+				cls: "timeline-planner-emoji-section-label",
+				text: cat.label,
+			});
+			const grid = sec.createDiv({ cls: "timeline-planner-emoji-grid" });
+			for (const it of items) {
+				const btn = grid.createEl("button", {
+					type: "button",
+					cls: "timeline-planner-emoji-cell",
+					text: it.emoji,
+				});
+				btn.addEventListener("click", () => {
+					this.onChoose(it.emoji);
+					this.close();
+				});
+			}
+		}
+		if (!this.gridHost.childElementCount) {
+			this.gridHost.createDiv({
+				cls: "timeline-planner-emoji-empty",
+				text: DisplayedTexts.emojiModal.noMatches,
+			});
+		}
+	}
+
 
 	onClose(): void {
 		this.contentEl.empty();

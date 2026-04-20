@@ -10,8 +10,7 @@ type DefaultEmojiPickerFile = {
 	}>;
 };
 
-const defaultEmojiPickerData =
-	defaultEmojiPickerJson as DefaultEmojiPickerFile;
+const defaultEmojiPickerData = defaultEmojiPickerJson as DefaultEmojiPickerFile;
 
 function resolveCategoryLabel(nameKey: string): string {
 	const keys = DisplayedTexts.emojiCategories;
