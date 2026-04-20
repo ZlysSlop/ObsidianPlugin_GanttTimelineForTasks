@@ -1,0 +1,65 @@
+{
+	"version": 1,
+	"categories": [
+		{
+			"nameKey": "objects",
+			"items": [
+				{ "emoji": "⌚", "tags": "watch time" },
+				{ "emoji": "📱", "tags": "phone mobile iphone" },
+				{ "emoji": "💻", "tags": "laptop computer" },
+				{ "emoji": "⌨️", "tags": "keyboard" },
+				{ "emoji": "🖥", "tags": "desktop monitor" },
+				{ "emoji": "🖨", "tags": "printer" },
+				{ "emoji": "🕯", "tags": "candle" },
+				{ "emoji": "💡", "tags": "light bulb idea" },
+				{ "emoji": "🔦", "tags": "flashlight torch" },
+				{ "emoji": "📷", "tags": "camera photo" },
+				{ "emoji": "🎥", "tags": "movie camera" },
+				{ "emoji": "📞", "tags": "telephone" },
+				{ "emoji": "📺", "tags": "tv television" },
+				{ "emoji": "📻", "tags": "radio" },
+				{ "emoji": "⏰", "tags": "alarm clock" },
+				{ "emoji": "⌛", "tags": "hourglass time" },
+				{ "emoji": "📅", "tags": "calendar date" },
+				{ "emoji": "📌", "tags": "pin pushpin" },
+				{ "emoji": "📎", "tags": "paperclip" },
+				{ "emoji": "✏️", "tags": "pencil write" },
+				{ "emoji": "🖊", "tags": "pen" },
+				{ "emoji": "📁", "tags": "folder files" },
+				{ "emoji": "📂", "tags": "folder open" },
+				{ "emoji": "🗂", "tags": "card index dividers" },
+				{ "emoji": "📋", "tags": "clipboard" },
+				{ "emoji": "📖", "tags": "book open read" },
+				{ "emoji": "📚", "tags": "books stack" },
+				{ "emoji": "🔖", "tags": "bookmark" },
+				{ "emoji": "💼", "tags": "briefcase work" },
+				{ "emoji": "🛠", "tags": "hammer wrench tools" },
+				{ "emoji": "🔧", "tags": "wrench" },
+				{ "emoji": "🔨", "tags": "hammer" },
+				{ "emoji": "⚙️", "tags": "gear settings" },
+				{ "emoji": "💊", "tags": "pill medicine health" },
+				{ "emoji": "🩹", "tags": "bandage" },
+				{ "emoji": "🔗", "tags": "link chain" }
+			]
+		},
+		{
+			"nameKey": "symbols",
+			"items": [
+				{ "emoji": "⭐", "tags": "star" },
+				{ "emoji": "✅", "tags": "check mark done yes" },
+				{ "emoji": "❌", "tags": "cross mark no" },
+				{ "emoji": "⚠️", "tags": "warning caution" },
+				{ "emoji": "⛔", "tags": "no entry stop" },
+				{ "emoji": "🚫", "tags": "prohibited banned" },
+				{ "emoji": "♻️", "tags": "recycle" },
+				{ "emoji": "✳️", "tags": "asterisk" },
+				{ "emoji": "❓", "tags": "question" },
+				{ "emoji": "❗", "tags": "exclamation" },
+				{ "emoji": "💭", "tags": "thought bubble" },
+				{ "emoji": "💬", "tags": "speech balloon chat" },
+				{ "emoji": "🏁", "tags": "checkered flag finish" },
+				{ "emoji": "🚩", "tags": "flag triangular" }
+			]
+		}
+	]
+}

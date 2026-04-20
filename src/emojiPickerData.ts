@@ -1,86 +1,38 @@
 import { DisplayedTexts } from "./DisplayedTexts";
-import type {
-	EmojiPickerCategoryDefinition,
-	EmojiPickerItemDefinition,
-} from "./settingsData";
+import defaultEmojiPickerJson from "../data/defaultEmojiPicker.json";
+import type { EmojiPickerCategoryDefinition } from "./settingsData";
 
-function I(emoji: string, tags: string): EmojiPickerItemDefinition {
-	return { emoji, tags: tags.toLowerCase() };
+type DefaultEmojiPickerFile = {
+	version: number;
+	categories: Array<{
+		nameKey: string;
+		items: Array<{ emoji: string; tags: string }>;
+	}>;
+};
+
+const defaultEmojiPickerData =
+	defaultEmojiPickerJson as DefaultEmojiPickerFile;
+
+function resolveCategoryLabel(nameKey: string): string {
+	const keys = DisplayedTexts.emojiCategories;
+	if (nameKey in keys) {
+		return keys[nameKey as keyof typeof keys];
+	}
+	return nameKey;
 }
 
-type BuiltInCategory = { label: string; items: EmojiPickerItemDefinition[] };
+function normalizeTags(tags: string): string {
+	return tags.trim().toLowerCase().replace(/\s+/g, " ");
+}
 
-const EMOJI_PICKER_CATEGORIES: BuiltInCategory[] = [
-	{
-		label: DisplayedTexts.emojiCategories.objects,
-		items: [
-			I("⌚", "watch time"),
-			I("📱", "phone mobile iphone"),
-			I("💻", "laptop computer"),
-			I("⌨️", "keyboard"),
-			I("🖥", "desktop monitor"),
-			I("🖨", "printer"),
-			I("🕯", "candle"),
-			I("💡", "light bulb idea"),
-			I("🔦", "flashlight torch"),
-			I("📷", "camera photo"),
-			I("🎥", "movie camera"),
-			I("📞", "telephone"),
-			I("📺", "tv television"),
-			I("📻", "radio"),
-			I("⏰", "alarm clock"),
-			I("⌛", "hourglass time"),
-			I("📅", "calendar date"),
-			I("📌", "pin pushpin"),
-			I("📎", "paperclip"),
-			I("✏️", "pencil write"),
-			I("🖊", "pen"),
-			I("📁", "folder files"),
-			I("📂", "folder open"),
-			I("🗂", "card index dividers"),
-			I("📋", "clipboard"),
-			I("📖", "book open read"),
-			I("📚", "books stack"),
-			I("🔖", "bookmark"),
-			I("💼", "briefcase work"),
-			I("🛠", "hammer wrench tools"),
-			I("🔧", "wrench"),
-			I("🔨", "hammer"),
-			I("⚙️", "gear settings"),
-			I("💊", "pill medicine health"),
-			I("🩹", "bandage"),
-			I("🔗", "link chain"),
-		],
-	},
-	{
-		label: DisplayedTexts.emojiCategories.symbols,
-		items: [
-			I("⭐", "star"),
-			I("✅", "check mark done yes"),
-			I("❌", "cross mark no"),
-			I("⚠️", "warning caution"),
-			I("⛔", "no entry stop"),
-			I("🚫", "prohibited banned"),
-			I("♻️", "recycle"),
-			I("✳️", "asterisk"),
-			I("❓", "question"),
-			I("❗", "exclamation"),
-			I("💭", "thought bubble"),
-			I("💬", "speech balloon chat"),
-			I("🏁", "checkered flag finish"),
-			I("🚩", "flag triangular"),
-		],
-	},
-];
-
-/** Default set copied into settings when none are stored yet. */
+/** Default set copied into settings when none are stored yet (from `data/defaultEmojiPicker.json`). */
 export function getBuiltInEmojiPickerCategoryDefinitions(): EmojiPickerCategoryDefinition[] {
-	return EMOJI_PICKER_CATEGORIES.map((cat, i) => ({
+	return defaultEmojiPickerData.categories.map((cat, i) => ({
 		id: `ecat-builtin-${i}`,
-		name: cat.label,
+		name: resolveCategoryLabel(cat.nameKey),
 		items: cat.items.map((it) => ({
 			emoji: it.emoji,
-			tags: it.tags,
+			tags: normalizeTags(it.tags),
 		})),
 	}));
 }

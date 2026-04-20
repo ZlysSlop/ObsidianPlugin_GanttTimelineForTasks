@@ -83,7 +83,7 @@ export const DisplayedTexts = {
 		noMatches: "No matches — try another word.",
 	},
 
-	/** Section titles in the emoji picker grid (see emojiPickerData.ts). */
+	/** Section titles for built-in emoji categories (`data/defaultEmojiPicker.json` uses these `nameKey`s). */
 	emojiCategories: {
 		smileys: "Smileys",
 		gesturesPeople: "Gestures & people",
