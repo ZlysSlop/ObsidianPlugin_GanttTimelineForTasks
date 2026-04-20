@@ -1,15 +1,15 @@
 import { Notice, Plugin, TFile, normalizePath } from "obsidian";
 import { TIMELINE_VIEW_TYPE, ZLY_TIMELINE_EXTENSION } from "./src/constants";
 import { DisplayedTexts } from "./src/DisplayedTexts";
+import type { TimelinePlannerSettings } from "./src/settingsData";
 import {
-	DEFAULT_TIMELINE_SETTINGS,
-	type TimelinePlannerSettings,
-} from "./src/settingsData";
+	clampTaskBarStackBreakpointPx,
+	mergeLoadedTimelineSettings,
+} from "./src/settingsSetup";
 import { TimelinePlannerSettingTab } from "./src/settingsTab";
 import { TimelineView } from "./src/TimelineView";
 import { getBuiltInEmojiPickerCategoryDefinitions } from "./src/emojiPickerData";
 import { definitionsToRuntimeCategories } from "./src/emojiPickerRuntime";
-import { normalizeEmojiPickerCategories } from "./src/emojiPickerNormalize";
 import {
 	buildNewZlyTimelineFileContent,
 	ensureParentFolders,
@@ -18,26 +18,10 @@ import {
 
 export default class TimelinePlannerPlugin extends Plugin {
 	private saveIgnorePaths = new Set<string>();
-	settings: TimelinePlannerSettings = { ...DEFAULT_TIMELINE_SETTINGS };
+	settings: TimelinePlannerSettings = mergeLoadedTimelineSettings({});
 
 	async loadSettings(): Promise<void> {
-		const data = (await this.loadData()) as Partial<TimelinePlannerSettings>;
-		this.settings = Object.assign({}, DEFAULT_TIMELINE_SETTINGS, data);
-		if (!Array.isArray(this.settings.taskStates)) {
-			this.settings.taskStates = [];
-		}
-		this.settings.taskBarStackLayoutBreakpointPx =
-			this.clampTaskBarStackBreakpointPx(
-				this.settings.taskBarStackLayoutBreakpointPx
-			);
-		if (!Array.isArray(this.settings.emojiPickerCategories)) {
-			this.settings.emojiPickerCategories = [];
-		}
-		if (this.settings.emojiPickerCategories.length === 0) {
-			this.settings.emojiPickerCategories =
-				getBuiltInEmojiPickerCategoryDefinitions();
-		}
-		normalizeEmojiPickerCategories(this.settings.emojiPickerCategories);
+		this.settings = mergeLoadedTimelineSettings(await this.loadData());
 	}
 
 	async saveSettings(): Promise<void> {
@@ -53,7 +37,7 @@ export default class TimelinePlannerPlugin extends Plugin {
 				getDefaultTaskBarColor: () => this.settings.defaultTaskBarColor,
 				getTaskStates: () => this.settings.taskStates,
 				getTaskBarStackLayoutBreakpointPx: () =>
-					this.clampTaskBarStackBreakpointPx(
+					clampTaskBarStackBreakpointPx(
 						this.settings.taskBarStackLayoutBreakpointPx
 					),
 				getEmojiPickerCategories: () => {
@@ -105,14 +89,6 @@ export default class TimelinePlannerPlugin extends Plugin {
 
 	onunload(): void {
 		this.app.workspace.detachLeavesOfType(TIMELINE_VIEW_TYPE);
-	}
-
-	private clampTaskBarStackBreakpointPx(value: unknown): number {
-		const n =
-			typeof value === "number" && Number.isFinite(value)
-				? value
-				: DEFAULT_TIMELINE_SETTINGS.taskBarStackLayoutBreakpointPx;
-		return Math.round(Math.min(600, Math.max(120, n)));
 	}
 
 	private async persistTimelineView(view: TimelineView): Promise<void> {

@@ -9,3 +9,8 @@ export const ZLY_TIMELINE_FORMAT_VERSION = 1;
 
 /** Must match `.timeline-task-row-label` width in `styles/row.css`. */
 export const TIMELINE_LABEL_COLUMN_PX = 200;
+
+/** Minimum days visible (strongest zoom-in; widest day columns). */
+export const TIMELINE_VISIBLE_DAYS_MIN = 7;
+/** Maximum days visible (strongest zoom-out; narrowest day columns). */
+export const TIMELINE_VISIBLE_DAYS_MAX = 120;

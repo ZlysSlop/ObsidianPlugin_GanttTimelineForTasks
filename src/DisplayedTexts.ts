@@ -97,16 +97,18 @@ export const DisplayedTexts = {
 		navEarlierAria: "Earlier",
 		navLaterAria: "Later",
 
-		zoomTitle: "Ctrl + Scroll on the timeline to zoom in or out.",
+		zoomTitle:
+			"Ctrl + Scroll on the timeline to change how many days fit the pane (columns always fill the width).",
 		zoomLabel: "Zoom",
-		zoomOutAria: "Zoom out",
-		zoomInAria: "Zoom in",
+		zoomOutAria: "Show more days (zoom out)",
+		zoomInAria: "Show fewer days (zoom in)",
 		
 		shiftSelectionLabel: "Shift selection",
 		nudgeEarlierTitle: "Move all selected tasks one day earlier (Ctrl+click bars to select)",
 		nudgeLaterTitle: "Move all selected tasks one day later (Ctrl+click bars to select)",
 
-		scrollRegionTitle: "Right Click-drag: move up/down through tasks,\nleft/right to change which days are visible.\nWheel: scroll. Ctrl + Scroll: to zoom in or out.",
+		scrollRegionTitle:
+			"Right Click-drag: move up/down through tasks,\nleft/right to change which days are visible.\nWheel: scroll. Ctrl + Scroll: show more or fewer days in the pane.",
 		noticeParseError: (ext: string) => `Could not parse this .${ext} file (invalid JSON?).\nUsing empty planner.`,
 		noticeNoFile: "No timeline file loaded.",
 		noticeNoSelection: "No tasks selected. Ctrl+click bars to select.",

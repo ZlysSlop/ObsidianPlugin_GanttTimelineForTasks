@@ -2,6 +2,8 @@ import { FileView, Menu, Notice, TFile, WorkspaceLeaf } from "obsidian";
 import {
 	TIMELINE_LABEL_COLUMN_PX,
 	TIMELINE_VIEW_TYPE,
+	TIMELINE_VISIBLE_DAYS_MAX,
+	TIMELINE_VISIBLE_DAYS_MIN,
 	ZLY_TIMELINE_EXTENSION,
 } from "./constants";
 import {
@@ -36,9 +38,8 @@ function moveInArray<T>(arr: T[], from: number, to: number): void {
 }
 
 export class TimelineView extends FileView {
-	private static readonly ZOOM_MIN = 16;
-	private static readonly ZOOM_MAX = 80;
-	private static readonly ZOOM_STEP = 4;
+	/** Zoom adjusts how many days fit the pane: +1 = zoom out (more days). */
+	private static readonly ZOOM_DAY_STEP = 1;
 	/** Bar drag: movement past this picks vertical reorder vs horizontal date move. */
 	private static readonly PENDING_BAR_DRAG_PX = 6;
 	/** Empty track: movement past this starts a rubber-band (marquee) selection. */
@@ -65,24 +66,24 @@ export class TimelineView extends FileView {
 	private readonly selectedTaskIds = new Set<string>();
 	private dragState:
 		| {
-				mode: "move" | "resize-left" | "resize-right";
-				taskId: string;
-				startX: number;
-				origStart: Date;
-				origEnd: Date;
-				/** Present for `move`: all tasks that move together (same day delta from drag start). */
-				groupOrigins?: Map<
-					string,
-					{ origStart: Date; origEnd: Date }
-				>;
+			mode: "move" | "resize-left" | "resize-right";
+			taskId: string;
+			startX: number;
+			origStart: Date;
+			origEnd: Date;
+			/** Present for `move`: all tasks that move together (same day delta from drag start). */
+			groupOrigins?: Map<
+				string,
+				{ origStart: Date; origEnd: Date }
+			>;
 		  }
 		| {
-				mode: "pending-bar";
-				taskId: string;
-				startX: number;
-				startY: number;
-				origStart: Date;
-				origEnd: Date;
+			mode: "pending-bar";
+			taskId: string;
+			startX: number;
+			startY: number;
+			origStart: Date;
+			origEnd: Date;
 		  }
 		| { mode: "reorder"; taskId: string }
 		| null = null;
@@ -270,14 +271,14 @@ export class TimelineView extends FileView {
 				minus.setAttr("title", "");
 				minus.setAttr("aria-label", DisplayedTexts.timeline.zoomOutAria);
 				minus.addEventListener("click", () => {
-					this.applyZoomDelta(-TimelineView.ZOOM_STEP);
+					this.applyZoomDayDelta(TimelineView.ZOOM_DAY_STEP);
 				});
 
 				const plus = zoom.createEl("button", { text: "+" });
 				plus.setAttr("title", "");
 				plus.setAttr("aria-label", DisplayedTexts.timeline.zoomInAria);
 				plus.addEventListener("click", () => {
-					this.applyZoomDelta(TimelineView.ZOOM_STEP);
+					this.applyZoomDayDelta(-TimelineView.ZOOM_DAY_STEP);
 				});
 			}
 			
@@ -346,11 +347,13 @@ export class TimelineView extends FileView {
 		this.bodyEl = this.mainWrapEl.createDiv({ cls: "timeline-planner-rows" });
 
 		this.resizeObserver = new ResizeObserver(() => {
-			const prev = this.data.dayCount;
+			const prevDayCount = this.data.dayCount;
+			const prevPpd = this.data.pixelsPerDay;
 			this.redrawPreservingScroll();
 			if (
 				this.file &&
-				this.data.dayCount !== prev
+				(this.data.dayCount !== prevDayCount ||
+					Math.abs(this.data.pixelsPerDay - prevPpd) > 0.01)
 			) {
 				if (this.resizePersistTimer !== null) {
 					window.clearTimeout(this.resizePersistTimer);
@@ -431,7 +434,7 @@ export class TimelineView extends FileView {
 	private async persistAndRedraw(): Promise<void> {
 		if (!this.file) return;
 		await this.api.persist(this);
-		this.redraw();
+		this.redrawPreservingScroll();
 	}
 
 	/**
@@ -454,17 +457,18 @@ export class TimelineView extends FileView {
 		void this.persistAndRedraw();
 	}
 
-	private applyZoomDelta(delta: number): void {
+	/** Positive = more days visible (zoom out); negative = fewer days (zoom in). */
+	private applyZoomDayDelta(dayDelta: number): void {
 		if (!this.file) return;
 		const next = Math.min(
-			TimelineView.ZOOM_MAX,
+			TIMELINE_VISIBLE_DAYS_MAX,
 			Math.max(
-				TimelineView.ZOOM_MIN,
-				this.data.pixelsPerDay + delta
+				TIMELINE_VISIBLE_DAYS_MIN,
+				this.data.dayCount + dayDelta
 			)
 		);
-		if (next === this.data.pixelsPerDay) return;
-		this.data.pixelsPerDay = next;
+		if (next === this.data.dayCount) return;
+		this.data.dayCount = next;
 		void this.persistAndRedraw();
 	}
 
@@ -506,11 +510,8 @@ export class TimelineView extends FileView {
 		}
 		this.lastWheelZoomAt = now;
 		ev.preventDefault();
-		const delta =
-			ev.deltaY < 0
-				? TimelineView.ZOOM_STEP
-				: -TimelineView.ZOOM_STEP;
-		this.applyZoomDelta(delta);
+		const dayDelta = ev.deltaY < 0 ? -1 : 1;
+		this.applyZoomDayDelta(dayDelta);
 	}
 
 	/** Call when planner data was reloaded from disk so the grid updates. */
@@ -518,18 +519,24 @@ export class TimelineView extends FileView {
 		this.redraw();
 	}
 
-	/**
-	 * Fill the scroll viewport with day columns: `ceil((width − label) / pxPerDay)`.
-	 * If width is not laid out yet, keeps the last `dayCount` from data.
-	 */
-	private computeVisibleDayCount(): number {
-		const labelW = TIMELINE_LABEL_COLUMN_PX;
-		const px = Math.max(1, this.data.pixelsPerDay);
-		const w = this.scrollEl?.clientWidth ?? 0;
-		if (w <= labelW + 1) {
-			return Math.max(1, this.data.dayCount || 1);
-		}
-		return Math.max(1, Math.ceil((w - labelW) / px));
+	private clampVisibleDayCount(n: number): number {
+		return Math.min(
+			TIMELINE_VISIBLE_DAYS_MAX,
+			Math.max(TIMELINE_VISIBLE_DAYS_MIN, Math.round(n))
+		);
+	}
+
+	/** Width available for day columns inside the scrollport (excludes label column + padding). */
+	private getAvailableDayTrackWidthPx(): number {
+		if (!this.scrollEl) return 0;
+		const el = this.scrollEl;
+		const cs = getComputedStyle(el);
+		const pl = parseFloat(cs.paddingLeft) || 0;
+		const pr = parseFloat(cs.paddingRight) || 0;
+		return Math.max(
+			0,
+			el.clientWidth - pl - pr - TIMELINE_LABEL_COLUMN_PX
+		);
 	}
 
 	/** One full redraw per frame max while horizontally panning (range changes). */
@@ -771,7 +778,7 @@ export class TimelineView extends FileView {
 		}
 		this.taskBarStackObservers.length = 0;
 
-		this.data.dayCount = this.computeVisibleDayCount();
+		this.data.dayCount = this.clampVisibleDayCount(this.data.dayCount);
 
 		this.mainWrapEl
 			?.querySelectorAll(".timeline-planner-today-line")
@@ -791,7 +798,12 @@ export class TimelineView extends FileView {
 		}
 
 		const rs = parseYmd(this.data.rangeStart);
-		const dayW = this.data.pixelsPerDay;
+		const avail = this.getAvailableDayTrackWidthPx();
+		const dayW =
+			avail > 0
+				? avail / this.data.dayCount
+				: Math.max(8, this.data.pixelsPerDay);
+		this.data.pixelsPerDay = dayW;
 		this.rootEl.style.setProperty("--tp-day-w", `${dayW}px`);
 		this.rootEl.style.setProperty(
 			"--tp-label-col-w",

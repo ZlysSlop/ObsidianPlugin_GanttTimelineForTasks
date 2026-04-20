@@ -1,5 +1,9 @@
 import type { App, TFile, Vault } from "obsidian";
-import { ZLY_TIMELINE_FORMAT_VERSION } from "./constants";
+import {
+	TIMELINE_VISIBLE_DAYS_MAX,
+	TIMELINE_VISIBLE_DAYS_MIN,
+	ZLY_TIMELINE_FORMAT_VERSION,
+} from "./constants";
 import type { TimelinePlannerData, TimelineTask } from "./types";
 
 function pad2(n: number): string {
@@ -68,10 +72,16 @@ export function normalizePlannerData(raw: unknown): TimelinePlannerData | null {
 	const tasks = Array.isArray(tasksRaw)
 		? (tasksRaw.map(normalizeTask).filter(Boolean) as TimelineTask[])
 		: [];
+	const rawDayCount =
+		typeof o.dayCount === "number" && o.dayCount > 0 ? o.dayCount : 42;
+	const dayCount = Math.min(
+		TIMELINE_VISIBLE_DAYS_MAX,
+		Math.max(TIMELINE_VISIBLE_DAYS_MIN, Math.round(rawDayCount))
+	);
 	return {
 		tasks,
 		rangeStart: typeof o.rangeStart === "string" ? o.rangeStart : "",
-		dayCount: typeof o.dayCount === "number" && o.dayCount > 0 ? o.dayCount : 42,
+		dayCount,
 		pixelsPerDay:
 			typeof o.pixelsPerDay === "number" && o.pixelsPerDay > 0
 				? o.pixelsPerDay

@@ -20,8 +20,8 @@ export interface TimelinePlannerData {
 	tasks: TimelineTask[];
 	/** First visible day (YYYY-MM-DD) */
 	rangeStart: string;
-	/** Number of days shown in the header */
+	/** How many calendar days are visible (zoom: lower = zoomed in, higher = zoomed out). */
 	dayCount: number;
-	/** Pixels per day */
+	/** Column width in CSS px; derived as (track width ÷ dayCount) on each layout, also persisted. */
 	pixelsPerDay: number;
 }
