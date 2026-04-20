@@ -347,7 +347,7 @@ export class TimelineView extends FileView {
 
 		this.resizeObserver = new ResizeObserver(() => {
 			const prev = this.data.dayCount;
-			this.redraw();
+			this.redrawPreservingScroll();
 			if (
 				this.file &&
 				this.data.dayCount !== prev
@@ -377,7 +377,7 @@ export class TimelineView extends FileView {
 			if (this.selectedTaskIds.size === 0) return;
 			ev.preventDefault();
 			this.selectedTaskIds.clear();
-			this.redraw();
+			this.redrawPreservingScroll();
 		});
 
 		this.registerEvent(
@@ -538,9 +538,7 @@ export class TimelineView extends FileView {
 		this.panRedrawRafId = requestAnimationFrame(() => {
 			this.panRedrawRafId = null;
 			if (!this.panState || !this.scrollEl) return;
-			const st = this.scrollEl.scrollTop;
-			this.redraw();
-			this.scrollEl.scrollTop = st;
+			this.redrawPreservingScroll();
 		});
 	}
 
@@ -550,7 +548,7 @@ export class TimelineView extends FileView {
 		this.dragRedrawRafId = requestAnimationFrame(() => {
 			this.dragRedrawRafId = null;
 			if (!this.dragState) return;
-			this.redraw();
+			this.redrawPreservingScroll();
 		});
 	}
 
@@ -721,7 +719,7 @@ export class TimelineView extends FileView {
 			}
 		}
 
-		this.redraw();
+		this.redrawPreservingScroll();
 	}
 
 	/** Drag a selection box on empty track (not on a task bar). */
@@ -752,6 +750,17 @@ export class TimelineView extends FileView {
 			};
 			this.syncDocumentCursorFromInteractionState();
 		});
+	}
+
+	/** Full layout rebuild without jumping scroll (see `redraw`, which clears the body). */
+	private redrawPreservingScroll(): void {
+		if (!this.scrollEl) {
+			this.redraw();
+			return;
+		}
+		const st = this.scrollEl.scrollTop;
+		this.redraw();
+		this.scrollEl.scrollTop = st;
 	}
 
 	private redraw(): void {
@@ -1098,7 +1107,7 @@ export class TimelineView extends FileView {
 							this.selectedTaskIds.add(task.id);
 						}
 
-						this.redraw();
+						this.redrawPreservingScroll();
 
 						return;
 					}
@@ -1358,9 +1367,7 @@ export class TimelineView extends FileView {
 				if (this.panRedrawRafId !== null) {
 					cancelAnimationFrame(this.panRedrawRafId);
 					this.panRedrawRafId = null;
-					const st = this.scrollEl.scrollTop;
-					this.redraw();
-					this.scrollEl.scrollTop = st;
+					this.redrawPreservingScroll();
 				}
 
 				const initialRange = this.panState.initialRangeStart;
@@ -1381,7 +1388,7 @@ export class TimelineView extends FileView {
 					this.applyMarqueeSelection(ms);
 				} else if (ms.phase === "pending" && !ms.additive) {
 					this.selectedTaskIds.clear();
-					this.redraw();
+					this.redrawPreservingScroll();
 				}
 				
 				this.endMarqueeGesture();
@@ -1392,7 +1399,7 @@ export class TimelineView extends FileView {
 				if (this.dragRedrawRafId !== null) {
 					cancelAnimationFrame(this.dragRedrawRafId);
 					this.dragRedrawRafId = null;
-					this.redraw();
+					this.redrawPreservingScroll();
 				}
 
 				this.dragState = null;
