@@ -781,6 +781,8 @@ export class TimelineView extends FileView {
 		this.bodyEl.empty();
 
 		if (!this.file) {
+			this.rootEl.style.removeProperty("--tp-label-col-w");
+			this.rootEl.style.removeProperty("--tp-visible-track-px");
 			this.bodyEl.createDiv({
 				cls: "timeline-planner-empty",
 				text: DisplayedTexts.timeline.emptyNoFileLoaded,
@@ -791,6 +793,14 @@ export class TimelineView extends FileView {
 		const rs = parseYmd(this.data.rangeStart);
 		const dayW = this.data.pixelsPerDay;
 		this.rootEl.style.setProperty("--tp-day-w", `${dayW}px`);
+		this.rootEl.style.setProperty(
+			"--tp-label-col-w",
+			`${TIMELINE_LABEL_COLUMN_PX}px`
+		);
+		this.rootEl.style.setProperty(
+			"--tp-visible-track-px",
+			`${this.data.dayCount * dayW}px`
+		);
 
 		const grid = this.headerRowEl;
 		grid.style.gridTemplateColumns = `${TIMELINE_LABEL_COLUMN_PX}px repeat(${this.data.dayCount}, ${dayW}px)`;
@@ -930,14 +940,15 @@ export class TimelineView extends FileView {
 			const rangeEnd = addDays(rangeStart, this.data.dayCount - 1);
 			if (end < rangeStart || start > rangeEnd) {
 				const pastLeft = end < rangeStart;
-				const element_row = element_track.createDiv({
+				const jumpOverlay = element_row.createDiv({
 					cls:
-						"timeline-planner-outside-range timeline-planner-outside-range--track " +
-						(
-							pastLeft
+						"timeline-planner-outside-range-overlay timeline-planner-outside-range " +
+						(pastLeft
 							? "timeline-planner-outside-range--past-left"
-							: "timeline-planner-outside-range--past-right"
-						),
+							: "timeline-planner-outside-range--past-right"),
+				});
+				const outsideStrip = jumpOverlay.createDiv({
+					cls: "timeline-planner-outside-range-inner",
 				});
 
 				const onJumpMouseDown = (ev: MouseEvent): void => {
@@ -950,7 +961,7 @@ export class TimelineView extends FileView {
 					this.jumpRangeToShowTask(start, end);
 				};
 
-				const element_leftArrow = element_row.createEl("button", {
+				const element_leftArrow = outsideStrip.createEl("button", {
 					type: "button",
 					cls: "timeline-planner-outside-range-arrow timeline-planner-outside-range-arrow--left",
 					text: "◀",
@@ -969,10 +980,10 @@ export class TimelineView extends FileView {
 					element_leftArrow.addClass("is-inactive");
 				}
 
-				const element_center = element_row.createDiv({
+				const element_center = outsideStrip.createDiv({
 					cls: "timeline-planner-outside-range-center",
 				});
-				if(element_center){
+				if (element_center) {
 					const jumpBtn = element_center.createEl("button", {
 						type: "button",
 						cls: "timeline-planner-jump-task-btn",
@@ -983,14 +994,13 @@ export class TimelineView extends FileView {
 					jumpBtn.addEventListener("mousedown", onJumpMouseDown);
 					jumpBtn.addEventListener("click", onJumpClick);
 				}
-				
 
-				const element_rightArrow = element_row.createEl("button", {
+				const element_rightArrow = outsideStrip.createEl("button", {
 					type: "button",
 					cls: "timeline-planner-outside-range-arrow timeline-planner-outside-range-arrow--right",
 					text: "▶",
 				});
-				if(element_rightArrow){
+				if (element_rightArrow) {
 					if (!pastLeft) {
 						const tip = DisplayedTexts.timeline.outsideRangeArrowTitleRight(
 							formatYmd(rangeEnd)
@@ -999,8 +1009,7 @@ export class TimelineView extends FileView {
 						element_rightArrow.setAttr("aria-label", tip);
 						element_rightArrow.addEventListener("mousedown", onJumpMouseDown);
 						element_rightArrow.addEventListener("click", onJumpClick);
-					}
-					else {
+					} else {
 						element_rightArrow.disabled = true;
 						element_rightArrow.setAttr("aria-hidden", "true");
 						element_rightArrow.addClass("is-inactive");

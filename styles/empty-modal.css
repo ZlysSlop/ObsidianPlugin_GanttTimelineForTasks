@@ -1,13 +1,47 @@
 /* Empty state + modal textarea */
 
-/* Task row track: task falls outside current day window — arrow on hidden side */
-.timeline-planner-outside-range--track {
+/*
+ * “Jump to task” sits on the row, not inside `.timeline-task-row-track`, so its width
+ * matches the visible day grid (`--tp-visible-track-px`) instead of the flex track.
+ */
+.timeline-planner-outside-range-overlay {
+	position: absolute;
+	left: var(--tp-label-col-w, 200px);
+	top: 0;
+	bottom: 0;
+	width: var(--tp-visible-track-px, 100%);
+	max-width: calc(100% - var(--tp-label-col-w, 200px));
+	box-sizing: border-box;
+	z-index: 2;
+	display: flex;
+	align-items: center;
+	justify-content: flex-start;
+	pointer-events: none;
+}
+
+.timeline-planner-outside-range-overlay > .timeline-planner-outside-range-inner {
+	flex: 1 1 auto;
+	min-width: 0;
+}
+
+.timeline-planner-outside-range-inner {
 	display: grid;
+	/* Arrows hug the visible track edges; jump control stays centered in the middle. */
 	grid-template-columns: 44px 1fr 44px;
 	align-items: center;
 	width: 100%;
-	height: 100%;
-	padding: 0px;
+	max-width: 100%;
+	min-width: 0;
+	box-sizing: border-box;
+	pointer-events: auto;
+}
+
+.timeline-planner-outside-range-inner > .timeline-planner-outside-range-arrow--left {
+	justify-self: start;
+}
+
+.timeline-planner-outside-range-inner > .timeline-planner-outside-range-arrow--right {
+	justify-self: end;
 }
 
 button.timeline-planner-outside-range-arrow {
@@ -66,6 +100,7 @@ button.timeline-planner-outside-range-arrow.is-inactive {
 	align-items: center;
 	justify-content: center;
 	min-width: 0;
+	width: 100%;
 }
 
 .timeline-planner-jump-task-btn {
