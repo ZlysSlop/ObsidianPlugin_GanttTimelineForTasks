@@ -14,7 +14,7 @@
 		0 2px 8px color-mix(in srgb, var(--background-primary) 55%, rgba(0, 0, 0, 0.12));
 }
 
-.timeline-planner-spacer {
+.timeline-planner-dayhead-spacer {
 	border-right: 1px solid color-mix(in srgb, var(--background-modifier-border) 85%, transparent);
 	box-sizing: border-box;
 }

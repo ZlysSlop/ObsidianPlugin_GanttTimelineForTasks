@@ -795,7 +795,7 @@ export class TimelineView extends FileView {
 		const grid = this.headerRowEl;
 		grid.style.gridTemplateColumns = `${TIMELINE_LABEL_COLUMN_PX}px repeat(${this.data.dayCount}, ${dayW}px)`;
 
-		grid.createDiv({ cls: "timeline-planner-spacer" });
+		grid.createDiv({ cls: "timeline-planner-dayhead-spacer" });
 
 		for (let i = 0; i < this.data.dayCount; i++) {
 			const d = addDays(rs, i);
