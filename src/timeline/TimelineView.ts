@@ -38,10 +38,8 @@ import {
 	moveInArray,
 } from "./timelineUtils";
 import { styleTaskStateSelect } from "./TimelineTaskBar";
-import {
-	renderTimelineTaskRow,
-	type TaskRowRenderContext,
-} from "./TimelineTaskTrack";
+import { renderTimelineTaskRow } from "./TimelineTaskTrack";
+import { buildTaskRowContext } from "./TimelineTaskRow";
 import type { TimelinePlannerData, TimelineTask } from "../types";
 import { DisplayedTexts } from "../DisplayedTexts";
 import {
@@ -238,13 +236,13 @@ export class TimelineView extends FileView {
 
 		this.rootEl = this.containerEl.createDiv({ cls: "timeline-planner-root" });
 
-		const toolbar = this.rootEl.createDiv({ cls: "timeline-planner-toolbar" });
+		const toolbar = this.rootEl.createDiv({ cls: "timeline-toolbar" });
 		if(toolbar){
-			const element_text_titleRow = toolbar.createDiv({ cls: "timeline-planner-title-row" }); {
+			const element_text_titleRow = toolbar.createDiv({ cls: "timeline-toolbar-title" }); {
 				element_text_titleRow.createEl("span", { text: DisplayedTexts.timeline.toolbarHeading });
 				
 				this.filePathLabelEl = element_text_titleRow.createEl("span", {
-					cls: "timeline-planner-file-label",
+					cls: "timeline-toolbar-file-label",
 				});
 
 				this.updateToolbarPath();
@@ -257,49 +255,50 @@ export class TimelineView extends FileView {
 			element_button_addTask.addEventListener("click", () => this.addTask());
 	
 
-			const element_button_JumpToToday = toolbar.createEl("button", {
-				text: DisplayedTexts.timeline.jumpToToday,
-			});
-			element_button_JumpToToday.addEventListener("click", () => {
-				const t = parseYmd(todayYmd());
-				this.data.rangeStart = formatYmd(addDays(t, -7));
-				this.persistAndRedraw();
-			});
-	
-
-			const element_button_shiftDaysbackToLeft = toolbar.createEl("button", { text: "◀" }); {
-				element_button_shiftDaysbackToLeft.setAttr("title", "");
-				element_button_shiftDaysbackToLeft.setAttr("aria-label", DisplayedTexts.timeline.navEarlierAria);
-				element_button_shiftDaysbackToLeft.addEventListener("click", () => {
-					this.data.rangeStart = formatYmd(
-						addDays(parseYmd(this.data.rangeStart), -14)
-					);
+			const element_ViewManagment_group = toolbar.createDiv({ cls: "timeline-toolbar-group" }); {
+				const element_button_JumpToToday = element_ViewManagment_group.createEl("button", {
+					text: DisplayedTexts.timeline.jumpToToday,
+				});
+				element_button_JumpToToday.addEventListener("click", () => {
+					const t = parseYmd(todayYmd());
+					this.data.rangeStart = formatYmd(addDays(t, -7));
 					this.persistAndRedraw();
 				});
-			}
-			
+		
 	
-			const element_button_shiftDaysbackToRight = toolbar.createEl("button", { text: "▶" }); {
-				element_button_shiftDaysbackToRight.setAttr("title", "");
-				element_button_shiftDaysbackToRight.setAttr("aria-label", DisplayedTexts.timeline.navLaterAria);
-				element_button_shiftDaysbackToRight.addEventListener("click", () => {
-					this.data.rangeStart = formatYmd(
-						addDays(parseYmd(this.data.rangeStart), 14)
-					);
-					this.persistAndRedraw();
-				});
+				const element_button_shiftDaysbackToLeft = element_ViewManagment_group.createEl("button", { text: "◀" }); {
+					element_button_shiftDaysbackToLeft.setAttr("title", "");
+					element_button_shiftDaysbackToLeft.setAttr("aria-label", DisplayedTexts.timeline.navEarlierAria);
+					element_button_shiftDaysbackToLeft.addEventListener("click", () => {
+						this.data.rangeStart = formatYmd(
+							addDays(parseYmd(this.data.rangeStart), -14)
+						);
+						this.persistAndRedraw();
+					});
+				}
+				
+		
+				const element_button_shiftDaysbackToRight = element_ViewManagment_group.createEl("button", { text: "▶" }); {
+					element_button_shiftDaysbackToRight.setAttr("title", "");
+					element_button_shiftDaysbackToRight.setAttr("aria-label", DisplayedTexts.timeline.navLaterAria);
+					element_button_shiftDaysbackToRight.addEventListener("click", () => {
+						this.data.rangeStart = formatYmd(
+							addDays(parseYmd(this.data.rangeStart), 14)
+						);
+						this.persistAndRedraw();
+					});
+				}
 			}
-	
 
-			toolbar.createDiv({ cls: "timeline-planner-spacer" });
+			toolbar.createDiv({ cls: "timeline-toolbar-spacer" });
 
 
-			const element_zoom_group = toolbar.createDiv({ cls: "timeline-planner-zoom" }); {
+			const element_zoom_group = toolbar.createDiv({ cls: "timeline-toolbar-group" }); {
 				element_zoom_group.setAttr("title", "");
 				element_zoom_group.setAttr("aria-label", DisplayedTexts.timeline.zoomTitle);
 
 				element_zoom_group.createSpan({
-					cls: "timeline-planner-zoom-label",
+					cls: "timeline-toolbar-zoom-label",
 					text: DisplayedTexts.timeline.zoomLabel,
 				});
 
@@ -319,9 +318,9 @@ export class TimelineView extends FileView {
 			}
 			
 	
-			const selTools = toolbar.createDiv({ cls: "timeline-planner-selection-tools" }); {
+			const selTools = toolbar.createDiv({ cls: "timeline-toolbar-group" }); {
 				selTools.createSpan({
-					cls: "timeline-planner-selection-label",
+					cls: "timeline-toolbar-selection-label",
 					text: DisplayedTexts.timeline.shiftSelectionLabel,
 				});
 
@@ -814,7 +813,7 @@ export class TimelineView extends FileView {
 			`${this.data.dayCount * dayW}px`
 		);
 
-		renderDayHeaderRow(this.headerRowEl, rs, this.data.dayCount, dayW);
+		renderDayHeaderRow(this.headerRowEl, rs, this.data.dayCount, dayW, () => this.addTask());
 
 		if (this.data.tasks.length === 0) {
 			this.bodyEl.createDiv({
@@ -822,7 +821,7 @@ export class TimelineView extends FileView {
 				text: DisplayedTexts.timeline.emptyNoTasks,
 			});
 		} else {
-			const rowCtx = this.buildTaskRowContext();
+			const rowCtx = buildTaskRowContext(this);
 			for (const task of this.data.tasks) {
 				renderTimelineTaskRow(rowCtx, task, rs, dayW);
 			}
@@ -843,75 +842,6 @@ export class TimelineView extends FileView {
 		const dayW = this.data.pixelsPerDay;
 		removeTodayLineElements(this.mainWrapEl);
 		placeTodayLine(this.mainWrapEl, rs, this.data.dayCount, dayW);
-	}
-
-	private buildTaskRowContext(): TaskRowRenderContext {
-		return {
-			dayCount: this.data.dayCount,
-			bodyEl: this.bodyEl,
-			selectedTaskIds: this.selectedTaskIds,
-			getTaskStates: () => this.api.getTaskStates(),
-			getDefaultTaskBarColor: () => this.api.getDefaultTaskBarColor(),
-			getTaskBarStackLayoutBreakpointPx: () =>
-				this.api.getTaskBarStackLayoutBreakpointPx(),
-			taskBarStackObservers: this.taskBarStackObservers,
-			bindMarqueeOnTrack: (track) => this.bindMarqueeOnTrack(track),
-			beginReorder: (taskId) => {
-				this.selectedTaskIds.clear();
-				this.dragState = { mode: "reorder", taskId };
-				this.syncDocumentCursorFromInteractionState();
-			},
-			jumpRangeToShowTask: (start, end) =>
-				this.jumpRangeToShowTask(start, end),
-			deleteTask: (id) => this.deleteTask(id),
-			openEditModal: (task) => this.openEditModal(task),
-			redrawPreservingScroll: () => this.redrawPreservingScroll(),
-			toggleBarMultiSelect: (taskId) => {
-				if (this.selectedTaskIds.has(taskId)) {
-					this.selectedTaskIds.delete(taskId);
-				} else {
-					this.selectedTaskIds.add(taskId);
-				}
-				this.redrawPreservingScroll();
-			},
-			beginPendingBarDrag: (taskId, clientX, clientY, origStart, origEnd) => {
-				if (!this.selectedTaskIds.has(taskId)) {
-					this.selectedTaskIds.clear();
-				}
-				this.dragState = {
-					mode: "pending-bar",
-					taskId,
-					startX: clientX,
-					startY: clientY,
-					origStart,
-					origEnd,
-				};
-				this.syncDocumentCursorFromInteractionState();
-			},
-			beginResizeLeft: (taskId, clientX, origStart, origEnd) => {
-				this.dragState = {
-					mode: "resize-left",
-					taskId,
-					startX: clientX,
-					origStart,
-					origEnd,
-				};
-				this.syncDocumentCursorFromInteractionState();
-			},
-			beginResizeRight: (taskId, clientX, origStart, origEnd) => {
-				this.dragState = {
-					mode: "resize-right",
-					taskId,
-					startX: clientX,
-					origStart,
-					origEnd,
-				};
-				this.syncDocumentCursorFromInteractionState();
-			},
-			onStateButtonPress: (ev, task, taskStates, stateBtn) => {
-				this.stateButtonPressCallback(ev, task, taskStates, stateBtn);
-			},
-		};
 	}
 
 	private onGlobalMouseMove(ev: MouseEvent): void {
@@ -1155,7 +1085,7 @@ export class TimelineView extends FileView {
 		}
 	}
 
-	private addTask(): void {
+	public addTask(): void {
 		if (!this.file) {
 			new Notice(DisplayedTexts.timeline.noticeNoFile);
 			return;

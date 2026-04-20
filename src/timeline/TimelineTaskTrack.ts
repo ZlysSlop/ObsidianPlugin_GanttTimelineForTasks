@@ -1,54 +1,12 @@
 import { DisplayedTexts } from "../DisplayedTexts";
-import type { TaskStateDefinition } from "../settings/settingsData";
 import type { TimelineTask } from "../types";
 import { appendTimelineTaskBar } from "./TimelineTaskBar";
 import { appendTimelineTaskLabel, taskLabelParts } from "./TimelineTaskLabel";
 import {
 	appendOutsideRangeOverlayOnTaskRow,
 	appendTimelineTaskRowTrack,
+	type TaskRowRenderContext,
 } from "./TimelineTaskRow";
-
-export type TaskRowRenderContext = {
-	dayCount: number;
-	bodyEl: HTMLElement;
-	selectedTaskIds: Set<string>;
-	getTaskStates: () => TaskStateDefinition[];
-	getDefaultTaskBarColor: () => string;
-	getTaskBarStackLayoutBreakpointPx: () => number;
-	taskBarStackObservers: ResizeObserver[];
-	bindMarqueeOnTrack: (track: HTMLElement) => void;
-	beginReorder: (taskId: string) => void;
-	jumpRangeToShowTask: (start: Date, end: Date) => void;
-	deleteTask: (id: string) => void;
-	openEditModal: (task: TimelineTask) => void;
-	redrawPreservingScroll: () => void;
-	toggleBarMultiSelect: (taskId: string) => void;
-	beginPendingBarDrag: (
-		taskId: string,
-		clientX: number,
-		clientY: number,
-		start: Date,
-		end: Date
-	) => void;
-	beginResizeLeft: (
-		taskId: string,
-		clientX: number,
-		start: Date,
-		end: Date
-	) => void;
-	beginResizeRight: (
-		taskId: string,
-		clientX: number,
-		start: Date,
-		end: Date
-	) => void;
-	onStateButtonPress: (
-		ev: MouseEvent,
-		task: TimelineTask,
-		taskStates: TaskStateDefinition[],
-		stateBtn: HTMLElement
-	) => void;
-};
 
 /** Builds one `.timeline-task-row` (label column + track + bar or outside-range UI). */
 export function renderTimelineTaskRow(

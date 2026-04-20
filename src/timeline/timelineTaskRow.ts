@@ -6,7 +6,167 @@ import {
 	parseYmd,
 } from "../dateUtils";
 import { DisplayedTexts } from "../DisplayedTexts";
+import type { TaskStateDefinition } from "../settings/settingsData";
 import type { TimelineTask } from "../types";
+import type { TimelineView } from "./TimelineView";
+
+export type TaskRowRenderContext = {
+	dayCount: number;
+	bodyEl: HTMLElement;
+	selectedTaskIds: Set<string>;
+	getTaskStates: () => TaskStateDefinition[];
+	getDefaultTaskBarColor: () => string;
+	getTaskBarStackLayoutBreakpointPx: () => number;
+	taskBarStackObservers: ResizeObserver[];
+	bindMarqueeOnTrack: (track: HTMLElement) => void;
+	beginReorder: (taskId: string) => void;
+	jumpRangeToShowTask: (start: Date, end: Date) => void;
+	deleteTask: (id: string) => void;
+	openEditModal: (task: TimelineTask) => void;
+	redrawPreservingScroll: () => void;
+	toggleBarMultiSelect: (taskId: string) => void;
+	beginPendingBarDrag: (
+		taskId: string,
+		clientX: number,
+		clientY: number,
+		start: Date,
+		end: Date
+	) => void;
+	beginResizeLeft: (
+		taskId: string,
+		clientX: number,
+		start: Date,
+		end: Date
+	) => void;
+	beginResizeRight: (
+		taskId: string,
+		clientX: number,
+		start: Date,
+		end: Date
+	) => void;
+	onStateButtonPress: (
+		ev: MouseEvent,
+		task: TimelineTask,
+		taskStates: TaskStateDefinition[],
+		stateBtn: HTMLElement
+	) => void;
+};
+
+/**
+ * TimelineView keeps most row wiring private; this shim matches only what we read/write here.
+ * Cast is intentional — the module boundary cannot see `private` fields on the class.
+ */
+type TimelineViewForTaskRows = {
+	data: { dayCount: number };
+	bodyEl: HTMLElement;
+	selectedTaskIds: Set<string>;
+	taskBarStackObservers: ResizeObserver[];
+	api: {
+		getTaskStates: () => TaskStateDefinition[];
+		getDefaultTaskBarColor: () => string;
+		getTaskBarStackLayoutBreakpointPx: () => number;
+	};
+	bindMarqueeOnTrack(track: HTMLElement): void;
+	syncDocumentCursorFromInteractionState(): void;
+	jumpRangeToShowTask(start: Date, end: Date): void;
+	deleteTask(id: string): void;
+	openEditModal(task: TimelineTask): void;
+	redrawPreservingScroll(): void;
+	stateButtonPressCallback(
+		ev: MouseEvent,
+		task: TimelineTask,
+		taskStates: TaskStateDefinition[],
+		stateBtn: HTMLElement
+	): void;
+	dragState:
+		| {
+				mode: "move" | "resize-left" | "resize-right";
+				taskId: string;
+				startX: number;
+				origStart: Date;
+				origEnd: Date;
+				groupOrigins?: Map<string, { origStart: Date; origEnd: Date }>;
+		  }
+		| {
+				mode: "pending-bar";
+				taskId: string;
+				startX: number;
+				startY: number;
+				origStart: Date;
+				origEnd: Date;
+		  }
+		| { mode: "reorder"; taskId: string }
+		| null;
+};
+
+export function buildTaskRowContext(view: TimelineView): TaskRowRenderContext {
+	const v = view as unknown as TimelineViewForTaskRows;
+	return {
+		dayCount: v.data.dayCount,
+		bodyEl: v.bodyEl,
+		selectedTaskIds: v.selectedTaskIds,
+		getTaskStates: () => v.api.getTaskStates(),
+		getDefaultTaskBarColor: () => v.api.getDefaultTaskBarColor(),
+		getTaskBarStackLayoutBreakpointPx: () =>
+			v.api.getTaskBarStackLayoutBreakpointPx(),
+		taskBarStackObservers: v.taskBarStackObservers,
+		bindMarqueeOnTrack: (track) => v.bindMarqueeOnTrack(track),
+		beginReorder: (taskId) => {
+			v.selectedTaskIds.clear();
+			v.dragState = { mode: "reorder", taskId };
+			v.syncDocumentCursorFromInteractionState();
+		},
+		jumpRangeToShowTask: (start, end) => v.jumpRangeToShowTask(start, end),
+		deleteTask: (id) => v.deleteTask(id),
+		openEditModal: (task) => v.openEditModal(task),
+		redrawPreservingScroll: () => v.redrawPreservingScroll(),
+		toggleBarMultiSelect: (taskId) => {
+			if (v.selectedTaskIds.has(taskId)) {
+				v.selectedTaskIds.delete(taskId);
+			} else {
+				v.selectedTaskIds.add(taskId);
+			}
+			v.redrawPreservingScroll();
+		},
+		beginPendingBarDrag: (taskId, clientX, clientY, origStart, origEnd) => {
+			if (!v.selectedTaskIds.has(taskId)) {
+				v.selectedTaskIds.clear();
+			}
+			v.dragState = {
+				mode: "pending-bar",
+				taskId,
+				startX: clientX,
+				startY: clientY,
+				origStart,
+				origEnd,
+			};
+			v.syncDocumentCursorFromInteractionState();
+		},
+		beginResizeLeft: (taskId, clientX, origStart, origEnd) => {
+			v.dragState = {
+				mode: "resize-left",
+				taskId,
+				startX: clientX,
+				origStart,
+				origEnd,
+			};
+			v.syncDocumentCursorFromInteractionState();
+		},
+		beginResizeRight: (taskId, clientX, origStart, origEnd) => {
+			v.dragState = {
+				mode: "resize-right",
+				taskId,
+				startX: clientX,
+				origStart,
+				origEnd,
+			};
+			v.syncDocumentCursorFromInteractionState();
+		},
+		onStateButtonPress: (ev, task, taskStates, stateBtn) => {
+			v.stateButtonPressCallback(ev, task, taskStates, stateBtn);
+		},
+	};
+}
 
 export type TimelineTaskTrackResult =
 	| {

@@ -1,6 +1,6 @@
 /* Toolbar + title row + file label + zoom + selection strip */
 
-.timeline-planner-toolbar {
+.timeline-toolbar {
 	display: flex;
 	align-items: center;
 	gap: 10px;
@@ -15,32 +15,7 @@
 	box-shadow: 0 1px 0 color-mix(in srgb, var(--background-modifier-border) 40%, transparent);
 }
 
-.timeline-planner-title-row {
-	display: flex;
-	align-items: baseline;
-	gap: 10px;
-	flex-wrap: wrap;
-}
-
-.timeline-planner-title-row > span:first-child {
-	font-weight: 600;
-	font-size: var(--font-ui-medium);
-	letter-spacing: -0.02em;
-	color: var(--text-normal);
-}
-
-.timeline-planner-file-label {
-	font-size: var(--font-ui-smaller);
-	color: var(--text-muted);
-	font-weight: 400;
-	max-width: 280px;
-	overflow: hidden;
-	text-overflow: ellipsis;
-	white-space: nowrap;
-	opacity: 0.92;
-}
-
-.timeline-planner-toolbar button {
+.timeline-toolbar button {
 	margin: 0;
 	border-radius: var(--radius-s, 6px);
 	padding: 4px 12px;
@@ -55,18 +30,43 @@
 	box-shadow: 0 1px 2px color-mix(in srgb, var(--background-primary) 80%, transparent);
 }
 
-.timeline-planner-toolbar button:hover {
+.timeline-toolbar button:hover {
 	background: var(--background-modifier-hover);
 	border-color: var(--background-modifier-border-hover);
 }
 
-.timeline-planner-toolbar button:active {
+.timeline-toolbar button:active {
 	transform: translateY(0.5px);
+}
+
+.timeline-toolbar-title {
+	display: flex;
+	align-items: baseline;
+	gap: 10px;
+	flex-wrap: wrap;
+}
+
+.timeline-toolbar-title > span:first-child {
+	font-weight: 600;
+	font-size: var(--font-ui-medium);
+	letter-spacing: -0.02em;
+	color: var(--text-normal);
+}
+
+.timeline-toolbar-file-label {
+	font-size: var(--font-ui-smaller);
+	color: var(--text-muted);
+	font-weight: 400;
+	max-width: 280px;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+	opacity: 0.92;
 }
 
 /* -------------------------------------------------------- */
 
-.timeline-planner-spacer {
+.timeline-toolbar-spacer {
 	margin-right: auto;
 	padding: 10px;
 	box-sizing: unset;
@@ -75,7 +75,7 @@
 
 /* -------------------------------------------------------- */
 
-.timeline-planner-zoom {
+.timeline-toolbar-group {
 	display: flex;
 	align-items: center;
 	gap: 6px;
@@ -85,7 +85,9 @@
 	border: 1px solid color-mix(in srgb, var(--background-modifier-border) 70%, transparent);
 }
 
-.timeline-planner-zoom-label {
+/* -------------------------------------------------------- */
+
+.timeline-toolbar-zoom-label {
 	opacity: 0.75;
 	font-size: var(--font-ui-smaller);
 	font-weight: 500;
@@ -94,17 +96,7 @@
 
 /* -------------------------------------------------------- */
 
-.timeline-planner-selection-tools {
-	display: flex;
-	align-items: center;
-	gap: 6px;
-	padding: 8px;
-	border-radius: var(--radius-s, 8px);
-	background: color-mix(in srgb, var(--background-modifier-hover) 35%, transparent);
-	border: 1px solid color-mix(in srgb, var(--background-modifier-border) 70%, transparent);
-}
-
-.timeline-planner-selection-label {
+.timeline-toolbar-selection-label {
 	opacity: 0.75;
 	font-size: var(--font-ui-smaller);
 	font-weight: 500;

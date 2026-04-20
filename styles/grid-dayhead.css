@@ -15,8 +15,39 @@
 }
 
 .timeline-planner-dayhead-spacer {
+	display: flex;
+	padding: 0px;
+	align-items: center;
+	justify-content: center;
 	border-right: 1px solid color-mix(in srgb, var(--background-modifier-border) 85%, transparent);
 	box-sizing: border-box;
+}
+
+.timeline-planner-dayhead-spacer button {
+	margin: 5px;
+	padding: 0px;
+	font-size: var(--font-ui-smaller);
+	font-weight: 500;
+	width: 100%;
+	height: fit-content;
+	border-radius: var(--radius-s, 6px);
+	border: 1px solid var(--background-modifier-border);
+	background: var(--background-modifier-form-field);
+	color: var(--text-normal);
+	transition:
+		background 0.12s ease,
+		border-color 0.12s ease,
+		box-shadow 0.12s ease;
+	box-shadow: 0 1px 2px color-mix(in srgb, var(--background-primary) 80%, transparent);
+}
+
+.timeline-planner-dayhead-spacer button:hover {
+	background: var(--background-modifier-hover);
+	border-color: var(--background-modifier-border-hover);
+}
+
+.timeline-planner-dayhead-spacer button:active {
+	transform: translateY(0.5px);
 }
 
 .timeline-planner-dayhead {

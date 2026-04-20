@@ -1,6 +1,7 @@
 import { TIMELINE_LABEL_COLUMN_PX } from "../constants";
 import { addDays, daysBetweenInclusive, formatYmd, fractionOfLocalDayElapsed, parseYmd, todayYmd } from "../dateUtils";
 import { DisplayedTexts } from "../DisplayedTexts";
+import {TimelineView} from "./TimelineView"
 
 export function removeTodayLineElements(mainWrapEl: HTMLElement): void {
 	mainWrapEl
@@ -9,17 +10,32 @@ export function removeTodayLineElements(mainWrapEl: HTMLElement): void {
 }
 
 export function renderDayHeaderRow(
-	gridEl: HTMLElement,
+	element_grid: HTMLElement,
 	rangeStart: Date,
 	dayCount: number,
-	dayW: number
+	dayW: number,
+	callback_AddTask: () => void
 ): void {
-	gridEl.style.gridTemplateColumns = `${TIMELINE_LABEL_COLUMN_PX}px repeat(${dayCount}, ${dayW}px)`;
-	gridEl.createDiv({ cls: "timeline-planner-dayhead-spacer" });
+	element_grid.style.gridTemplateColumns = `${TIMELINE_LABEL_COLUMN_PX}px repeat(${dayCount}, ${dayW}px)`;
+
+	const element_spacer_dh = element_grid.createDiv({ cls: "timeline-planner-dayhead-spacer" });
+	{
+		const element_button_altNewTask = element_spacer_dh.createEl("button", {
+			type: "button",
+			attr: {
+				"aria-label": "Create new task.",
+				"aria-haspopup": "menu",
+			},
+			text: "+",
+		});
+
+		element_button_altNewTask.addEventListener("click", callback_AddTask);
+	}
+	
 	for (let i = 0; i < dayCount; i++) {
 		const d = addDays(rangeStart, i);
 		const w = d.getDay();
-		const head = gridEl.createDiv({
+		const head = element_grid.createDiv({
 			cls: "timeline-planner-dayhead",
 			text: `${d.getDate()}`,
 		});
