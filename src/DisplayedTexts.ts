@@ -23,12 +23,34 @@ export const DisplayedTexts = {
 		taskBarStackBreakpointDesc:
 			"When a bar is narrower than this many pixels, the title stacks above the state control (zoom affects bar width in px).\nHigher = stay on one row longer while zoomed out; lower = stack sooner.\nRange: 120–600.",
 		taskStatesHeading: "Task states",
+		taskStatesSummaryDesc:
+			"Workflow states (name + color) for tasks on the bar and in the editor. Opens in a separate window.",
+		openTaskStatesSettingsButton: "Configure task states…",
 		taskStatesIntro: "Define states you can assign to tasks (shown on the bar and in the edit dialog). Each state has a name and color.",
 		taskStateNameLabel: "Name",
 		taskStateColorLabel: "Color",
 		addTaskStateButton: "Add state",
 		newTaskStateDefaultName: "New state",
 		removeTaskStateTooltip: "Remove this state",
+
+		emojiPickerHeading: "Emoji picker",
+		emojiPickerSummaryDesc:
+			"Categories and emojis for the task editor. Opens a separate window — useful for large custom sets.",
+		openEmojiPickerSettingsButton: "Configure emoji picker…",
+		emojiPickerIntro:
+			"Categories and emojis shown when choosing a task emoji. Add work-specific sets or trim the defaults. Search in the picker matches category names and the tags you set per emoji.",
+		emojiPickerRestoreDefaults: "Restore default emoji set",
+		emojiPickerRestoreDefaultsTooltip:
+			"Replace all categories with the plugin’s built-in list (current customizations are lost).",
+		emojiCategoryNameLabel: "Category name",
+		emojiCategoryRemoveTooltip: "Remove this category",
+		emojiItemEmojiLabel: "Emoji",
+		emojiItemTagsDesc:
+			"Space-separated words used when searching in the picker (stored lowercase).",
+		emojiItemRemoveTooltip: "Remove this emoji",
+		addEmojiCategoryButton: "Add category",
+		addEmojiItemButton: "Add emoji to this category",
+		newEmojiCategoryDefaultName: "New category",
 	},
 
 	taskModal: {

@@ -7,6 +7,18 @@ export interface TaskStateDefinition {
 	color: string;
 }
 
+export interface EmojiPickerItemDefinition {
+	emoji: string;
+	/** Space-separated search keywords (stored lowercase). */
+	tags: string;
+}
+
+export interface EmojiPickerCategoryDefinition {
+	id: string;
+	name: string;
+	items: EmojiPickerItemDefinition[];
+}
+
 export interface TimelinePlannerSettings {
 	/**
 	 * CSS color for task bars when a task has no `color` (e.g. `#7c3aed`).
@@ -20,10 +32,13 @@ export interface TimelinePlannerSettings {
 	 * Larger values keep the single-row layout longer when zoomed out.
 	 */
 	taskBarStackLayoutBreakpointPx: number;
+	/** Custom emoji picker categories; empty on disk until first load seeds built-ins. */
+	emojiPickerCategories: EmojiPickerCategoryDefinition[];
 }
 
 export const DEFAULT_TIMELINE_SETTINGS: TimelinePlannerSettings = {
 	defaultTaskBarColor: "",
 	taskStates: [],
 	taskBarStackLayoutBreakpointPx: 260,
+	emojiPickerCategories: [],
 };

@@ -68,3 +68,16 @@
 	padding: var(--size-4-4, 16px) 0;
 	text-align: center;
 }
+
+/* Plugin settings → modals (emoji picker, task states) */
+.modal:has(.timeline-planner-emoji-settings-modal),
+.modal:has(.timeline-planner-task-states-settings-modal) {
+	width: min(640px, 94vw);
+	max-width: min(640px, 94vw);
+}
+
+.modal:has(.timeline-planner-emoji-settings-modal) .modal-content,
+.modal:has(.timeline-planner-task-states-settings-modal) .modal-content {
+	max-height: min(78vh, 720px);
+	overflow-y: auto;
+}

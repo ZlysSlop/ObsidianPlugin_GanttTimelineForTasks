@@ -16,6 +16,7 @@ import {
 import { barAccentLikeGradient } from "./colorUi";
 import { firstGrapheme } from "./emojiUtils";
 import { TaskEditModal } from "./TaskEditModal";
+import type { EmojiPickerCategoryForModal } from "./emojiPickerRuntime";
 import type { TaskStateDefinition } from "./settingsData";
 import type { TimelinePlannerData, TimelineTask } from "./types";
 import { DisplayedTexts } from "./DisplayedTexts";
@@ -58,6 +59,7 @@ export class TimelineView extends FileView {
 		getDefaultTaskBarColor: () => string;
 		getTaskStates: () => TaskStateDefinition[];
 		getTaskBarStackLayoutBreakpointPx: () => number;
+		getEmojiPickerCategories: () => EmojiPickerCategoryForModal[];
 	};
 	/** Task ids selected with Ctrl/Cmd+click on bars — moved together when you drag or use nudge buttons. */
 	private readonly selectedTaskIds = new Set<string>();
@@ -131,6 +133,7 @@ export class TimelineView extends FileView {
 			getDefaultTaskBarColor: () => string;
 			getTaskStates: () => TaskStateDefinition[];
 			getTaskBarStackLayoutBreakpointPx: () => number;
+			getEmojiPickerCategories: () => EmojiPickerCategoryForModal[];
 		}
 	) {
 		super(leaf);
@@ -1457,7 +1460,8 @@ export class TimelineView extends FileView {
 				void this.persistAndRedraw();
 			},
 			this.api.getDefaultTaskBarColor(),
-			this.api.getTaskStates()
+			this.api.getTaskStates(),
+			this.api.getEmojiPickerCategories()
 		).open();
 	}
 

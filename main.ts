@@ -7,6 +7,9 @@ import {
 } from "./src/settingsData";
 import { TimelinePlannerSettingTab } from "./src/settingsTab";
 import { TimelineView } from "./src/TimelineView";
+import { getBuiltInEmojiPickerCategoryDefinitions } from "./src/emojiPickerData";
+import { definitionsToRuntimeCategories } from "./src/emojiPickerRuntime";
+import { normalizeEmojiPickerCategories } from "./src/emojiPickerNormalize";
 import {
 	buildNewZlyTimelineFileContent,
 	ensureParentFolders,
@@ -27,6 +30,14 @@ export default class TimelinePlannerPlugin extends Plugin {
 			this.clampTaskBarStackBreakpointPx(
 				this.settings.taskBarStackLayoutBreakpointPx
 			);
+		if (!Array.isArray(this.settings.emojiPickerCategories)) {
+			this.settings.emojiPickerCategories = [];
+		}
+		if (this.settings.emojiPickerCategories.length === 0) {
+			this.settings.emojiPickerCategories =
+				getBuiltInEmojiPickerCategoryDefinitions();
+		}
+		normalizeEmojiPickerCategories(this.settings.emojiPickerCategories);
 	}
 
 	async saveSettings(): Promise<void> {
@@ -45,6 +56,17 @@ export default class TimelinePlannerPlugin extends Plugin {
 					this.clampTaskBarStackBreakpointPx(
 						this.settings.taskBarStackLayoutBreakpointPx
 					),
+				getEmojiPickerCategories: () => {
+					const runtime = definitionsToRuntimeCategories(
+						this.settings.emojiPickerCategories
+					);
+					if (runtime.length > 0) {
+						return runtime;
+					}
+					return definitionsToRuntimeCategories(
+						getBuiltInEmojiPickerCategoryDefinitions()
+					);
+				},
 			});
 		});
 

@@ -6,6 +6,7 @@ import {
 } from "./colorUi";
 import { DisplayedTexts } from "./DisplayedTexts";
 import { EmojiSelectModal } from "./EmojiSelectModal";
+import type { EmojiPickerCategoryForModal } from "./emojiPickerRuntime";
 import type { TaskStateDefinition } from "./settingsData";
 import type { TimelineTask } from "./types";
 
@@ -15,7 +16,8 @@ export class TaskEditModal extends Modal {
 		private task: TimelineTask,
 		private onSubmit: (t: Partial<TimelineTask>) => void,
 		private readonly pluginDefaultBarColor: string = "",
-		private readonly taskStates: TaskStateDefinition[] = []
+		private readonly taskStates: TaskStateDefinition[] = [],
+		private readonly emojiPickerCategories: EmojiPickerCategoryForModal[] = []
 	) {
 		super(app);
 	}
@@ -45,12 +47,16 @@ export class TaskEditModal extends Modal {
 					initialEmoji || DisplayedTexts.taskModal.chooseEmoji
 				);
 				b.onClick(() => {
-					new EmojiSelectModal(this.app, (ch) => {
-						emojiDraft = ch;
-						emojiPickBtn?.setButtonText(
-							ch || DisplayedTexts.taskModal.chooseEmoji
-						);
-					}).open();
+					new EmojiSelectModal(
+						this.app,
+						this.emojiPickerCategories,
+						(ch) => {
+							emojiDraft = ch;
+							emojiPickBtn?.setButtonText(
+								ch || DisplayedTexts.taskModal.chooseEmoji
+							);
+						}
+					).open();
 				});
 			})
 			.addExtraButton((btn) => {

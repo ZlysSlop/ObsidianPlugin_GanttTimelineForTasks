@@ -1,10 +1,11 @@
 import { App, Modal } from "obsidian";
 import { DisplayedTexts } from "./DisplayedTexts";
-import { EMOJI_PICKER_CATEGORIES } from "./emojiPickerData";
+import type { EmojiPickerCategoryForModal } from "./emojiPickerRuntime";
 
 export class EmojiSelectModal extends Modal {
 	constructor(
 		app: App,
+		private readonly categories: EmojiPickerCategoryForModal[],
 		private readonly onChoose: (emoji: string) => void
 	) {
 		super(app);
@@ -31,7 +32,7 @@ export class EmojiSelectModal extends Modal {
 		const render = (query: string): void => {
 			gridHost.empty();
 			const q = query.trim().toLowerCase();
-			for (const cat of EMOJI_PICKER_CATEGORIES) {
+			for (const cat of this.categories) {
 				const items = cat.items.filter(
 					(it) =>
 						!q ||
