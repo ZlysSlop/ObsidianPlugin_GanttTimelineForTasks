@@ -1,8 +1,8 @@
 import { barAccentLikeGradient } from "../colorUi";
 import { DisplayedTexts } from "../DisplayedTexts";
 import type { TaskStateDefinition } from "../settings/settingsData";
-import type { TimelineTask } from "../types";
-import type { TaskRowRenderContext } from "./timelineTaskRow";
+import type { TimelineTask } from "./TimelineTypes";
+import type { TaskRowRenderContext } from "./timelineTaskTrack";
 
 /**
  * Filled state: full pill uses state color; hover/focus/active kept identical so
@@ -85,7 +85,8 @@ export function appendTimelineTaskBar(
 	element_task_bar.dataset.taskId = task.id;
 	element_task_bar.style.left = `${i0 * dayW}px`;
 	element_task_bar.style.width = `${span * dayW - 4}px`;
-	element_task_bar.setAttr("title", DisplayedTexts.timeline.barTitle);
+	element_task_bar.setAttr("title", "");
+	element_task_bar.setAttr("aria-label", DisplayedTexts.timeline.barTitle);
 
 	const element_labelRow = element_task_bar.createDiv({
 		cls: "timeline-task-row-task-bar-labelrow",

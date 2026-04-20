@@ -14,9 +14,26 @@
 		color-mix(in srgb, #e53935 75%, var(--interactive-accent)) 100%
 	);
 	pointer-events: none;
-	z-index: 4;
+	/* Above `.timeline-planner-grid` (z-index 5) so the line and top arrow show in the header */
+	z-index: 6;
 	border-radius: 1px;
 	box-shadow:
 		0 0 0 1px color-mix(in srgb, white 35%, transparent),
 		0 0 10px color-mix(in srgb, #e53935 45%, transparent);
+}
+
+/* Down-pointing arrow at the top of the “now” line */
+.timeline-planner-today-line::before {
+	content: "";
+	position: absolute;
+	left: 50%;
+	top: 0;
+	transform: translate(-50%, 0);
+	width: 0;
+	height: 0;
+	border-left: 5px solid transparent;
+	border-right: 5px solid transparent;
+	border-top: 7px solid color-mix(in srgb, #c62828 90%, var(--interactive-accent));
+	filter: drop-shadow(0 -1px 1px color-mix(in srgb, #e53935 35%, transparent));
+	pointer-events: none;
 }

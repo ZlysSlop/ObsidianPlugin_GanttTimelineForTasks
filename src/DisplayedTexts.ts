@@ -92,15 +92,12 @@ export const DisplayedTexts = {
 
 	timeline: {
 		viewTitle: "Timeline",
-		filePathPlaceholder: "—",
-		toolbarHeading: "Timeline",
 		newTask: "New task",
 		jumpToToday: "Jump to today",
 		navEarlierAria: "Earlier",
 		navLaterAria: "Later",
 
-		zoomTitle:
-			"Ctrl + Scroll on the timeline to change how many days fit the pane (columns fill the width). Zoom grows or shrinks the range from both ends (see plugin setting: zoom step).",
+		zoomTitle: "Ctrl + Scroll on the timeline to change how many days fit the pane (columns fill the width). Zoom grows or shrinks the range from both ends (see plugin setting: zoom step).",
 		zoomLabel: "Zoom",
 		zoomOutAria: "Show more days (zoom out)",
 		zoomInAria: "Show fewer days (zoom in)",
@@ -109,8 +106,7 @@ export const DisplayedTexts = {
 		nudgeEarlierTitle: "Move all selected tasks one day earlier (Ctrl+click bars to select)",
 		nudgeLaterTitle: "Move all selected tasks one day later (Ctrl+click bars to select)",
 
-		scrollRegionTitle:
-			"Right Click-drag: move up/down through tasks,\nleft/right to change which days are visible.\nWheel: scroll. Ctrl + Scroll: show more or fewer days in the pane.",
+		scrollRegionTitle: "Right Click-drag: move up/down through tasks,\nleft/right to change which days are visible.\nWheel: scroll. Ctrl + Scroll: show more or fewer days in the pane.",
 		noticeParseError: (ext: string) => `Could not parse this .${ext} file (invalid JSON?).\nUsing empty planner.`,
 		noticeNoFile: "No timeline file loaded.",
 		noticeNoSelection: "No tasks selected. Ctrl+click bars to select.",
@@ -119,6 +115,7 @@ export const DisplayedTexts = {
 		reorderHandleGlyph: "⋮⋮",
 		reorderTitle: "Drag up or down to reorder (or drag the bar vertically on the timeline)",
 		deleteTaskSymbol: "x",
+		deleteTask: "Delete this task.",
 		taskExisitngNoteIndication: "[~]",
 		outsideRangeArrowTitleLeft: (firstVisibleDay: string) => `Task is earlier — ends before ${firstVisibleDay} (left of the timeline).`,
 		outsideRangeArrowTitleRight: (lastVisibleDay: string) => `Task is later — starts after ${lastVisibleDay} (right of the timeline).`,

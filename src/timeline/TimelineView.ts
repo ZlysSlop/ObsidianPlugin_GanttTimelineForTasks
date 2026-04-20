@@ -39,9 +39,9 @@ import {
 	sortTaskIdsByListOrder,
 } from "./timelineUtils";
 import { styleTaskStateSelect } from "./TimelineTaskBar";
-import { renderTimelineTaskRow } from "./TimelineTaskTrack";
-import { buildTaskRowContext } from "./timelineTaskRow";
-import type { TimelinePlannerData, TimelineTask } from "../types";
+import { renderTimelineTaskRow } from "./TimelineTaskRow";
+import { buildTaskRowContext } from "./timelineTaskTrack";
+import type { TimelinePlannerData, TimelineTask } from "./TimelineTypes";
 import { DisplayedTexts } from "../DisplayedTexts";
 import {
 	createEmptyPlannerData,
@@ -53,7 +53,6 @@ export { TIMELINE_VIEW_TYPE };
 export class TimelineView extends FileView {
 
 	data: TimelinePlannerData;
-	private filePathLabelEl: HTMLElement | null = null;
 	private rootEl!: HTMLElement;
 	/** Scrollport for the grid + task rows (right-drag pans this element). */
 	private scrollEl: HTMLElement | null = null;
@@ -187,14 +186,6 @@ export class TimelineView extends FileView {
 	}
 
 
-	private updateToolbarPath(): void {
-		if (!this.filePathLabelEl) return;
-		this.filePathLabelEl.setText(
-			this.file?.path ?? DisplayedTexts.timeline.filePathPlaceholder
-		);
-	}
-
-
 	private async loadDataFromFile(file: TFile): Promise<void> {
 		const parsed = await readTimelineZlyFile(this.app, file);
 		if (parsed) {
@@ -211,7 +202,6 @@ export class TimelineView extends FileView {
 
 	async onLoadFile(file: TFile): Promise<void> {
 		await this.loadDataFromFile(file);
-		this.updateToolbarPath();
 		if (this.headerRowEl) {
 			this.redraw();
 		}
@@ -239,22 +229,13 @@ export class TimelineView extends FileView {
 
 		const toolbar = this.rootEl.createDiv({ cls: "timeline-toolbar" });
 		if(toolbar){
-			const element_text_titleRow = toolbar.createDiv({ cls: "timeline-toolbar-title" }); {
-				element_text_titleRow.createEl("span", { text: DisplayedTexts.timeline.toolbarHeading });
-				
-				this.filePathLabelEl = element_text_titleRow.createEl("span", {
-					cls: "timeline-toolbar-file-label",
+			const element_toolbar_leftSpacer = toolbar.createDiv({ cls: "timeline-toolbar-left-spacer" }); {
+				const element_button_addTask = element_toolbar_leftSpacer.createEl("button", {
+					text: DisplayedTexts.timeline.newTask,
 				});
-
-				this.updateToolbarPath();
+				element_button_addTask.addEventListener("click", () => this.addTask());
 			}
-	
-
-			const element_button_addTask = toolbar.createEl("button", {
-				text: DisplayedTexts.timeline.newTask,
-			});
-			element_button_addTask.addEventListener("click", () => this.addTask());
-	
+			
 
 			const element_ViewManagment_group = toolbar.createDiv({ cls: "timeline-toolbar-group" }); {
 				const element_button_JumpToToday = element_ViewManagment_group.createEl("button", {
@@ -292,7 +273,6 @@ export class TimelineView extends FileView {
 			}
 
 			toolbar.createDiv({ cls: "timeline-toolbar-spacer" });
-
 
 			const element_zoom_group = toolbar.createDiv({ cls: "timeline-toolbar-group" }); {
 				element_zoom_group.setAttr("title", "");
@@ -345,8 +325,7 @@ export class TimelineView extends FileView {
 
 		const scroll = this.rootEl.createDiv({ cls: "timeline-planner-scroll" }); {
 			this.scrollEl = scroll;
-			scroll.setAttr("title", DisplayedTexts.timeline.scrollRegionTitle);
-	
+			
 			this.registerDomEvent(scroll, "mousedown", (ev: MouseEvent) => {
 				if (ev.button !== 2) return;
 				if (!this.file || !this.scrollEl) return;
@@ -424,14 +403,6 @@ export class TimelineView extends FileView {
 			this.redrawPreservingScroll();
 		});
 
-		this.registerEvent(
-			this.app.vault.on("rename", (file, oldPath) => {
-				if (oldPath === this.file?.path && file instanceof TFile) {
-					this.updateToolbarPath();
-				}
-			})
-		);
-
 		this.registerInterval(
 			window.setInterval(() => {
 				this.refreshTodayLinePosition();
@@ -445,7 +416,6 @@ export class TimelineView extends FileView {
 			{ passive: false }
 		);
 
-		this.updateToolbarPath();
 		this.redraw();
 	}
 
@@ -469,7 +439,6 @@ export class TimelineView extends FileView {
 		this.endMarqueeGesture();
 		this.scrollEl = null;
 		this.clearDocumentCursorOverride();
-		this.filePathLabelEl = null;
 		this.containerEl.empty();
 	}
 
@@ -814,7 +783,7 @@ export class TimelineView extends FileView {
 			`${this.data.dayCount * dayW}px`
 		);
 
-		renderDayHeaderRow(this.headerRowEl, rs, this.data.dayCount, dayW, () => this.addTask());
+		renderDayHeaderRow(this.headerRowEl, rs, this.data.dayCount, dayW, () => this.addTask(true));
 
 		if (this.data.tasks.length === 0) {
 			this.bodyEl.createDiv({
@@ -1093,7 +1062,7 @@ export class TimelineView extends FileView {
 		}
 	}
 
-	public addTask(): void {
+	public addTask(dontShowModal: boolean = false): void {
 		if (!this.file) {
 			new Notice(DisplayedTexts.timeline.noticeNoFile);
 			return;
@@ -1113,7 +1082,10 @@ export class TimelineView extends FileView {
 		new Notice(DisplayedTexts.timeline.noticeTaskAdded);
 		void this.persistAndRedraw();
 		
-		this.openEditModal(task);
+		if(!dontShowModal)
+		{
+			this.openEditModal(task);
+		}
 	}
 
 	private deleteTask(id: string): void {

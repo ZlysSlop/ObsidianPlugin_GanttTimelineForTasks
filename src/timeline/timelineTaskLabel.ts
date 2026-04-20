@@ -1,6 +1,6 @@
 import { DisplayedTexts } from "../DisplayedTexts";
 import { firstGrapheme } from "../emoji/emojiUtils";
-import type { TimelineTask } from "../types";
+import type { TimelineTask } from "./TimelineTypes";
 
 /** Notes tag + title (no emoji); emoji is separate for layout. */
 export function taskLabelParts(task: TimelineTask): { emoji: string; core: string } {
@@ -77,5 +77,6 @@ export function appendTimelineTaskLabel(
 	const delBtn = element_actions.createEl("button", {
 		text: DisplayedTexts.timeline.deleteTaskSymbol,
 	});
+	delBtn.setAttr("aria-label", DisplayedTexts.timeline.deleteTask);
 	delBtn.addEventListener("click", () => ctx.deleteTask(task.id));
 }

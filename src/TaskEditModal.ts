@@ -8,7 +8,7 @@ import { DisplayedTexts } from "./DisplayedTexts";
 import { EmojiSelectModal } from "./emoji/EmojiSelectModal";
 import type { EmojiPickerCategoryForModal } from "./emoji/emojiPickerRuntime";
 import type { TaskStateDefinition } from "./settings/settingsData";
-import type { TimelineTask } from "./types";
+import type { TimelineTask } from "./timeline/TimelineTypes";
 
 export class TaskEditModal extends Modal {
 	constructor(
