@@ -3,8 +3,8 @@ import {
 	TIMELINE_VISIBLE_DAYS_MAX,
 	TIMELINE_VISIBLE_DAYS_MIN,
 	ZLY_TIMELINE_FORMAT_VERSION,
-} from "./constants";
-import type { TimelinePlannerData, TimelineTask } from "./types";
+} from "../constants";
+import type { TimelinePlannerData, TimelineTask } from "../types";
 
 function pad2(n: number): string {
 	return n < 10 ? `0${n}` : `${n}`;

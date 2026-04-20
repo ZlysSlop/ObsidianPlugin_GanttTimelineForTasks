@@ -1,7 +1,7 @@
 import { App, Modal } from "obsidian";
 import { TIMELINE_VIEW_TYPE } from "../constants";
 import { DisplayedTexts } from "../DisplayedTexts";
-import { TimelineView } from "../TimelineView";
+import { TimelineView } from "../timeline/TimelineView";
 import { renderTaskStatesSettings } from "./taskStatesSettingsUi";
 import type { TimelinePlannerPluginLike } from "./timelinePluginLike";
 

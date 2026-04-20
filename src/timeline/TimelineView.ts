@@ -5,45 +5,53 @@ import {
 	TIMELINE_VISIBLE_DAYS_MAX,
 	TIMELINE_VISIBLE_DAYS_MIN,
 	ZLY_TIMELINE_EXTENSION,
-} from "./constants";
+} from "../constants";
 import {
 	addDays,
 	clampDateOrder,
-	daysBetweenInclusive,
 	formatYmd,
-	fractionOfLocalDayElapsed,
 	parseYmd,
 	todayYmd,
-} from "./dateUtils";
-import { barAccentLikeGradient } from "./colorUi";
-import type { EmojiPickerCategoryForModal } from "./emoji/emojiPickerRuntime";
-import { firstGrapheme } from "./emoji/emojiUtils";
-import { TaskEditModal } from "./TaskEditModal";
-import type { TaskStateDefinition } from "./settings/settingsData";
-import type { TimelinePlannerData, TimelineTask } from "./types";
-import { DisplayedTexts } from "./DisplayedTexts";
+} from "../dateUtils";
+import type { EmojiPickerCategoryForModal } from "../emoji/emojiPickerRuntime";
+import { firstGrapheme } from "../emoji/emojiUtils";
+import type { TaskStateDefinition } from "../settings/settingsData";
+import { TaskEditModal } from "../TaskEditModal";
+import {
+	TIMELINE_MARQUEE_DRAG_PX,
+	TIMELINE_PENDING_BAR_DRAG_PX,
+	TIMELINE_WHEEL_ZOOM_MIN_INTERVAL_MS,
+} from "./timelineConstants";
+import {
+	placeTodayLine,
+	removeTodayLineElements,
+	renderDayHeaderRow,
+} from "./timelineDayGrid";
+import {
+	clampVisibleDayCount,
+	getAvailableDayTrackWidthPx,
+	pickZoomSideDeltas,
+} from "./timelineLayoutMetrics";
+import {
+	computeJumpRangeStartYmd,
+	computeReorderTargetIndex as computeReorderDropIndex,
+	moveInArray,
+} from "./timelineUtils";
+import { styleTaskStateSelect } from "./TimelineTaskBar";
+import {
+	renderTimelineTaskRow,
+	type TaskRowRenderContext,
+} from "./TimelineTaskTrack";
+import type { TimelinePlannerData, TimelineTask } from "../types";
+import { DisplayedTexts } from "../DisplayedTexts";
 import {
 	createEmptyPlannerData,
 	readTimelineZlyFile,
-} from "./timelineStorage";
+} from "./TimelineStorage";
 
 export { TIMELINE_VIEW_TYPE };
 
-function moveInArray<T>(arr: T[], from: number, to: number): void {
-	if (from === to) return;
-	if (from < 0 || from >= arr.length) return;
-	if (to < 0 || to >= arr.length) return;
-	const [item] = arr.splice(from, 1);
-	arr.splice(to, 0, item);
-}
-
 export class TimelineView extends FileView {
-	/** Bar drag: movement past this picks vertical reorder vs horizontal date move. */
-	private static readonly PENDING_BAR_DRAG_PX = 6;
-	/** Empty track: movement past this starts a rubber-band (marquee) selection. */
-	private static readonly MARQUEE_DRAG_PX = 4;
-	/** Limits trackpad “pinch as ctrl+wheel” from jumping zoom too fast. */
-	private static readonly WHEEL_ZOOM_MIN_INTERVAL_MS = 90;
 
 	data: TimelinePlannerData;
 	private filePathLabelEl: HTMLElement | null = null;
@@ -479,46 +487,13 @@ export class TimelineView extends FileView {
 	 */
 	private jumpRangeToShowTask(taskStart: Date, taskEnd: Date): void {
 		if (!this.file) return;
-		const { start, end } = clampDateOrder(taskStart, taskEnd);
-		const n = Math.max(1, this.data.dayCount);
-		const span = daysBetweenInclusive(start, end) + 1;
-		let rs: Date;
-		if (span >= n) {
-			rs = new Date(start.getTime());
-		} else {
-			const pad = Math.floor((n - span) / 2);
-			rs = addDays(start, -pad);
-		}
-		this.data.rangeStart = formatYmd(rs);
+		this.data.rangeStart = computeJumpRangeStartYmd(
+			taskStart,
+			taskEnd,
+			this.data.dayCount
+		);
 		void this.persistAndRedraw();
 	}
-
-
-	/**
-	 * How many days to add/remove at the start vs end of the range for a zoom step `s`
-	 * (start = earlier boundary, end = later). Even `s`: equal halves. Odd `s`≥3: ⌊s/2⌋, ⌈s/2⌉.
-	 * `s === 1`: {1,0} vs {0,1} via `zoomSplitAlternate`.
-	 */
-	private pickZoomSideDeltas(s: number): [number, number] {
-		const lo = Math.floor(s / 2);
-		const hi = s - lo;
-		let startSide: number;
-		let endSide: number;
-		if (s === 1) {
-			startSide = hi;
-			endSide = lo;
-		} else {
-			startSide = lo;
-			endSide = hi;
-		}
-		if (this.zoomSplitAlternate) {
-			const t = startSide;
-			startSide = endSide;
-			endSide = t;
-		}
-		return [startSide, endSide];
-	}
-
 
 	/** Positive = more days visible (zoom out); negative = fewer days (zoom in). */
 	private applyZoomDayDelta(dayDelta: number): void {
@@ -534,14 +509,14 @@ export class TimelineView extends FileView {
 			const maxAdd = TIMELINE_VISIBLE_DAYS_MAX - this.data.dayCount;
 			if (maxAdd <= 0) return;
 			s = Math.min(s, maxAdd);
-			const [startSide, endSide] = this.pickZoomSideDeltas(s);
+			const [startSide] = pickZoomSideDeltas(s, this.zoomSplitAlternate);
 			this.data.rangeStart = formatYmd(addDays(rs, -startSide));
 			this.data.dayCount += s;
 		} else {
 			const maxRemove = this.data.dayCount - TIMELINE_VISIBLE_DAYS_MIN;
 			if (maxRemove <= 0) return;
 			s = Math.min(s, maxRemove);
-			const [startSide, endSide] = this.pickZoomSideDeltas(s);
+			const [startSide] = pickZoomSideDeltas(s, this.zoomSplitAlternate);
 			this.data.rangeStart = formatYmd(addDays(rs, startSide));
 			this.data.dayCount -= s;
 		}
@@ -582,7 +557,7 @@ export class TimelineView extends FileView {
 		const now = Date.now();
 		if (
 			now - this.lastWheelZoomAt <
-			TimelineView.WHEEL_ZOOM_MIN_INTERVAL_MS
+			TIMELINE_WHEEL_ZOOM_MIN_INTERVAL_MS
 		) {
 			ev.preventDefault();
 			return;
@@ -597,26 +572,6 @@ export class TimelineView extends FileView {
 	/** Call when planner data was reloaded from disk so the grid updates. */
 	refresh(): void {
 		this.redraw();
-	}
-
-	private clampVisibleDayCount(n: number): number {
-		return Math.min(
-			TIMELINE_VISIBLE_DAYS_MAX,
-			Math.max(TIMELINE_VISIBLE_DAYS_MIN, Math.round(n))
-		);
-	}
-
-	/** Width available for day columns inside the scrollport (excludes label column + padding). */
-	private getAvailableDayTrackWidthPx(): number {
-		if (!this.scrollEl) return 0;
-		const el = this.scrollEl;
-		const cs = getComputedStyle(el);
-		const pl = parseFloat(cs.paddingLeft) || 0;
-		const pr = parseFloat(cs.paddingRight) || 0;
-		return Math.max(
-			0,
-			el.clientWidth - pl - pr - TIMELINE_LABEL_COLUMN_PX
-		);
 	}
 
 	/** One full redraw per frame max while horizontally panning (range changes). */
@@ -645,40 +600,7 @@ export class TimelineView extends FileView {
 	 */
 	private computeReorderTargetIndex(clientY: number): number {
 		if (!this.bodyEl) return 0;
-		const rows = this.bodyEl.querySelectorAll(".timeline-task-row");
-		if (rows.length === 0) return 0;
-		if (rows.length === 1) return 0;
-
-		const rects: DOMRect[] = [];
-		for (let i = 0; i < rows.length; i++) {
-			rects.push(rows[i].getBoundingClientRect());
-		}
-
-		for (let i = 0; i < rects.length; i++) {
-			const r = rects[i];
-			const last = i === rects.length - 1;
-			if (
-				clientY >= r.top &&
-				(last ? clientY <= r.bottom : clientY < r.bottom)
-			) {
-				return i;
-			}
-		}
-
-		if (clientY < rects[0].top) return 0;
-		if (clientY > rects[rects.length - 1].bottom) {
-			return rects.length - 1;
-		}
-
-		for (let i = 0; i < rects.length - 1; i++) {
-			const a = rects[i];
-			const b = rects[i + 1];
-			if (clientY > a.bottom && clientY < b.top) {
-				return clientY < (a.bottom + b.top) / 2 ? i : i + 1;
-			}
-		}
-
-		return rects.length - 1;
+		return computeReorderDropIndex(this.bodyEl, clientY);
 	}
 
 	/** Remove `html` cursor override (call on mouseup / view close). */
@@ -858,11 +780,9 @@ export class TimelineView extends FileView {
 		}
 		this.taskBarStackObservers.length = 0;
 
-		this.data.dayCount = this.clampVisibleDayCount(this.data.dayCount);
+		this.data.dayCount = clampVisibleDayCount(this.data.dayCount);
 
-		this.mainWrapEl
-			?.querySelectorAll(".timeline-planner-today-line")
-			.forEach((el) => el.remove());
+		this.mainWrapEl && removeTodayLineElements(this.mainWrapEl);
 
 		this.headerRowEl.empty();
 		this.bodyEl.empty();
@@ -878,7 +798,7 @@ export class TimelineView extends FileView {
 		}
 
 		const rs = parseYmd(this.data.rangeStart);
-		const avail = this.getAvailableDayTrackWidthPx();
+		const avail = getAvailableDayTrackWidthPx(this.scrollEl);
 		const dayW =
 			avail > 0
 				? avail / this.data.dayCount
@@ -894,31 +814,7 @@ export class TimelineView extends FileView {
 			`${this.data.dayCount * dayW}px`
 		);
 
-		const grid = this.headerRowEl;
-		grid.style.gridTemplateColumns = `${TIMELINE_LABEL_COLUMN_PX}px repeat(${this.data.dayCount}, ${dayW}px)`;
-
-		grid.createDiv({ cls: "timeline-planner-dayhead-spacer" });
-
-		for (let i = 0; i < this.data.dayCount; i++) {
-			const d = addDays(rs, i);
-			const w = d.getDay();
-
-			const head = grid.createDiv({
-				cls: "timeline-planner-dayhead",
-				text: `${d.getDate()}`,
-			});
-
-			if (w === 0 || w === 6) {
-				head.addClass("is-weekend");
-			}
-			
-			if (formatYmd(d) === todayYmd()) {
-				head.addClass("is-today");
-			}
-			
-			head.setAttr("title", "");
-			head.setAttr("aria-label", formatYmd(d));
-		}
+		renderDayHeaderRow(this.headerRowEl, rs, this.data.dayCount, dayW);
 
 		if (this.data.tasks.length === 0) {
 			this.bodyEl.createDiv({
@@ -926,31 +822,15 @@ export class TimelineView extends FileView {
 				text: DisplayedTexts.timeline.emptyNoTasks,
 			});
 		} else {
+			const rowCtx = this.buildTaskRowContext();
 			for (const task of this.data.tasks) {
-				this.renderTaskRow(task, rs, dayW);
+				renderTimelineTaskRow(rowCtx, task, rs, dayW);
 			}
 		}
 
-		this.placeTodayLine(rs, dayW);
-	}
-
-	/** Vertical marker for “now” when today lies in the visible range; x = time within the day. */
-	private placeTodayLine(rangeStart: Date, dayW: number): void {
-		if (!this.mainWrapEl) {
-			return;
+		if (this.mainWrapEl) {
+			placeTodayLine(this.mainWrapEl, rs, this.data.dayCount, dayW);
 		}
-
-		const today = parseYmd(todayYmd());
-		const idx = daysBetweenInclusive(rangeStart, today);
-		if (idx < 0 || idx >= this.data.dayCount) {
-			return;
-		}
-
-		const labelCol = TIMELINE_LABEL_COLUMN_PX;
-		const t = fractionOfLocalDayElapsed();
-		const leftPx = labelCol + idx * dayW + t * dayW;
-		const line = this.mainWrapEl.createDiv({ cls: "timeline-planner-today-line" });
-		line.style.left = `${leftPx}px`;
 	}
 
 	/** Recompute cursor x from clock (no full redraw). */
@@ -961,316 +841,77 @@ export class TimelineView extends FileView {
 
 		const rs = parseYmd(this.data.rangeStart);
 		const dayW = this.data.pixelsPerDay;
-		this.mainWrapEl
-			.querySelectorAll(".timeline-planner-today-line")
-			.forEach((el) => el.remove());
-		this.placeTodayLine(rs, dayW);
+		removeTodayLineElements(this.mainWrapEl);
+		placeTodayLine(this.mainWrapEl, rs, this.data.dayCount, dayW);
 	}
 
-	private renderTaskRow(task: TimelineTask, rangeStart: Date, dayW: number): void {
-		const element_row = this.bodyEl.createDiv({ cls: "timeline-task-row" });
-
-		const element_label = element_row.createDiv({ cls: "timeline-task-row-label" });
-		if(element_label){
-			const element_handle = element_label.createDiv({
-				cls: "timeline-task-row-movehandle",
-				text: DisplayedTexts.timeline.reorderHandleGlyph,
-			});
-			if(element_handle){
-				element_handle.setAttr("title", "");
-				element_handle.setAttr("aria-label", DisplayedTexts.timeline.reorderTitle);
-				element_handle.addEventListener("mousedown", (ev) => {
-					if (ev.button !== 0) return;
-					ev.preventDefault();
-					ev.stopPropagation();
-					this.selectedTaskIds.clear();
-					this.dragState = { mode: "reorder", taskId: task.id };
-					this.syncDocumentCursorFromInteractionState();
-				});
-			}
-		}
-
-		const { emoji: titleEmoji, core: titleCore } = this.taskLabelParts(task);
-		const task_title_label = titleCore || DisplayedTexts.timeline.untitledTaskLabel;
-
-		const element_labelMain = element_label.createDiv({ cls: "timeline-task-row-info-panel" });
-		const element_titleEl = element_labelMain.createDiv({
-			cls: "timeline-task-row-info-panel-title",
-		});
-		if (titleEmoji) {
-			element_titleEl.createSpan({
-				cls: "timeline-task-row-title-emoji",
-				text: titleEmoji,
-			});
-		}
-		element_titleEl.createSpan({
-			cls: "timeline-task-row-title-text",
-			text: task_title_label,
-		});
-		element_titleEl.addEventListener("click", (e) => {
-			e.preventDefault();
-			this.openEditModal(task);
-		});
-
-		const element_meta = element_labelMain.createDiv({ cls: "timeline-task-row-info-panel-meta" });
-		element_meta.setText(`${task.start} → ${task.end}`);
-
-		const element_actions = element_labelMain.createDiv({ cls: "timeline-task-row-info-panel-actions" });
-		if(element_actions){
-			const delBtn = element_actions.createEl("button", {
-				text: DisplayedTexts.timeline.deleteTaskSymbol,
-			});
-			delBtn.addEventListener("click", () => this.deleteTask(task.id));
-		}
-
-		const element_track = element_row.createDiv({ cls: "timeline-task-row-track" });
-		if(element_track){
-			element_track.style.minWidth = `${this.data.dayCount * dayW}px`;
-			this.bindMarqueeOnTrack(element_track);
-			const { start, end } = clampDateOrder(parseYmd(task.start), parseYmd(task.end));
-
-			const rangeEnd = addDays(rangeStart, this.data.dayCount - 1);
-			if (end < rangeStart || start > rangeEnd) {
-				const pastLeft = end < rangeStart;
-				const jumpOverlay = element_row.createDiv({
-					cls:
-						"timeline-planner-outside-range-overlay timeline-planner-outside-range " +
-						(pastLeft
-							? "timeline-planner-outside-range--past-left"
-							: "timeline-planner-outside-range--past-right"),
-				});
-				const outsideStrip = jumpOverlay.createDiv({
-					cls: "timeline-planner-outside-range-inner",
-				});
-
-				const onJumpMouseDown = (ev: MouseEvent): void => {
-					ev.preventDefault();
-					ev.stopPropagation();
-				};
-				const onJumpClick = (ev: MouseEvent): void => {
-					ev.preventDefault();
-					ev.stopPropagation();
-					this.jumpRangeToShowTask(start, end);
-				};
-
-				const element_leftArrow = outsideStrip.createEl("button", {
-					type: "button",
-					cls: "timeline-planner-outside-range-arrow timeline-planner-outside-range-arrow--left",
-					text: "◀",
-				});
-				if (pastLeft) {
-					const tip = DisplayedTexts.timeline.outsideRangeArrowTitleLeft(
-						formatYmd(rangeStart)
-					);
-					element_leftArrow.setAttr("title", "");
-					element_leftArrow.setAttr("aria-label", tip);
-					element_leftArrow.addEventListener("mousedown", onJumpMouseDown);
-					element_leftArrow.addEventListener("click", onJumpClick);
+	private buildTaskRowContext(): TaskRowRenderContext {
+		return {
+			dayCount: this.data.dayCount,
+			bodyEl: this.bodyEl,
+			selectedTaskIds: this.selectedTaskIds,
+			getTaskStates: () => this.api.getTaskStates(),
+			getDefaultTaskBarColor: () => this.api.getDefaultTaskBarColor(),
+			getTaskBarStackLayoutBreakpointPx: () =>
+				this.api.getTaskBarStackLayoutBreakpointPx(),
+			taskBarStackObservers: this.taskBarStackObservers,
+			bindMarqueeOnTrack: (track) => this.bindMarqueeOnTrack(track),
+			beginReorder: (taskId) => {
+				this.selectedTaskIds.clear();
+				this.dragState = { mode: "reorder", taskId };
+				this.syncDocumentCursorFromInteractionState();
+			},
+			jumpRangeToShowTask: (start, end) =>
+				this.jumpRangeToShowTask(start, end),
+			deleteTask: (id) => this.deleteTask(id),
+			openEditModal: (task) => this.openEditModal(task),
+			redrawPreservingScroll: () => this.redrawPreservingScroll(),
+			toggleBarMultiSelect: (taskId) => {
+				if (this.selectedTaskIds.has(taskId)) {
+					this.selectedTaskIds.delete(taskId);
 				} else {
-					element_leftArrow.disabled = true;
-					element_leftArrow.setAttr("aria-hidden", "true");
-					element_leftArrow.addClass("is-inactive");
+					this.selectedTaskIds.add(taskId);
 				}
-
-				const element_center = outsideStrip.createDiv({
-					cls: "timeline-planner-outside-range-center",
-				});
-				if (element_center) {
-					const jumpBtn = element_center.createEl("button", {
-						type: "button",
-						cls: "timeline-planner-jump-task-btn",
-						text: DisplayedTexts.timeline.jumpToTaskButton,
-					});
-					jumpBtn.setAttr("title", "");
-					jumpBtn.setAttr("aria-label", DisplayedTexts.timeline.jumpToTaskTitle);
-					jumpBtn.addEventListener("mousedown", onJumpMouseDown);
-					jumpBtn.addEventListener("click", onJumpClick);
+				this.redrawPreservingScroll();
+			},
+			beginPendingBarDrag: (taskId, clientX, clientY, origStart, origEnd) => {
+				if (!this.selectedTaskIds.has(taskId)) {
+					this.selectedTaskIds.clear();
 				}
-
-				const element_rightArrow = outsideStrip.createEl("button", {
-					type: "button",
-					cls: "timeline-planner-outside-range-arrow timeline-planner-outside-range-arrow--right",
-					text: "▶",
-				});
-				if (element_rightArrow) {
-					if (!pastLeft) {
-						const tip = DisplayedTexts.timeline.outsideRangeArrowTitleRight(
-							formatYmd(rangeEnd)
-						);
-						element_rightArrow.setAttr("title", "");
-						element_rightArrow.setAttr("aria-label", tip);
-						element_rightArrow.addEventListener("mousedown", onJumpMouseDown);
-						element_rightArrow.addEventListener("click", onJumpClick);
-					} else {
-						element_rightArrow.disabled = true;
-						element_rightArrow.setAttr("aria-hidden", "true");
-						element_rightArrow.addClass("is-inactive");
-					}
-				}
-
-				return;
-			}
-
-			const visStart = start < rangeStart ? rangeStart : start;
-			const visEnd = end > rangeEnd ? rangeEnd : end;
-
-			const i0 = daysBetweenInclusive(rangeStart, visStart);
-			const span = daysBetweenInclusive(visStart, visEnd) + 1;
-
-			const element_task_bar = element_track.createDiv({
-				cls: "timeline-task-row-task-bar" + (this.selectedTaskIds.has(task.id) ? " is-selected" : ""),
-			});
-			if(element_task_bar){
-				element_task_bar.dataset.taskId = task.id;
-				element_task_bar.style.left = `${i0 * dayW}px`;
-				element_task_bar.style.width = `${span * dayW - 4}px`;
-				element_task_bar.setAttr("title", DisplayedTexts.timeline.barTitle);
-
-				const element_labelRow = element_task_bar.createDiv({
-					cls: "timeline-task-row-task-bar-labelrow",
-				});
-				if(element_labelRow){
-					if (titleEmoji) {
-						element_labelRow.createSpan({
-							cls: "timeline-task-row-task-bar-emoji",
-							text: titleEmoji,
-						});
-					}
-					element_labelRow.createDiv({
-						cls: "timeline-task-row-task-bar-text",
-						text: task_title_label,
-					});
-				}
-				
-		
-				const taskStates: TaskStateDefinition[] = this.api.getTaskStates();
-				const resolvedStateId =
-					task.stateId?.trim()
-					&& taskStates.some((s) => s.id === task.stateId!.trim())
-						? task.stateId!.trim()
-						: "";
-				const curState = taskStates.find((s) => s.id === resolvedStateId);
-
-
-				const stateBtn = element_task_bar.createEl("button", {
-					type: "button",
-					cls: "timeline-task-row-task-bar-state-select",
-					attr: {
-						"aria-label": DisplayedTexts.timeline.taskStateSelectTitle,
-						"aria-haspopup": "menu",
-					},
-					text: curState?.name ?? DisplayedTexts.taskModal.taskStateNone,
-				});
-
-				if(stateBtn){
-					this.styleTaskStateSelect(stateBtn, curState?.color ?? null);
-					stateBtn.addEventListener("mousedown", (ev) => {
-						ev.stopPropagation();
-					});
-
-					stateBtn.addEventListener("click", (ev) => {
-						this.sateButtonPressCallback(ev, task, taskStates, stateBtn);
-					});
-				}
-		
-				this.applyTaskBarColor(element_task_bar, task);
-				this.bindTaskBarStackLayout(element_task_bar);
-				element_task_bar.addEventListener("dblclick", (ev) => {
-					ev.preventDefault();
-					ev.stopPropagation();
-					this.openEditModal(task);
-				});
-		
-				const hL = element_task_bar.createDiv({
-					cls: "timeline-task-row-task-bar-handle timeline-task-row-task-bar-handle-left",
-				});
-				const hR = element_task_bar.createDiv({
-					cls: "timeline-task-row-task-bar-handle timeline-task-row-task-bar-handle-right",
-				});
-		
-				element_task_bar.addEventListener("mousedown", (ev) => {
-					if (ev.button !== 0 || ev.target === hL || ev.target === hR) {
-						return;
-					}
-
-					if ((ev.target as HTMLElement).closest(".timeline-task-row-task-bar-state-select"))
-					{
-						return;
-					}
-
-					if (ev.ctrlKey || ev.metaKey) {
-						ev.preventDefault();
-						ev.stopPropagation();
-
-						if (this.selectedTaskIds.has(task.id)) {
-							this.selectedTaskIds.delete(task.id);
-						} else {
-							this.selectedTaskIds.add(task.id);
-						}
-
-						this.redrawPreservingScroll();
-
-						return;
-					}
-
-					ev.preventDefault();
-					
-					if (!this.selectedTaskIds.has(task.id)) {
-						this.selectedTaskIds.clear();
-					}
-
-					this.dragState = {
-						mode: "pending-bar",
-						taskId: task.id,
-						startX: ev.clientX,
-						startY: ev.clientY,
-						origStart: new Date(start),
-						origEnd: new Date(end),
-					};
-
-					this.syncDocumentCursorFromInteractionState();
-				});
-
-
-				hL.addEventListener("mousedown", (ev) => {
-					if (ev.button !== 0) {
-						return;
-					}
-
-					ev.preventDefault();
-					ev.stopPropagation();
-					
-					this.dragState = {
-						mode: "resize-left",
-						taskId: task.id,
-						startX: ev.clientX,
-						origStart: new Date(start),
-						origEnd: new Date(end),
-					};
-					
-					this.syncDocumentCursorFromInteractionState();
-				});
-		
-				hR.addEventListener("mousedown", (ev) => {
-					if (ev.button !== 0) {
-						return;
-					}
-
-					ev.preventDefault();
-					ev.stopPropagation();
-					
-					this.dragState = {
-						mode: "resize-right",
-						taskId: task.id,
-						startX: ev.clientX,
-						origStart: new Date(start),
-						origEnd: new Date(end),
-					};
-
-					this.syncDocumentCursorFromInteractionState();
-				});
-			}
-		}
+				this.dragState = {
+					mode: "pending-bar",
+					taskId,
+					startX: clientX,
+					startY: clientY,
+					origStart,
+					origEnd,
+				};
+				this.syncDocumentCursorFromInteractionState();
+			},
+			beginResizeLeft: (taskId, clientX, origStart, origEnd) => {
+				this.dragState = {
+					mode: "resize-left",
+					taskId,
+					startX: clientX,
+					origStart,
+					origEnd,
+				};
+				this.syncDocumentCursorFromInteractionState();
+			},
+			beginResizeRight: (taskId, clientX, origStart, origEnd) => {
+				this.dragState = {
+					mode: "resize-right",
+					taskId,
+					startX: clientX,
+					origStart,
+					origEnd,
+				};
+				this.syncDocumentCursorFromInteractionState();
+			},
+			onStateButtonPress: (ev, task, taskStates, stateBtn) => {
+				this.stateButtonPressCallback(ev, task, taskStates, stateBtn);
+			},
+		};
 	}
 
 	private onGlobalMouseMove(ev: MouseEvent): void {
@@ -1282,7 +923,7 @@ export class TimelineView extends FileView {
 						ev.clientX - ms.startX,
 						ev.clientY - ms.startY
 					);
-					if (d < TimelineView.MARQUEE_DRAG_PX) {
+					if (d < TIMELINE_MARQUEE_DRAG_PX) {
 						ev.preventDefault();
 						return;
 					}
@@ -1337,7 +978,7 @@ export class TimelineView extends FileView {
 			if (st.mode === "pending-bar") {
 				const dx = ev.clientX - st.startX;
 				const dy = ev.clientY - st.startY;
-				if (Math.hypot(dx, dy) < TimelineView.PENDING_BAR_DRAG_PX) {
+				if (Math.hypot(dx, dy) < TIMELINE_PENDING_BAR_DRAG_PX) {
 					ev.preventDefault();
 					return;
 				}
@@ -1595,68 +1236,12 @@ export class TimelineView extends FileView {
 		).open();
 	}
 
-	/** Notes tag + title (no emoji); emoji is separate for layout. */
-	private taskLabelParts(task: TimelineTask): { emoji: string; core: string } {
-		const notesTag = task.text.length > 0 && task.title.length > 0 ? `${DisplayedTexts.timeline.taskExisitngNoteIndication} ` : "";
-		const core = notesTag + task.title;
-		const emoji = task.emoji?.trim() ? firstGrapheme(task.emoji) : "";
-		return { emoji, core };
-	}
-
-	/**
-	 * Narrow bars: stack title + state (class mirrors CSS). Uses ResizeObserver
-	 * because `@container` is unreliable in Obsidian’s embedded Chromium.
-	 */
-	private bindTaskBarStackLayout(element_task_bar: HTMLElement): void {
-		const apply = (): void => {
-			const w = element_task_bar.offsetWidth;
-			const thresholdPx = this.api.getTaskBarStackLayoutBreakpointPx();
-			element_task_bar.toggleClass(
-				"timeline-task-row-task-bar--stacked",
-				w > 0 && w < thresholdPx
-			);
-		};
-		apply();
-		requestAnimationFrame(apply);
-		const ro = new ResizeObserver(apply);
-		ro.observe(element_task_bar);
-		this.taskBarStackObservers.push(ro);
-	}
-
-	/**
-	 * Filled state: full pill uses state color; hover/focus/active kept identical so
-	 * opening the native menu does not flash theme “unhovered” chrome.
-	 */
-	private styleTaskStateSelect(el: HTMLElement, fillHex: string | null): void {
-		el.removeClass("timeline-task-row-task-bar-state-select--filled");
-		
-		if (!fillHex?.trim()) {
-			el.style.removeProperty("--tp-state-fill");
-			return;
-		}
-		
-		el.style.setProperty("--tp-state-fill", fillHex.trim());
-		el.addClass("timeline-task-row-task-bar-state-select--filled");
-	}
-
-	/** Uses theme bar CSS when both task and plugin default are empty. */
-	private applyTaskBarColor(element_task_bar: HTMLElement, task: TimelineTask): void {
-		const fallback = this.api.getDefaultTaskBarColor().trim();
-		const rawColor = (task.color?.trim() || fallback) || "";
-		const useCustom = rawColor.length > 0;
-		
-		element_task_bar.classList.toggle("timeline-task-row-task-bar--custom", useCustom);
-
-		if (useCustom) {
-			element_task_bar.style.background = barAccentLikeGradient(rawColor);
-			element_task_bar.style.borderColor = `color-mix(in srgb, ${rawColor} 55%, black)`;
-		} else {
-			element_task_bar.style.removeProperty("background");
-			element_task_bar.style.removeProperty("border-color");
-		}
-	}
-
-	private sateButtonPressCallback(ev: MouseEvent, task: TimelineTask, taskStates: TaskStateDefinition[], stateBtn: HTMLElement){
+	private stateButtonPressCallback(
+		ev: MouseEvent,
+		task: TimelineTask,
+		taskStates: TaskStateDefinition[],
+		stateBtn: HTMLElement
+	) {
 		ev.stopPropagation();
 
 		if (
@@ -1692,7 +1277,7 @@ export class TimelineView extends FileView {
 				if (had) {
 					delete task.stateId;
 					stateBtn.textContent = DisplayedTexts.taskModal.taskStateNone;
-					this.styleTaskStateSelect(stateBtn, null);
+					styleTaskStateSelect(stateBtn, null);
 					void this.persistAndRedraw();
 				}
 			});
@@ -1708,7 +1293,7 @@ export class TimelineView extends FileView {
 					}
 					task.stateId = s.id;
 					stateBtn.textContent = s.name;
-					this.styleTaskStateSelect(stateBtn, s.color);
+					styleTaskStateSelect(stateBtn, s.color);
 					void this.persistAndRedraw();
 				});
 			});

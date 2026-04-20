@@ -8,7 +8,7 @@ import {
 import { TIMELINE_VIEW_TYPE, ZLY_TIMELINE_EXTENSION } from "../constants";
 import { DisplayedTexts } from "../DisplayedTexts";
 import { EmojiPickerSettingsModal } from "../emoji/EmojiPickerSettingsModal";
-import { TimelineView } from "../TimelineView";
+import { TimelineView } from "../timeline/TimelineView";
 import { clampTimelineZoomDayStep } from "./settingsSetup";
 import type { TimelinePlannerPluginLike } from "./timelinePluginLike";
 import { TaskStatesSettingsModal } from "./TaskStatesSettingsModal";

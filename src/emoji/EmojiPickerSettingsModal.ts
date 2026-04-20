@@ -2,7 +2,7 @@ import { App, Modal } from "obsidian";
 import { TIMELINE_VIEW_TYPE } from "../constants";
 import { DisplayedTexts } from "../DisplayedTexts";
 import type { TimelinePlannerPluginLike } from "../settings/timelinePluginLike";
-import { TimelineView } from "../TimelineView";
+import { TimelineView } from "../timeline/TimelineView";
 import { renderEmojiPickerSettings } from "./emojiPickerSettingsUi";
 
 export class EmojiPickerSettingsModal extends Modal {

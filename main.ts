@@ -10,12 +10,12 @@ import {
 	mergeLoadedTimelineSettings,
 } from "./src/settings/settingsSetup";
 import { TimelinePlannerSettingTab } from "./src/settings/settingsTab";
-import { TimelineView } from "./src/TimelineView";
+import { TimelineView } from "./src/timeline/TimelineView";
 import {
 	buildNewZlyTimelineFileContent,
 	ensureParentFolders,
 	writeTimelineZlyFile,
-} from "./src/timelineStorage";
+} from "./src/timeline/TimelineStorage";
 
 export default class TimelinePlannerPlugin extends Plugin {
 	private saveIgnorePaths = new Set<string>();
