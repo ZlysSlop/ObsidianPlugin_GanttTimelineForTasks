@@ -4,18 +4,14 @@ import {
 	armColorPickerGate,
 	isHex6,
 	PICKER_PLACEHOLDER_HEX,
-} from "./colorUi";
-import { TIMELINE_VIEW_TYPE, ZLY_TIMELINE_EXTENSION } from "./constants";
-import { DisplayedTexts } from "./DisplayedTexts";
-import { EmojiPickerSettingsModal } from "./EmojiPickerSettingsModal";
-import { TaskStatesSettingsModal } from "./TaskStatesSettingsModal";
-import type {
-	TaskStateDefinition,
-	TimelinePlannerSettings,
-} from "./settingsData";
+} from "../colorUi";
+import { TIMELINE_VIEW_TYPE, ZLY_TIMELINE_EXTENSION } from "../constants";
+import { DisplayedTexts } from "../DisplayedTexts";
+import { EmojiPickerSettingsModal } from "../emoji/EmojiPickerSettingsModal";
+import { TimelineView } from "../TimelineView";
 import { clampTimelineZoomDayStep } from "./settingsSetup";
-import type { TimelinePlannerPluginLike } from "./emojiPickerSettingsUi";
-import { TimelineView } from "./TimelineView";
+import type { TimelinePlannerPluginLike } from "./timelinePluginLike";
+import { TaskStatesSettingsModal } from "./TaskStatesSettingsModal";
 
 export class TimelinePlannerSettingTab extends PluginSettingTab {
 	plugin: TimelinePlannerPluginLike;

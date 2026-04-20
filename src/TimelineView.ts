@@ -16,10 +16,10 @@ import {
 	todayYmd,
 } from "./dateUtils";
 import { barAccentLikeGradient } from "./colorUi";
-import { firstGrapheme } from "./emojiUtils";
+import type { EmojiPickerCategoryForModal } from "./emoji/emojiPickerRuntime";
+import { firstGrapheme } from "./emoji/emojiUtils";
 import { TaskEditModal } from "./TaskEditModal";
-import type { EmojiPickerCategoryForModal } from "./emojiPickerRuntime";
-import type { TaskStateDefinition } from "./settingsData";
+import type { TaskStateDefinition } from "./settings/settingsData";
 import type { TimelinePlannerData, TimelineTask } from "./types";
 import { DisplayedTexts } from "./DisplayedTexts";
 import {
@@ -90,18 +90,18 @@ export class TimelineView extends FileView {
 	private marqueeState:
 		| null
 		| {
-				phase: "pending";
-				startX: number;
-				startY: number;
-				additive: boolean;
+			phase: "pending";
+			startX: number;
+			startY: number;
+			additive: boolean;
 		  }
 		| {
-				phase: "dragging";
-				startX: number;
-				startY: number;
-				curX: number;
-				curY: number;
-				additive: boolean;
+			phase: "dragging";
+			startX: number;
+			startY: number;
+			curX: number;
+			curY: number;
+			additive: boolean;
 		  } = null;
 	private marqueeOverlayEl: HTMLElement | null = null;
 	/** Right-drag: vertical = scroll tasks; horizontal = shift visible day range. */
@@ -131,6 +131,7 @@ export class TimelineView extends FileView {
 	/** Cleared on each `redraw` so detached task bars don’t leak observers. */
 	private readonly taskBarStackObservers: ResizeObserver[] = [];
 
+
 	constructor(
 		leaf: WorkspaceLeaf,
 		api: {
@@ -148,29 +149,36 @@ export class TimelineView extends FileView {
 		this.navigation = true;
 	}
 
+
 	getViewType(): string {
 		return TIMELINE_VIEW_TYPE;
 	}
+
 
 	canAcceptExtension(extension: string): boolean {
 		return extension === ZLY_TIMELINE_EXTENSION;
 	}
 
+
 	getTimelineFile(): TFile | null {
 		return this.file;
 	}
+
 
 	ownsFilePath(path: string): boolean {
 		return this.file?.path === path;
 	}
 
+
 	getDisplayText(): string {
 		return this.file ? this.file.basename : DisplayedTexts.timeline.viewTitle;
 	}
 
+
 	getIcon(): string {
 		return "calendar-range";
 	}
+
 
 	private updateToolbarPath(): void {
 		if (!this.filePathLabelEl) return;
@@ -178,6 +186,7 @@ export class TimelineView extends FileView {
 			this.file?.path ?? DisplayedTexts.timeline.filePathPlaceholder
 		);
 	}
+
 
 	private async loadDataFromFile(file: TFile): Promise<void> {
 		const parsed = await readTimelineZlyFile(this.app, file);
@@ -192,6 +201,7 @@ export class TimelineView extends FileView {
 		}
 	}
 
+
 	async onLoadFile(file: TFile): Promise<void> {
 		await this.loadDataFromFile(file);
 		this.updateToolbarPath();
@@ -200,16 +210,19 @@ export class TimelineView extends FileView {
 		}
 	}
 
+
 	async onUnloadFile(_file: TFile): Promise<void> {
 		this.selectedTaskIds.clear();
 		this.endMarqueeGesture();
 	}
+
 
 	async reloadFromDisk(): Promise<void> {
 		if (!this.file) return;
 		await this.loadDataFromFile(this.file);
 		this.redraw();
 	}
+
 
 	async onOpen(): Promise<void> {
 		this.containerEl.empty();
@@ -219,80 +232,86 @@ export class TimelineView extends FileView {
 
 		const toolbar = this.rootEl.createDiv({ cls: "timeline-planner-toolbar" });
 		if(toolbar){
-			const titleRow = toolbar.createDiv({ cls: "timeline-planner-title-row" });
-			titleRow.createEl("span", { text: DisplayedTexts.timeline.toolbarHeading });
-			this.filePathLabelEl = titleRow.createEl("span", {
-				cls: "timeline-planner-file-label",
-			});
-			this.updateToolbarPath();
+			const element_text_titleRow = toolbar.createDiv({ cls: "timeline-planner-title-row" }); {
+				element_text_titleRow.createEl("span", { text: DisplayedTexts.timeline.toolbarHeading });
+				
+				this.filePathLabelEl = element_text_titleRow.createEl("span", {
+					cls: "timeline-planner-file-label",
+				});
+
+				this.updateToolbarPath();
+			}
 	
-			const addBtn = toolbar.createEl("button", {
+
+			const element_button_addTask = toolbar.createEl("button", {
 				text: DisplayedTexts.timeline.newTask,
 			});
-			addBtn.addEventListener("click", () => this.addTask());
+			element_button_addTask.addEventListener("click", () => this.addTask());
 	
-			const todayBtn = toolbar.createEl("button", {
+
+			const element_button_JumpToToday = toolbar.createEl("button", {
 				text: DisplayedTexts.timeline.jumpToToday,
 			});
-			todayBtn.addEventListener("click", () => {
+			element_button_JumpToToday.addEventListener("click", () => {
 				const t = parseYmd(todayYmd());
 				this.data.rangeStart = formatYmd(addDays(t, -7));
 				this.persistAndRedraw();
 			});
 	
-			const backBtn = toolbar.createEl("button", { text: "◀" });
-			backBtn.setAttr("title", "");
-			backBtn.setAttr("aria-label", DisplayedTexts.timeline.navEarlierAria);
-			backBtn.addEventListener("click", () => {
-				this.data.rangeStart = formatYmd(
-					addDays(parseYmd(this.data.rangeStart), -14)
-				);
-				this.persistAndRedraw();
-			});
+
+			const element_button_shiftDaysbackToLeft = toolbar.createEl("button", { text: "◀" }); {
+				element_button_shiftDaysbackToLeft.setAttr("title", "");
+				element_button_shiftDaysbackToLeft.setAttr("aria-label", DisplayedTexts.timeline.navEarlierAria);
+				element_button_shiftDaysbackToLeft.addEventListener("click", () => {
+					this.data.rangeStart = formatYmd(
+						addDays(parseYmd(this.data.rangeStart), -14)
+					);
+					this.persistAndRedraw();
+				});
+			}
+			
 	
-			const fwdBtn = toolbar.createEl("button", { text: "▶" });
-			fwdBtn.setAttr("title", "");
-			fwdBtn.setAttr("aria-label", DisplayedTexts.timeline.navLaterAria);
-			fwdBtn.addEventListener("click", () => {
-				this.data.rangeStart = formatYmd(
-					addDays(parseYmd(this.data.rangeStart), 14)
-				);
-				this.persistAndRedraw();
-			});
+			const element_button_shiftDaysbackToRight = toolbar.createEl("button", { text: "▶" }); {
+				element_button_shiftDaysbackToRight.setAttr("title", "");
+				element_button_shiftDaysbackToRight.setAttr("aria-label", DisplayedTexts.timeline.navLaterAria);
+				element_button_shiftDaysbackToRight.addEventListener("click", () => {
+					this.data.rangeStart = formatYmd(
+						addDays(parseYmd(this.data.rangeStart), 14)
+					);
+					this.persistAndRedraw();
+				});
+			}
 	
+
 			toolbar.createDiv({ cls: "timeline-planner-spacer" });
 
-			const zoom = toolbar.createDiv({ cls: "timeline-planner-zoom" });
-			if(zoom){
-				zoom.setAttr("title", "");
-				zoom.setAttr("aria-label", DisplayedTexts.timeline.zoomTitle);
 
-				zoom.createSpan({
+			const element_zoom_group = toolbar.createDiv({ cls: "timeline-planner-zoom" }); {
+				element_zoom_group.setAttr("title", "");
+				element_zoom_group.setAttr("aria-label", DisplayedTexts.timeline.zoomTitle);
+
+				element_zoom_group.createSpan({
 					cls: "timeline-planner-zoom-label",
 					text: DisplayedTexts.timeline.zoomLabel,
 				});
 
-				const minus = zoom.createEl("button", { text: "−" });
-				minus.setAttr("title", "");
-				minus.setAttr("aria-label", DisplayedTexts.timeline.zoomOutAria);
-				minus.addEventListener("click", () => {
+				const element_button_ZoomDecrement = element_zoom_group.createEl("button", { text: "−" });
+				element_button_ZoomDecrement.setAttr("title", "");
+				element_button_ZoomDecrement.setAttr("aria-label", DisplayedTexts.timeline.zoomOutAria);
+				element_button_ZoomDecrement.addEventListener("click", () => {
 					this.applyZoomDayDelta(this.api.getTimelineZoomDayStep());
 				});
 
-				const plus = zoom.createEl("button", { text: "+" });
-				plus.setAttr("title", "");
-				plus.setAttr("aria-label", DisplayedTexts.timeline.zoomInAria);
-				plus.addEventListener("click", () => {
+				const element_button_ZoomIncrement = element_zoom_group.createEl("button", { text: "+" });
+				element_button_ZoomIncrement.setAttr("title", "");
+				element_button_ZoomIncrement.setAttr("aria-label", DisplayedTexts.timeline.zoomInAria);
+				element_button_ZoomIncrement.addEventListener("click", () => {
 					this.applyZoomDayDelta(-this.api.getTimelineZoomDayStep());
 				});
 			}
 			
 	
-			const selTools = toolbar.createDiv({
-				cls: "timeline-planner-selection-tools",
-			});
-
-			if(selTools){
+			const selTools = toolbar.createDiv({ cls: "timeline-planner-selection-tools" }); {
 				selTools.createSpan({
 					cls: "timeline-planner-selection-label",
 					text: DisplayedTexts.timeline.shiftSelectionLabel,
@@ -316,73 +335,82 @@ export class TimelineView extends FileView {
 			}
 		}
 
-		const scroll = this.rootEl.createDiv({ cls: "timeline-planner-scroll" });
-		this.scrollEl = scroll;
-		scroll.setAttr("title", DisplayedTexts.timeline.scrollRegionTitle);
-
-		this.registerDomEvent(scroll, "mousedown", (ev: MouseEvent) => {
-			if (ev.button !== 2) return;
-			if (!this.file || !this.scrollEl) return;
-
-			const t = ev.target as HTMLElement;
-			if (t.closest("button, a, input, textarea, select")) return;
-
-			ev.preventDefault();
-
-			const el = this.scrollEl;
-			this.panState = {
-				startX: ev.clientX,
-				startY: ev.clientY,
-				initialRangeStart: this.data.rangeStart,
-				initialScrollTop: el.scrollTop,
-			};
-			
-			el.classList.add("timeline-planner-scroll--panning");
-			
-			this.syncDocumentCursorFromInteractionState();
-		});
-		this.registerDomEvent(scroll, "contextmenu", (ev: MouseEvent) => {
-			if (this.panState) ev.preventDefault();
-		});
-
-		this.mainWrapEl = scroll.createDiv({ cls: "timeline-planner-main" });
-		this.headerRowEl = this.mainWrapEl.createDiv({
-			cls: "timeline-planner-grid",
-		});
-		this.bodyEl = this.mainWrapEl.createDiv({ cls: "timeline-planner-rows" });
-
-		this.resizeObserver = new ResizeObserver(() => {
-			const prevDayCount = this.data.dayCount;
-			const prevPpd = this.data.pixelsPerDay;
-			this.redrawPreservingScroll();
-			if (
-				this.file &&
-				(this.data.dayCount !== prevDayCount ||
-					Math.abs(this.data.pixelsPerDay - prevPpd) > 0.01)
-			) {
-				if (this.resizePersistTimer !== null) {
-					window.clearTimeout(this.resizePersistTimer);
+		const scroll = this.rootEl.createDiv({ cls: "timeline-planner-scroll" }); {
+			this.scrollEl = scroll;
+			scroll.setAttr("title", DisplayedTexts.timeline.scrollRegionTitle);
+	
+			this.registerDomEvent(scroll, "mousedown", (ev: MouseEvent) => {
+				if (ev.button !== 2) return;
+				if (!this.file || !this.scrollEl) return;
+	
+				const t = ev.target as HTMLElement;
+				if (t.closest("button, a, input, textarea, select")) return;
+	
+				ev.preventDefault();
+	
+				const el = this.scrollEl;
+				this.panState = {
+					startX: ev.clientX,
+					startY: ev.clientY,
+					initialRangeStart: this.data.rangeStart,
+					initialScrollTop: el.scrollTop,
+				};
+				
+				el.classList.add("timeline-planner-scroll--panning");
+				
+				this.syncDocumentCursorFromInteractionState();
+			});
+			this.registerDomEvent(scroll, "contextmenu", (ev: MouseEvent) => {
+				if (this.panState) ev.preventDefault();
+			});
+	
+			this.mainWrapEl = scroll.createDiv({ cls: "timeline-planner-main" });
+			this.headerRowEl = this.mainWrapEl.createDiv({
+				cls: "timeline-planner-grid",
+			});
+			this.bodyEl = this.mainWrapEl.createDiv({ cls: "timeline-planner-rows" });
+	
+			this.resizeObserver = new ResizeObserver(() => {
+				const prevDayCount = this.data.dayCount;
+				const prevPpd = this.data.pixelsPerDay;
+				this.redrawPreservingScroll();
+				if (
+					this.file &&
+					(this.data.dayCount !== prevDayCount ||
+						Math.abs(this.data.pixelsPerDay - prevPpd) > 0.01)
+				) {
+					if (this.resizePersistTimer !== null) {
+						window.clearTimeout(this.resizePersistTimer);
+					}
+					this.resizePersistTimer = window.setTimeout(() => {
+						this.resizePersistTimer = null;
+						void this.api.persist(this);
+					}, 400);
 				}
-				this.resizePersistTimer = window.setTimeout(() => {
-					this.resizePersistTimer = null;
-					void this.api.persist(this);
-				}, 400);
-			}
-		});
-		this.resizeObserver.observe(scroll);
+			});
+			this.resizeObserver.observe(scroll);
+		}
+		
 
-		this.registerDomEvent(window, "mousemove", (ev: MouseEvent) =>
-			this.onGlobalMouseMove(ev)
+		this.registerDomEvent(window, "mousemove",
+			(ev: MouseEvent) => this.onGlobalMouseMove(ev)
 		);
 		this.registerDomEvent(window, "mouseup", () => this.onGlobalMouseUp());
 		this.registerDomEvent(window, "keydown", (ev: KeyboardEvent) => {
-			if (ev.key !== "Escape") return;
+			if (ev.key !== "Escape") {
+				return;
+			}
+
 			if (this.marqueeState) {
 				ev.preventDefault();
 				this.endMarqueeGesture();
 				return;
 			}
-			if (this.selectedTaskIds.size === 0) return;
+
+			if (this.selectedTaskIds.size === 0) {
+				return;
+			}
+
 			ev.preventDefault();
 			this.selectedTaskIds.clear();
 			this.redrawPreservingScroll();
@@ -413,6 +441,7 @@ export class TimelineView extends FileView {
 		this.redraw();
 	}
 
+
 	async onClose(): Promise<void> {
 		if (this.dragRedrawRafId !== null) {
 			cancelAnimationFrame(this.dragRedrawRafId);
@@ -436,11 +465,13 @@ export class TimelineView extends FileView {
 		this.containerEl.empty();
 	}
 
+
 	private async persistAndRedraw(): Promise<void> {
 		if (!this.file) return;
 		await this.api.persist(this);
 		this.redrawPreservingScroll();
 	}
+
 
 	/**
 	 * Moves `rangeStart` so the task interval is visible: centered when the task is
@@ -461,6 +492,7 @@ export class TimelineView extends FileView {
 		this.data.rangeStart = formatYmd(rs);
 		void this.persistAndRedraw();
 	}
+
 
 	/**
 	 * How many days to add/remove at the start vs end of the range for a zoom step `s`
@@ -486,6 +518,7 @@ export class TimelineView extends FileView {
 		}
 		return [startSide, endSide];
 	}
+
 
 	/** Positive = more days visible (zoom out); negative = fewer days (zoom in). */
 	private applyZoomDayDelta(dayDelta: number): void {
@@ -516,6 +549,7 @@ export class TimelineView extends FileView {
 		this.zoomSplitAlternate = !this.zoomSplitAlternate;
 		void this.persistAndRedraw();
 	}
+
 
 	private shiftSelectedTasksByDays(delta: number): void {
 		if (!this.file) {

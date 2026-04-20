@@ -3,10 +3,10 @@ import {
 	armColorPickerGate,
 	isHex6,
 	PICKER_PLACEHOLDER_HEX,
-} from "./colorUi";
-import { DisplayedTexts } from "./DisplayedTexts";
-import type { TimelinePlannerPluginLike } from "./emojiPickerSettingsUi";
+} from "../colorUi";
+import { DisplayedTexts } from "../DisplayedTexts";
 import type { TaskStateDefinition } from "./settingsData";
+import type { TimelinePlannerPluginLike } from "./timelinePluginLike";
 import { newTaskStateId } from "./taskStateId";
 
 export type TaskStatesSettingsUiContext = {

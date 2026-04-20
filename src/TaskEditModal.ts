@@ -5,9 +5,9 @@ import {
 	PICKER_PLACEHOLDER_HEX,
 } from "./colorUi";
 import { DisplayedTexts } from "./DisplayedTexts";
-import { EmojiSelectModal } from "./EmojiSelectModal";
-import type { EmojiPickerCategoryForModal } from "./emojiPickerRuntime";
-import type { TaskStateDefinition } from "./settingsData";
+import { EmojiSelectModal } from "./emoji/EmojiSelectModal";
+import type { EmojiPickerCategoryForModal } from "./emoji/emojiPickerRuntime";
+import type { TaskStateDefinition } from "./settings/settingsData";
 import type { TimelineTask } from "./types";
 
 export class TaskEditModal extends Modal {

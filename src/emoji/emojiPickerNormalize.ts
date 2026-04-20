@@ -1,5 +1,5 @@
+import type { EmojiPickerCategoryDefinition } from "../settings/settingsData";
 import { newEmojiCategoryId } from "./emojiCategoryId";
-import type { EmojiPickerCategoryDefinition } from "./settingsData";
 
 /** Ensures ids, trims strings, drops empty emoji rows (mutates). */
 export function normalizeEmojiPickerCategories(

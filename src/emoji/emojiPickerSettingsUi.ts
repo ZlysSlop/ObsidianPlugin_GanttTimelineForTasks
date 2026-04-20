@@ -1,13 +1,8 @@
-import { Plugin, Setting } from "obsidian";
-import { DisplayedTexts } from "./DisplayedTexts";
+import { Setting } from "obsidian";
+import { DisplayedTexts } from "../DisplayedTexts";
+import type { TimelinePlannerPluginLike } from "../settings/timelinePluginLike";
 import { getBuiltInEmojiPickerCategoryDefinitions } from "./emojiPickerData";
 import { newEmojiCategoryId } from "./emojiCategoryId";
-import type { TimelinePlannerSettings } from "./settingsData";
-
-export type TimelinePlannerPluginLike = Plugin & {
-	settings: TimelinePlannerSettings;
-	saveSettings(): Promise<void>;
-};
 
 export type EmojiPickerSettingsUiContext = {
 	plugin: TimelinePlannerPluginLike;

@@ -1,16 +1,16 @@
 import { Notice, Plugin, TFile, normalizePath } from "obsidian";
 import { TIMELINE_VIEW_TYPE, ZLY_TIMELINE_EXTENSION } from "./src/constants";
 import { DisplayedTexts } from "./src/DisplayedTexts";
-import type { TimelinePlannerSettings } from "./src/settingsData";
+import { getBuiltInEmojiPickerCategoryDefinitions } from "./src/emoji/emojiPickerData";
+import { definitionsToRuntimeCategories } from "./src/emoji/emojiPickerRuntime";
+import type { TimelinePlannerSettings } from "./src/settings/settingsData";
 import {
 	clampTaskBarStackBreakpointPx,
 	clampTimelineZoomDayStep,
 	mergeLoadedTimelineSettings,
-} from "./src/settingsSetup";
-import { TimelinePlannerSettingTab } from "./src/settingsTab";
+} from "./src/settings/settingsSetup";
+import { TimelinePlannerSettingTab } from "./src/settings/settingsTab";
 import { TimelineView } from "./src/TimelineView";
-import { getBuiltInEmojiPickerCategoryDefinitions } from "./src/emojiPickerData";
-import { definitionsToRuntimeCategories } from "./src/emojiPickerRuntime";
 import {
 	buildNewZlyTimelineFileContent,
 	ensureParentFolders,

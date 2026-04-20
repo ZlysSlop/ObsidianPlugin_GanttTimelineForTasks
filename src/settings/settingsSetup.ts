@@ -1,5 +1,5 @@
-import { getBuiltInEmojiPickerCategoryDefinitions } from "./emojiPickerData";
-import { normalizeEmojiPickerCategories } from "./emojiPickerNormalize";
+import { getBuiltInEmojiPickerCategoryDefinitions } from "../emoji/emojiPickerData";
+import { normalizeEmojiPickerCategories } from "../emoji/emojiPickerNormalize";
 import {
 	DEFAULT_TIMELINE_SETTINGS,
 	type TimelinePlannerSettings,

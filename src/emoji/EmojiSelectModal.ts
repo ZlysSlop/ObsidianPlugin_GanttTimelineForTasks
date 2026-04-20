@@ -1,5 +1,5 @@
 import { App, Modal } from "obsidian";
-import { DisplayedTexts } from "./DisplayedTexts";
+import { DisplayedTexts } from "../DisplayedTexts";
 import type { EmojiPickerCategoryForModal } from "./emojiPickerRuntime";
 
 export class EmojiSelectModal extends Modal {

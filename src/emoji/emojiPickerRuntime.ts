@@ -1,4 +1,4 @@
-import type { EmojiPickerCategoryDefinition } from "./settingsData";
+import type { EmojiPickerCategoryDefinition } from "../settings/settingsData";
 
 /** Shape consumed by `EmojiSelectModal` (search uses `tags`). */
 export type EmojiPickerCategoryForModal = {

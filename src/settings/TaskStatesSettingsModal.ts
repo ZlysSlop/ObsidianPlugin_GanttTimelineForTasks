@@ -1,9 +1,9 @@
 import { App, Modal } from "obsidian";
-import { TIMELINE_VIEW_TYPE } from "./constants";
-import { DisplayedTexts } from "./DisplayedTexts";
-import type { TimelinePlannerPluginLike } from "./emojiPickerSettingsUi";
+import { TIMELINE_VIEW_TYPE } from "../constants";
+import { DisplayedTexts } from "../DisplayedTexts";
+import { TimelineView } from "../TimelineView";
 import { renderTaskStatesSettings } from "./taskStatesSettingsUi";
-import { TimelineView } from "./TimelineView";
+import type { TimelinePlannerPluginLike } from "./timelinePluginLike";
 
 export class TaskStatesSettingsModal extends Modal {
 	constructor(

@@ -4,7 +4,7 @@
 	display: flex;
 	align-items: center;
 	gap: 10px;
-	padding: 10px 14px;
+	padding: 10px;
 	border-bottom: 1px solid var(--background-modifier-border);
 	flex-wrap: wrap;
 	background: linear-gradient(

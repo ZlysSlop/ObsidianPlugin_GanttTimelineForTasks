@@ -1,6 +1,6 @@
-import { DisplayedTexts } from "./DisplayedTexts";
-import defaultEmojiPickerJson from "../data/defaultEmojiPicker.json";
-import type { EmojiPickerCategoryDefinition } from "./settingsData";
+import { DisplayedTexts } from "../DisplayedTexts";
+import defaultEmojiPickerJson from "../../data/defaultEmojiPicker.json";
+import type { EmojiPickerCategoryDefinition } from "../settings/settingsData";
 
 type DefaultEmojiPickerFile = {
 	version: number;
