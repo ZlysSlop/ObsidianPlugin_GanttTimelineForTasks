@@ -56,7 +56,6 @@ export const EMOJI_PICKER_CATEGORIES: EmojiPickerCategory[] = [
 			I("😒", "unamused"),
 			I("🙄", "roll eyes"),
 			I("😬", "grimace awkward"),
-			I("😮‍💨", "exhale sigh relief"),
 			I("🤥", "lying pinocchio"),
 			I("😌", "relieved calm"),
 			I("😔", "pensive sad"),

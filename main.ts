@@ -1,17 +1,17 @@
 import { Notice, Plugin, TFile, normalizePath } from "obsidian";
-import { TIMELINE_VIEW_TYPE, ZLY_TIMELINE_EXTENSION } from "./constants";
-import { DisplayedTexts } from "./DisplayedTexts";
+import { TIMELINE_VIEW_TYPE, ZLY_TIMELINE_EXTENSION } from "./src/constants";
+import { DisplayedTexts } from "./src/DisplayedTexts";
 import {
 	DEFAULT_TIMELINE_SETTINGS,
 	type TimelinePlannerSettings,
-} from "./settingsData";
-import { TimelinePlannerSettingTab } from "./settingsTab";
-import { TimelineView } from "./TimelineView";
+} from "./src/settingsData";
+import { TimelinePlannerSettingTab } from "./src/settingsTab";
+import { TimelineView } from "./src/TimelineView";
 import {
 	buildNewZlyTimelineFileContent,
 	ensureParentFolders,
 	writeTimelineZlyFile,
-} from "./timelineStorage";
+} from "./src/timelineStorage";
 
 export default class TimelinePlannerPlugin extends Plugin {
 	private saveIgnorePaths = new Set<string>();
