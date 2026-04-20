@@ -1,12 +1,12 @@
-/* Scrollport + main content wrapper */
+/* Main area: scrollport + grid/rows/today-line root */
 
-.timeline-planner-scroll {
+.timeline-planner-main {
+	position: relative;
 	flex: 1;
 	min-width: 0;
 	min-height: 0;
 	overflow-x: hidden;
 	overflow-y: auto;
-	position: relative;
 	cursor: default;
 	/* Keep scrolling (wheel / touch / right-drag) but hide scrollbars. */
 	scrollbar-width: none;
@@ -14,19 +14,14 @@
 	/* Breathing room so the last day column isn’t flush against the pane edge. */
 	padding-block-end: 6px;
 	box-sizing: border-box;
+	background: var(--background-primary);
 }
 
-.timeline-planner-scroll::-webkit-scrollbar {
+.timeline-planner-main::-webkit-scrollbar {
 	display: none;
 }
 
-.timeline-planner-scroll.timeline-planner-scroll--panning {
+.timeline-planner-main.timeline-planner-main--panning {
 	cursor: default;
 	user-select: none;
-}
-
-.timeline-planner-main {
-	position: relative;
-	min-width: min-content;
-	background: var(--background-primary);
 }

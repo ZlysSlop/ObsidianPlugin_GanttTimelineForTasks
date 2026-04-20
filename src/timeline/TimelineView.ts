@@ -27,6 +27,7 @@ import {
 	removeTodayLineElements,
 	renderDayHeaderRow,
 } from "./timelineDayGrid";
+import { createTimelineToolbar } from "./TimelineToolbar";
 import {
 	clampVisibleDayCount,
 	getAvailableDayTrackWidthPx,
@@ -54,8 +55,7 @@ export class TimelineView extends FileView {
 
 	data: TimelinePlannerData;
 	private rootEl!: HTMLElement;
-	/** Scrollport for the grid + task rows (right-drag pans this element). */
-	private scrollEl: HTMLElement | null = null;
+	/** Scrollport + root for grid, rows, and today line (right-drag pans this element). */
 	private mainWrapEl: HTMLElement | null = null;
 	private headerRowEl!: HTMLElement;
 	private bodyEl!: HTMLElement;
@@ -227,156 +227,58 @@ export class TimelineView extends FileView {
 
 		this.rootEl = this.containerEl.createDiv({ cls: "timeline-planner-root" });
 
-		const toolbar = this.rootEl.createDiv({ cls: "timeline-toolbar" });
-		if(toolbar){
-			const element_toolbar_leftSpacer = toolbar.createDiv({ cls: "timeline-toolbar-left-spacer" }); {
-				const element_button_addTask = element_toolbar_leftSpacer.createEl("button", {
-					text: DisplayedTexts.timeline.newTask,
-				});
-				element_button_addTask.addEventListener("click", () => this.addTask());
-			}
-			
+		createTimelineToolbar(this.rootEl, this);
 
-			const element_ViewManagment_group = toolbar.createDiv({ cls: "timeline-toolbar-group" }); {
-				const element_button_JumpToToday = element_ViewManagment_group.createEl("button", {
-					text: DisplayedTexts.timeline.jumpToToday,
-				});
-				element_button_JumpToToday.addEventListener("click", () => {
-					const t = parseYmd(todayYmd());
-					this.data.rangeStart = formatYmd(addDays(t, -7));
-					this.persistAndRedraw();
-				});
-		
-	
-				const element_button_shiftDaysbackToLeft = element_ViewManagment_group.createEl("button", { text: "◀" }); {
-					element_button_shiftDaysbackToLeft.setAttr("title", "");
-					element_button_shiftDaysbackToLeft.setAttr("aria-label", DisplayedTexts.timeline.navEarlierAria);
-					element_button_shiftDaysbackToLeft.addEventListener("click", () => {
-						this.data.rangeStart = formatYmd(
-							addDays(parseYmd(this.data.rangeStart), -14)
-						);
-						this.persistAndRedraw();
-					});
+		this.mainWrapEl = this.rootEl.createDiv({ cls: "timeline-planner-main" });
+		this.registerDomEvent(this.mainWrapEl, "mousedown", (ev: MouseEvent) => {
+			if (ev.button !== 2) return;
+			if (!this.file || !this.mainWrapEl) return;
+
+			const t = ev.target as HTMLElement;
+			if (t.closest("button, a, input, textarea, select")) return;
+
+			ev.preventDefault();
+
+			const el = this.mainWrapEl;
+			this.panState = {
+				startX: ev.clientX,
+				startY: ev.clientY,
+				initialRangeStart: this.data.rangeStart,
+				initialScrollTop: el.scrollTop,
+			};
+
+			el.classList.add("timeline-planner-main--panning");
+
+			this.syncDocumentCursorFromInteractionState();
+		});
+		this.registerDomEvent(this.mainWrapEl, "contextmenu", (ev: MouseEvent) => {
+			if (this.panState) ev.preventDefault();
+		});
+
+		this.headerRowEl = this.mainWrapEl.createDiv({
+			cls: "timeline-planner-grid",
+		});
+		this.bodyEl = this.mainWrapEl.createDiv({ cls: "timeline-planner-rows" });
+
+		this.resizeObserver = new ResizeObserver(() => {
+			const prevDayCount = this.data.dayCount;
+			const prevPpd = this.data.pixelsPerDay;
+			this.redrawPreservingScroll();
+			if (
+				this.file &&
+				(this.data.dayCount !== prevDayCount ||
+					Math.abs(this.data.pixelsPerDay - prevPpd) > 0.01)
+			) {
+				if (this.resizePersistTimer !== null) {
+					window.clearTimeout(this.resizePersistTimer);
 				}
-				
-		
-				const element_button_shiftDaysbackToRight = element_ViewManagment_group.createEl("button", { text: "▶" }); {
-					element_button_shiftDaysbackToRight.setAttr("title", "");
-					element_button_shiftDaysbackToRight.setAttr("aria-label", DisplayedTexts.timeline.navLaterAria);
-					element_button_shiftDaysbackToRight.addEventListener("click", () => {
-						this.data.rangeStart = formatYmd(
-							addDays(parseYmd(this.data.rangeStart), 14)
-						);
-						this.persistAndRedraw();
-					});
-				}
+				this.resizePersistTimer = window.setTimeout(() => {
+					this.resizePersistTimer = null;
+					void this.api.persist(this);
+				}, 400);
 			}
-
-			toolbar.createDiv({ cls: "timeline-toolbar-spacer" });
-
-			const element_zoom_group = toolbar.createDiv({ cls: "timeline-toolbar-group" }); {
-				element_zoom_group.setAttr("title", "");
-				element_zoom_group.setAttr("aria-label", DisplayedTexts.timeline.zoomTitle);
-
-				element_zoom_group.createSpan({
-					cls: "timeline-toolbar-zoom-label",
-					text: DisplayedTexts.timeline.zoomLabel,
-				});
-
-				const element_button_ZoomDecrement = element_zoom_group.createEl("button", { text: "−" });
-				element_button_ZoomDecrement.setAttr("title", "");
-				element_button_ZoomDecrement.setAttr("aria-label", DisplayedTexts.timeline.zoomOutAria);
-				element_button_ZoomDecrement.addEventListener("click", () => {
-					this.applyZoomDayDelta(this.api.getTimelineZoomDayStep());
-				});
-
-				const element_button_ZoomIncrement = element_zoom_group.createEl("button", { text: "+" });
-				element_button_ZoomIncrement.setAttr("title", "");
-				element_button_ZoomIncrement.setAttr("aria-label", DisplayedTexts.timeline.zoomInAria);
-				element_button_ZoomIncrement.addEventListener("click", () => {
-					this.applyZoomDayDelta(-this.api.getTimelineZoomDayStep());
-				});
-			}
-			
-	
-			const selTools = toolbar.createDiv({ cls: "timeline-toolbar-group" }); {
-				selTools.createSpan({
-					cls: "timeline-toolbar-selection-label",
-					text: DisplayedTexts.timeline.shiftSelectionLabel,
-				});
-
-				const nudgeLeft = selTools.createEl("button", { text: "◀" });
-				nudgeLeft.setAttr("title", "");
-				nudgeLeft.setAttr(
-					"aria-label",
-					DisplayedTexts.timeline.nudgeEarlierTitle
-				);
-				nudgeLeft.addEventListener("click", () => this.shiftSelectedTasksByDays(-1));
-				
-				const nudgeRight = selTools.createEl("button", { text: "▶" });
-				nudgeRight.setAttr("title", "");
-				nudgeRight.setAttr(
-					"aria-label",
-					DisplayedTexts.timeline.nudgeLaterTitle
-				);
-				nudgeRight.addEventListener("click", () => this.shiftSelectedTasksByDays(1));
-			}
-		}
-
-		const scroll = this.rootEl.createDiv({ cls: "timeline-planner-scroll" }); {
-			this.scrollEl = scroll;
-			
-			this.registerDomEvent(scroll, "mousedown", (ev: MouseEvent) => {
-				if (ev.button !== 2) return;
-				if (!this.file || !this.scrollEl) return;
-	
-				const t = ev.target as HTMLElement;
-				if (t.closest("button, a, input, textarea, select")) return;
-	
-				ev.preventDefault();
-	
-				const el = this.scrollEl;
-				this.panState = {
-					startX: ev.clientX,
-					startY: ev.clientY,
-					initialRangeStart: this.data.rangeStart,
-					initialScrollTop: el.scrollTop,
-				};
-				
-				el.classList.add("timeline-planner-scroll--panning");
-				
-				this.syncDocumentCursorFromInteractionState();
-			});
-			this.registerDomEvent(scroll, "contextmenu", (ev: MouseEvent) => {
-				if (this.panState) ev.preventDefault();
-			});
-	
-			this.mainWrapEl = scroll.createDiv({ cls: "timeline-planner-main" });
-			this.headerRowEl = this.mainWrapEl.createDiv({
-				cls: "timeline-planner-grid",
-			});
-			this.bodyEl = this.mainWrapEl.createDiv({ cls: "timeline-planner-rows" });
-	
-			this.resizeObserver = new ResizeObserver(() => {
-				const prevDayCount = this.data.dayCount;
-				const prevPpd = this.data.pixelsPerDay;
-				this.redrawPreservingScroll();
-				if (
-					this.file &&
-					(this.data.dayCount !== prevDayCount ||
-						Math.abs(this.data.pixelsPerDay - prevPpd) > 0.01)
-				) {
-					if (this.resizePersistTimer !== null) {
-						window.clearTimeout(this.resizePersistTimer);
-					}
-					this.resizePersistTimer = window.setTimeout(() => {
-						this.resizePersistTimer = null;
-						void this.api.persist(this);
-					}, 400);
-				}
-			});
-			this.resizeObserver.observe(scroll);
-		}
+		});
+		this.resizeObserver.observe(this.mainWrapEl);
 		
 
 		this.registerDomEvent(window, "mousemove",
@@ -437,16 +339,41 @@ export class TimelineView extends FileView {
 		this.resizeObserver = null;
 		this.panState = null;
 		this.endMarqueeGesture();
-		this.scrollEl = null;
+		this.mainWrapEl = null;
 		this.clearDocumentCursorOverride();
 		this.containerEl.empty();
 	}
 
 
-	private async persistAndRedraw(): Promise<void> {
+	async persistAndRedraw(): Promise<void> {
 		if (!this.file) return;
 		await this.api.persist(this);
 		this.redrawPreservingScroll();
+	}
+
+	/** Toolbar — place today near the start of the visible range (same as legacy jump). */
+	toolbarJumpToToday(): void {
+		const t = parseYmd(todayYmd());
+		this.data.rangeStart = formatYmd(addDays(t, -7));
+		void this.persistAndRedraw();
+	}
+
+	/** Toolbar — shift `rangeStart` by `delta` calendar days (negative = earlier). */
+	toolbarShiftVisibleRangeByDays(delta: number): void {
+		this.data.rangeStart = formatYmd(
+			addDays(parseYmd(this.data.rangeStart), delta)
+		);
+		void this.persistAndRedraw();
+	}
+
+	/** Toolbar — zoom out by the configured day step. */
+	toolbarZoomOut(): void {
+		this.applyZoomDayDelta(this.api.getTimelineZoomDayStep());
+	}
+
+	/** Toolbar — zoom in by the configured day step. */
+	toolbarZoomIn(): void {
+		this.applyZoomDayDelta(-this.api.getTimelineZoomDayStep());
 	}
 
 
@@ -465,7 +392,7 @@ export class TimelineView extends FileView {
 	}
 
 	/** Positive = more days visible (zoom out); negative = fewer days (zoom in). */
-	private applyZoomDayDelta(dayDelta: number): void {
+	applyZoomDayDelta(dayDelta: number): void {
 		if (!this.file) return;
 		if (dayDelta === 0) return;
 		const zoomOut = dayDelta > 0;
@@ -495,7 +422,7 @@ export class TimelineView extends FileView {
 	}
 
 
-	private shiftSelectedTasksByDays(delta: number): void {
+	shiftSelectedTasksByDays(delta: number): void {
 		if (!this.file) {
 			new Notice(DisplayedTexts.timeline.noticeNoFile);
 			return;
@@ -519,7 +446,7 @@ export class TimelineView extends FileView {
 		void this.persistAndRedraw();
 	}
 
-	/** Ctrl+scroll (⌘+scroll on macOS) — same as the +/− zoom buttons. */
+
 	private onWheelZoom(ev: WheelEvent): void {
 		if (!this.file) return;
 		if (!ev.ctrlKey && !ev.metaKey) return;
@@ -548,7 +475,7 @@ export class TimelineView extends FileView {
 		if (this.panRedrawRafId !== null) return;
 		this.panRedrawRafId = requestAnimationFrame(() => {
 			this.panRedrawRafId = null;
-			if (!this.panState || !this.scrollEl) return;
+			if (!this.panState || !this.mainWrapEl) return;
 			this.redrawPreservingScroll();
 		});
 	}
@@ -732,13 +659,13 @@ export class TimelineView extends FileView {
 
 	/** Full layout rebuild without jumping scroll (see `redraw`, which clears the body). */
 	private redrawPreservingScroll(): void {
-		if (!this.scrollEl) {
+		if (!this.mainWrapEl) {
 			this.redraw();
 			return;
 		}
-		const st = this.scrollEl.scrollTop;
+		const st = this.mainWrapEl.scrollTop;
 		this.redraw();
-		this.scrollEl.scrollTop = st;
+		this.mainWrapEl.scrollTop = st;
 	}
 
 	private redraw(): void {
@@ -767,7 +694,7 @@ export class TimelineView extends FileView {
 		}
 
 		const rs = parseYmd(this.data.rangeStart);
-		const avail = getAvailableDayTrackWidthPx(this.scrollEl);
+		const avail = getAvailableDayTrackWidthPx(this.mainWrapEl);
 		const dayW =
 			avail > 0
 				? avail / this.data.dayCount
@@ -849,9 +776,9 @@ export class TimelineView extends FileView {
 				return;
 			}
 
-			if (this.panState && this.scrollEl) {
+			if (this.panState && this.mainWrapEl) {
 				const p = this.panState;
-				const el = this.scrollEl;
+				const el = this.mainWrapEl;
 				const dy = ev.clientY - p.startY;
 				const dx = ev.clientX - p.startX;
 				const newScrollTop = p.initialScrollTop - dy;
@@ -1012,7 +939,7 @@ export class TimelineView extends FileView {
 
 	private onGlobalMouseUp(): void {
 		try {
-			if (this.panState && this.scrollEl) {
+			if (this.panState && this.mainWrapEl) {
 				if (this.panRedrawRafId !== null) {
 					cancelAnimationFrame(this.panRedrawRafId);
 					this.panRedrawRafId = null;
@@ -1021,7 +948,7 @@ export class TimelineView extends FileView {
 
 				const initialRange = this.panState.initialRangeStart;
 				this.panState = null;
-				this.scrollEl.classList.remove("timeline-planner-scroll--panning");
+				this.mainWrapEl.classList.remove("timeline-planner-main--panning");
 				
 				if (
 					this.file

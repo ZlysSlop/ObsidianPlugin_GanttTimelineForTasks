@@ -61,10 +61,11 @@ export default class TimelinePlannerPlugin extends Plugin {
 
 		this.registerEvent(
 			this.app.vault.on("modify", (file) => {
-				if (this.saveIgnorePaths.has(file.path)) return;
-				for (const leaf of this.app.workspace.getLeavesOfType(
-					TIMELINE_VIEW_TYPE
-				)) {
+				if (this.saveIgnorePaths.has(file.path)) {
+					return;
+				}
+
+				for (const leaf of this.app.workspace.getLeavesOfType(TIMELINE_VIEW_TYPE)) {
 					const v = leaf.view;
 					if (v instanceof TimelineView && v.ownsFilePath(file.path)) {
 						void v.reloadFromDisk();
@@ -82,7 +83,7 @@ export default class TimelinePlannerPlugin extends Plugin {
 		);
 
 		this.addCommand({
-			id: "timeline-planner-new-zly-file",
+			id: "zlytimeline-new-file",
 			name: DisplayedTexts.main.commandNewTimeline(ZLY_TIMELINE_EXTENSION),
 			callback: () => void this.createNewTimelineFile(),
 		});
@@ -96,8 +97,13 @@ export default class TimelinePlannerPlugin extends Plugin {
 
 	private async persistTimelineView(view: TimelineView): Promise<void> {
 		const file = view.getTimelineFile();
-		if (!file || file.extension !== ZLY_TIMELINE_EXTENSION) return;
+
+		if (!file || file.extension !== ZLY_TIMELINE_EXTENSION) {
+			return;
+		}
+
 		this.saveIgnorePaths.add(file.path);
+
 		try {
 			await writeTimelineZlyFile(this.app, file, view.data);
 		} catch (e) {
@@ -117,6 +123,7 @@ export default class TimelinePlannerPlugin extends Plugin {
 		return p ? normalizePath(p) : "";
 	}
 
+
 	private uniqueZlyPath(folder: string, basename: string): string {
 		const ext = `.${ZLY_TIMELINE_EXTENSION}`;
 		let path = folder
@@ -132,6 +139,7 @@ export default class TimelinePlannerPlugin extends Plugin {
 		return path;
 	}
 
+	
 	async createNewTimelineFile(): Promise<void> {
 		const folder = this.suggestedFolderPath();
 		const basename = DisplayedTexts.main.newFileBasename;

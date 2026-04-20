@@ -123,8 +123,9 @@ export const DisplayedTexts = {
 		jumpToTaskTitle: "Scroll the timeline so this task appears in the day grid",
 		barTitle: "Double-click to edit.\nCtrl+click to multi-select, or drag on empty track to box-select.\nDrag horizontally to move in time; drag vertically to reorder.\nCan also use ⋮⋮ on the left side of the track to reorder vertically.",
 		untitledTaskLabel: "[untitled]",
+		
 		newTaskDefaultTitle: "New task",
-		noticeTaskAdded: "Task added — drag the bar or edges to plan.",
+		noticeTaskAdded: "Task added.",
 		noticeTaskRemoved: "Task removed.",
 		taskStateSelectTitle: "Task state",
 	},
