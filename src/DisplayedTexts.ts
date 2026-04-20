@@ -43,6 +43,9 @@ export const DisplayedTexts = {
 		emojiPickerRestoreDefaultsTooltip:
 			"Replace all categories with the plugin’s built-in list (current customizations are lost).",
 		emojiCategoryNameLabel: "Category name",
+		emojiCategoryUnnamed: "Unnamed category",
+		emojiCategorySummaryCount: (n: number) =>
+			n === 1 ? "1 emoji" : `${n} emojis`,
 		emojiCategoryRemoveTooltip: "Remove this category",
 		emojiItemEmojiLabel: "Emoji",
 		emojiItemTagsDesc:

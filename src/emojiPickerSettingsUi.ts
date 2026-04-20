@@ -14,6 +14,8 @@ export type EmojiPickerSettingsUiContext = {
 	refreshTimelineViews: () => void;
 	/** Rebuild this emoji settings panel (after add/remove category or item). */
 	redraw: () => void;
+	/** Category ids that should render expanded (preserved across redraw). */
+	initiallyOpenCategoryIds?: Set<string>;
 };
 
 /**
@@ -23,7 +25,8 @@ export function renderEmojiPickerSettings(
 	containerEl: HTMLElement,
 	ctx: EmojiPickerSettingsUiContext
 ): void {
-	const { plugin, refreshTimelineViews, redraw } = ctx;
+	const { plugin, refreshTimelineViews, redraw, initiallyOpenCategoryIds } =
+		ctx;
 
 	containerEl.createEl("p", {
 		text: DisplayedTexts.settings.emojiPickerIntro,
@@ -52,11 +55,45 @@ export function renderEmojiPickerSettings(
 	);
 
 	for (const cat of plugin.settings.emojiPickerCategories) {
-		new Setting(containerEl)
+		const syncCategorySummary = (
+			titleEl: HTMLElement,
+			countEl: HTMLElement
+		): void => {
+			titleEl.setText(
+				cat.name.trim() || DisplayedTexts.settings.emojiCategoryUnnamed
+			);
+			countEl.setText(
+				` · ${DisplayedTexts.settings.emojiCategorySummaryCount(cat.items.length)}`
+			);
+		};
+
+		const det = containerEl.createEl("details", {
+			cls: "timeline-planner-emoji-settings-category",
+			attr: { "data-category-id": cat.id },
+		});
+		if (initiallyOpenCategoryIds?.has(cat.id)) {
+			det.open = true;
+		}
+
+		const sum = det.createEl("summary", {
+			cls: "timeline-planner-emoji-cat-summary",
+		});
+		const titleEl = sum.createSpan({
+			cls: "timeline-planner-emoji-cat-summary-title",
+		});
+		const countEl = sum.createSpan({
+			cls: "timeline-planner-emoji-cat-count",
+		});
+		syncCategorySummary(titleEl, countEl);
+
+		const body = det.createDiv({ cls: "timeline-planner-emoji-cat-body" });
+
+		new Setting(body)
 			.setName(DisplayedTexts.settings.emojiCategoryNameLabel)
 			.addText((tc) => {
 				tc.setValue(cat.name).onChange(async (v) => {
 					cat.name = v;
+					syncCategorySummary(titleEl, countEl);
 					await plugin.saveSettings();
 					refreshTimelineViews();
 				});
@@ -76,7 +113,7 @@ export function renderEmojiPickerSettings(
 			});
 
 		for (const it of cat.items) {
-			new Setting(containerEl)
+			new Setting(body)
 				.setName(DisplayedTexts.settings.emojiItemEmojiLabel)
 				.setDesc(DisplayedTexts.settings.emojiItemTagsDesc)
 				.addText((tc) => {
@@ -110,15 +147,15 @@ export function renderEmojiPickerSettings(
 				});
 		}
 
-		new Setting(containerEl).addButton((btn) =>
+		new Setting(body).addButton((btn) =>
 			btn
-			.setButtonText(DisplayedTexts.settings.addEmojiItemButton)
-			.onClick(async () => {
-				cat.items.push({ emoji: "", tags: "" });
-				await plugin.saveSettings();
-				refreshTimelineViews();
-				redraw();
-			})
+				.setButtonText(DisplayedTexts.settings.addEmojiItemButton)
+				.onClick(async () => {
+					cat.items.push({ emoji: "", tags: "" });
+					await plugin.saveSettings();
+					refreshTimelineViews();
+					redraw();
+				})
 		);
 	}
 

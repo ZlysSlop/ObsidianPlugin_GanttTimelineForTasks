@@ -81,3 +81,72 @@
 	max-height: min(78vh, 720px);
 	overflow-y: auto;
 }
+
+/* Emoji settings: collapsible categories */
+.timeline-planner-emoji-settings-category {
+	margin-bottom: var(--size-4-3, 12px);
+	border: 1px solid var(--background-modifier-border);
+	border-radius: var(--radius-s, 6px);
+	background: var(--background-primary);
+	overflow: hidden;
+}
+
+.timeline-planner-emoji-cat-summary {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: baseline;
+	gap: 0 6px;
+	cursor: pointer;
+	padding: 10px 12px;
+	list-style: none;
+	font-weight: 600;
+	font-size: var(--font-ui-small);
+	color: var(--text-normal);
+	background: var(--background-secondary);
+	user-select: none;
+}
+
+.timeline-planner-emoji-cat-summary::before {
+	content: "▸";
+	flex-shrink: 0;
+	margin-right: 2px;
+	color: var(--text-muted);
+	font-weight: 700;
+	font-size: 0.85em;
+	transition: transform 0.12s ease;
+}
+
+.timeline-planner-emoji-settings-category[open]
+	> .timeline-planner-emoji-cat-summary::before {
+	transform: rotate(90deg);
+}
+
+.timeline-planner-emoji-cat-summary::-webkit-details-marker {
+	display: none;
+}
+
+.timeline-planner-emoji-settings-category[open] > .timeline-planner-emoji-cat-summary {
+	border-bottom: 1px solid var(--background-modifier-border);
+	background: color-mix(
+		in srgb,
+		var(--background-secondary) 88%,
+		var(--background-modifier-hover)
+	);
+}
+
+.timeline-planner-emoji-cat-summary-title {
+	flex: 1 1 8rem;
+	min-width: 0;
+	word-break: break-word;
+}
+
+.timeline-planner-emoji-cat-count {
+	font-weight: 500;
+	font-size: var(--font-ui-smaller);
+	color: var(--text-muted);
+	white-space: nowrap;
+}
+
+.timeline-planner-emoji-cat-body {
+	padding: 8px 10px 12px;
+}

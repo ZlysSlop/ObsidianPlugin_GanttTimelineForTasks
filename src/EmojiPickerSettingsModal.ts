@@ -29,11 +29,26 @@ export class EmojiPickerSettingsModal extends Modal {
 		this.contentEl.addClass("timeline-planner-emoji-settings-modal");
 
 		const redraw = (): void => {
+			const openIds = new Set<string>();
+			this.contentEl
+				.querySelectorAll(
+					"details.timeline-planner-emoji-settings-category[data-category-id]"
+				)
+				.forEach((node) => {
+					if (
+						node instanceof HTMLDetailsElement &&
+						node.open &&
+						node.dataset.categoryId
+					) {
+						openIds.add(node.dataset.categoryId);
+					}
+				});
 			this.contentEl.empty();
 			renderEmojiPickerSettings(this.contentEl, {
 				plugin: this.plugin,
 				refreshTimelineViews: () => this.refreshTimelineViews(),
 				redraw,
+				initiallyOpenCategoryIds: openIds,
 			});
 		};
 		redraw();
