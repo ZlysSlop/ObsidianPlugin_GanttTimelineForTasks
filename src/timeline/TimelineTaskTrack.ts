@@ -1,12 +1,12 @@
 import { DisplayedTexts } from "../DisplayedTexts";
 import type { TimelineTask } from "../types";
 import { appendTimelineTaskBar } from "./TimelineTaskBar";
-import { appendTimelineTaskLabel, taskLabelParts } from "./TimelineTaskLabel";
+import { appendTimelineTaskLabel, taskLabelParts } from "./timelineTaskLabel";
 import {
 	appendOutsideRangeOverlayOnTaskRow,
 	appendTimelineTaskRowTrack,
 	type TaskRowRenderContext,
-} from "./TimelineTaskRow";
+} from "./timelineTaskRow";
 
 /** Builds one `.timeline-task-row` (label column + track + bar or outside-range UI). */
 export function renderTimelineTaskRow(

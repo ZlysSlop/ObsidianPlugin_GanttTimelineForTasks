@@ -2,7 +2,7 @@ import { barAccentLikeGradient } from "../colorUi";
 import { DisplayedTexts } from "../DisplayedTexts";
 import type { TaskStateDefinition } from "../settings/settingsData";
 import type { TimelineTask } from "../types";
-import type { TaskRowRenderContext } from "./TimelineTaskRow";
+import type { TaskRowRenderContext } from "./timelineTaskRow";
 
 /**
  * Filled state: full pill uses state color; hover/focus/active kept identical so

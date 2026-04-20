@@ -35,11 +35,12 @@ import {
 import {
 	computeJumpRangeStartYmd,
 	computeReorderTargetIndex as computeReorderDropIndex,
-	moveInArray,
+	moveTasksToDisplayIndex,
+	sortTaskIdsByListOrder,
 } from "./timelineUtils";
 import { styleTaskStateSelect } from "./TimelineTaskBar";
 import { renderTimelineTaskRow } from "./TimelineTaskTrack";
-import { buildTaskRowContext } from "./TimelineTaskRow";
+import { buildTaskRowContext } from "./timelineTaskRow";
 import type { TimelinePlannerData, TimelineTask } from "../types";
 import { DisplayedTexts } from "../DisplayedTexts";
 import {
@@ -90,7 +91,7 @@ export class TimelineView extends FileView {
 			origStart: Date;
 			origEnd: Date;
 		  }
-		| { mode: "reorder"; taskId: string }
+		| { mode: "reorder"; taskIds: string[] }
 		| null = null;
 	/** OS-style drag box on empty timeline track; `phase` upgrades from pointer-down to drag. */
 	private marqueeState:
@@ -913,8 +914,16 @@ export class TimelineView extends FileView {
 					return;
 				}
 				if (Math.abs(dy) > Math.abs(dx)) {
-					this.selectedTaskIds.clear();
-					this.dragState = { mode: "reorder", taskId: st.taskId };
+					const primaryId = st.taskId;
+					const taskIds =
+						this.selectedTaskIds.size > 0 &&
+						this.selectedTaskIds.has(primaryId)
+							? sortTaskIdsByListOrder(
+									this.data.tasks,
+									Array.from(this.selectedTaskIds)
+								)
+							: [primaryId];
+					this.dragState = { mode: "reorder", taskIds };
 				} else {
 					const primaryId = st.taskId;
 					const ids =
@@ -961,11 +970,10 @@ export class TimelineView extends FileView {
 			}
 
 			if (st.mode === "reorder") {
-				const fromIdx = this.data.tasks.findIndex((t) => t.id === st.taskId);
-				if (fromIdx < 0) return;
 				const toIdx = this.computeReorderTargetIndex(ev.clientY);
-				if (toIdx !== fromIdx) {
-					moveInArray(this.data.tasks, fromIdx, toIdx);
+				if (
+					moveTasksToDisplayIndex(this.data.tasks, st.taskIds, toIdx)
+				) {
 					this.scheduleDragRedraw();
 				}
 				ev.preventDefault();

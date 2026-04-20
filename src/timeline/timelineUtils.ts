@@ -13,6 +13,61 @@ export function moveInArray<T>(arr: T[], from: number, to: number): void {
 	arr.splice(to, 0, item);
 }
 
+/** Task ids sorted by their current index in `tasks` (stable for duplicates by first occurrence). */
+export function sortTaskIdsByListOrder(
+	tasks: { id: string }[],
+	ids: string[]
+): string[] {
+	const pairs = ids
+		.map((id) => ({ id, i: tasks.findIndex((t) => t.id === id) }))
+		.filter((p) => p.i >= 0)
+		.sort((a, b) => a.i - b.i);
+	return pairs.map((p) => p.id);
+}
+
+/**
+ * Move one task or a block of tasks to the row index chosen by the pointer (`toIdxOrig`),
+ * matching {@link moveInArray} semantics for a single item.
+ */
+export function moveTasksToDisplayIndex<T extends { id: string }>(
+	tasks: T[],
+	taskIdsInListOrder: string[],
+	toIdxOrig: number
+): boolean {
+	const sortedIdxs = sortTaskIdsByListOrder(tasks, taskIdsInListOrder)
+		.map((id) => tasks.findIndex((t) => t.id === id))
+		.filter((i) => i >= 0)
+		.sort((a, b) => a - b);
+	if (sortedIdxs.length === 0) return false;
+
+	if (sortedIdxs.length === 1) {
+		const from = sortedIdxs[0];
+		if (from === toIdxOrig) return false;
+		moveInArray(tasks, from, toIdxOrig);
+		return true;
+	}
+
+	const moving = new Set(sortedIdxs);
+	if (moving.has(toIdxOrig)) return false;
+
+	const minIdx = sortedIdxs[0];
+	const removedBeforeTarget = sortedIdxs.filter((i) => i < toIdxOrig).length;
+	const mapped = toIdxOrig - removedBeforeTarget;
+	const insertAt =
+		minIdx < toIdxOrig ? mapped + 1 : mapped;
+
+	const block = sortedIdxs.map((i) => tasks[i]);
+	for (let i = sortedIdxs.length - 1; i >= 0; i--) {
+		tasks.splice(sortedIdxs[i], 1);
+	}
+
+	const at = Math.max(0, Math.min(insertAt, tasks.length));
+	const before = tasks.map((t) => t.id).join("\0");
+	tasks.splice(at, 0, ...block);
+	const after = tasks.map((t) => t.id).join("\0");
+	return before !== after;
+}
+
 /**
  * New `rangeStart` (YYYY-MM-DD) so `taskStart`–`taskEnd` is visible, centered when
  * the task is shorter than `dayCount` days.

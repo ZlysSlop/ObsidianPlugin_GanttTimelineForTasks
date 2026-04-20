@@ -8,6 +8,7 @@ import {
 import { DisplayedTexts } from "../DisplayedTexts";
 import type { TaskStateDefinition } from "../settings/settingsData";
 import type { TimelineTask } from "../types";
+import { sortTaskIdsByListOrder } from "./timelineUtils";
 import type { TimelineView } from "./TimelineView";
 
 export type TaskRowRenderContext = {
@@ -57,7 +58,7 @@ export type TaskRowRenderContext = {
  * Cast is intentional — the module boundary cannot see `private` fields on the class.
  */
 type TimelineViewForTaskRows = {
-	data: { dayCount: number };
+	data: { dayCount: number; tasks: { id: string }[] };
 	bodyEl: HTMLElement;
 	selectedTaskIds: Set<string>;
 	taskBarStackObservers: ResizeObserver[];
@@ -95,7 +96,7 @@ type TimelineViewForTaskRows = {
 				origStart: Date;
 				origEnd: Date;
 		  }
-		| { mode: "reorder"; taskId: string }
+		| { mode: "reorder"; taskIds: string[] }
 		| null;
 };
 
@@ -112,8 +113,17 @@ export function buildTaskRowContext(view: TimelineView): TaskRowRenderContext {
 		taskBarStackObservers: v.taskBarStackObservers,
 		bindMarqueeOnTrack: (track) => v.bindMarqueeOnTrack(track),
 		beginReorder: (taskId) => {
-			v.selectedTaskIds.clear();
-			v.dragState = { mode: "reorder", taskId };
+			let taskIds: string[];
+			if (v.selectedTaskIds.has(taskId) && v.selectedTaskIds.size > 1) {
+				taskIds = sortTaskIdsByListOrder(
+					v.data.tasks,
+					Array.from(v.selectedTaskIds)
+				);
+			} else {
+				v.selectedTaskIds.clear();
+				taskIds = [taskId];
+			}
+			v.dragState = { mode: "reorder", taskIds };
 			v.syncDocumentCursorFromInteractionState();
 		},
 		jumpRangeToShowTask: (start, end) => v.jumpRangeToShowTask(start, end),
