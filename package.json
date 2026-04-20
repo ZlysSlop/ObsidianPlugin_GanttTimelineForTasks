@@ -1,7 +1,7 @@
 {
 	"name": "obsidian-timeline-planner",
 	"version": "1.0.0",
-	"description": "Timeline planning for Obsidian",
+	"description": "Gantt Timeline planning for Obsidian. It's Vibe coded, but managed by an actual programmer, just not from the Web-dev field.",
 	"main": "main.js",
 	"scripts": {
 		"styles": "node scripts/merge-styles.mjs",
@@ -10,7 +10,7 @@
 	},
 	"keywords": [],
 	"author": "",
-	"license": "MIT",
+	"license": "APUOL",
 	"devDependencies": {
 		"@types/node": "^20.10.0",
 		"builtin-modules": "^3.3.0",

@@ -1,9 +1,9 @@
 {
 	"id": "obsidian-timeline-planner",
-	"name": "Timeline Planner",
+	"name": "Gantt Timeline Planner",
 	"version": "1.0.0",
 	"minAppVersion": "1.5.0",
-	"description": "Simple timeline planning: tasks on a time axis with drag, resize, and notes.",
-	"author": "",
-	"isDesktopOnly": false
+	"description": "Gantt Timeline planning for Obsidian. It's Vibe coded, but managed by an actual programmer, just not from the Web-dev field.",
+	"author": "Zly",
+	"isDesktopOnly": true
 }
