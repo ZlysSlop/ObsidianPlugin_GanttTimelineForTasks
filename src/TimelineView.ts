@@ -235,6 +235,7 @@ export class TimelineView extends FileView {
 			});
 	
 			const backBtn = toolbar.createEl("button", { text: "◀" });
+			backBtn.setAttr("title", "");
 			backBtn.setAttr("aria-label", DisplayedTexts.timeline.navEarlierAria);
 			backBtn.addEventListener("click", () => {
 				this.data.rangeStart = formatYmd(
@@ -244,6 +245,7 @@ export class TimelineView extends FileView {
 			});
 	
 			const fwdBtn = toolbar.createEl("button", { text: "▶" });
+			fwdBtn.setAttr("title", "");
 			fwdBtn.setAttr("aria-label", DisplayedTexts.timeline.navLaterAria);
 			fwdBtn.addEventListener("click", () => {
 				this.data.rangeStart = formatYmd(
@@ -256,7 +258,8 @@ export class TimelineView extends FileView {
 
 			const zoom = toolbar.createDiv({ cls: "timeline-planner-zoom" });
 			if(zoom){
-				zoom.setAttr("title", DisplayedTexts.timeline.zoomTitle);
+				zoom.setAttr("title", "");
+				zoom.setAttr("aria-label", DisplayedTexts.timeline.zoomTitle);
 
 				zoom.createSpan({
 					cls: "timeline-planner-zoom-label",
@@ -264,12 +267,14 @@ export class TimelineView extends FileView {
 				});
 
 				const minus = zoom.createEl("button", { text: "−" });
+				minus.setAttr("title", "");
 				minus.setAttr("aria-label", DisplayedTexts.timeline.zoomOutAria);
 				minus.addEventListener("click", () => {
 					this.applyZoomDelta(-TimelineView.ZOOM_STEP);
 				});
 
 				const plus = zoom.createEl("button", { text: "+" });
+				plus.setAttr("title", "");
 				plus.setAttr("aria-label", DisplayedTexts.timeline.zoomInAria);
 				plus.addEventListener("click", () => {
 					this.applyZoomDelta(TimelineView.ZOOM_STEP);
@@ -288,24 +293,18 @@ export class TimelineView extends FileView {
 				});
 
 				const nudgeLeft = selTools.createEl("button", { text: "◀" });
-				nudgeLeft.setAttr(
-					"title",
-					DisplayedTexts.timeline.nudgeEarlierTitle
-				);
+				nudgeLeft.setAttr("title", "");
 				nudgeLeft.setAttr(
 					"aria-label",
-					DisplayedTexts.timeline.nudgeEarlierAria
+					DisplayedTexts.timeline.nudgeEarlierTitle
 				);
 				nudgeLeft.addEventListener("click", () => this.shiftSelectedTasksByDays(-1));
 				
 				const nudgeRight = selTools.createEl("button", { text: "▶" });
-				nudgeRight.setAttr(
-					"title",
-					DisplayedTexts.timeline.nudgeLaterTitle
-				);
+				nudgeRight.setAttr("title", "");
 				nudgeRight.setAttr(
 					"aria-label",
-					DisplayedTexts.timeline.nudgeLaterAria
+					DisplayedTexts.timeline.nudgeLaterTitle
 				);
 				nudgeRight.addEventListener("click", () => this.shiftSelectedTasksByDays(1));
 			}
@@ -726,8 +725,8 @@ export class TimelineView extends FileView {
 	}
 
 	/** Drag a selection box on empty track (not on a task bar). */
-	private bindMarqueeOnTrack(track: HTMLElement): void {
-		track.addEventListener("mousedown", (ev) => {
+	private bindMarqueeOnTrack(element_track: HTMLElement): void {
+		element_track.addEventListener("mousedown", (ev) => {
 			if (ev.button !== 0 || !this.file) {
 				return;
 			}
@@ -806,7 +805,8 @@ export class TimelineView extends FileView {
 				head.addClass("is-today");
 			}
 			
-			head.setAttr("title", formatYmd(d));
+			head.setAttr("title", "");
+			head.setAttr("aria-label", formatYmd(d));
 		}
 
 		if (this.data.tasks.length === 0) {
@@ -857,323 +857,310 @@ export class TimelineView extends FileView {
 	}
 
 	private renderTaskRow(task: TimelineTask, rangeStart: Date, dayW: number): void {
-		const row = this.bodyEl.createDiv({ cls: "timeline-task-row" });
+		const element_row = this.bodyEl.createDiv({ cls: "timeline-task-row" });
 
-		const label = row.createDiv({ cls: "timeline-task-row-label" });
-		const handle = label.createDiv({
-			cls: "timeline-task-row-movehandle",
-			text: DisplayedTexts.timeline.reorderHandleGlyph,
-		});
-		handle.setAttr("aria-label", DisplayedTexts.timeline.reorderAria);
-		handle.setAttr("title", DisplayedTexts.timeline.reorderTitle);
-		handle.addEventListener("mousedown", (ev) => {
-			if (ev.button !== 0) return;
-			ev.preventDefault();
-			ev.stopPropagation();
-			this.selectedTaskIds.clear();
-			this.dragState = { mode: "reorder", taskId: task.id };
-			this.syncDocumentCursorFromInteractionState();
-		});
+		const element_label = element_row.createDiv({ cls: "timeline-task-row-label" });
+		if(element_label){
+			const element_handle = element_label.createDiv({
+				cls: "timeline-task-row-movehandle",
+				text: DisplayedTexts.timeline.reorderHandleGlyph,
+			});
+			if(element_handle){
+				element_handle.setAttr("title", "");
+				element_handle.setAttr("aria-label", DisplayedTexts.timeline.reorderTitle);
+				element_handle.addEventListener("mousedown", (ev) => {
+					if (ev.button !== 0) return;
+					ev.preventDefault();
+					ev.stopPropagation();
+					this.selectedTaskIds.clear();
+					this.dragState = { mode: "reorder", taskId: task.id };
+					this.syncDocumentCursorFromInteractionState();
+				});
+			}
+		}
 
 		const { emoji: titleEmoji, core: titleCore } = this.taskLabelParts(task);
-		const task_title_label =
-			titleCore || DisplayedTexts.timeline.untitledLabel;
-		const task_title_bar =
-			titleCore || DisplayedTexts.timeline.untitledBar;
+		const task_title_label = titleCore || DisplayedTexts.timeline.untitledTaskLabel;
 
-		const labelMain = label.createDiv({ cls: "timeline-task-row-info-panel" });
-		const titleEl = labelMain.createDiv({
+		const element_labelMain = element_label.createDiv({ cls: "timeline-task-row-info-panel" });
+		const element_titleEl = element_labelMain.createDiv({
 			cls: "timeline-task-row-info-panel-title",
 		});
 		if (titleEmoji) {
-			titleEl.createSpan({
+			element_titleEl.createSpan({
 				cls: "timeline-task-row-title-emoji",
 				text: titleEmoji,
 			});
 		}
-		titleEl.createSpan({
+		element_titleEl.createSpan({
 			cls: "timeline-task-row-title-text",
 			text: task_title_label,
 		});
-		titleEl.addEventListener("click", (e) => {
+		element_titleEl.addEventListener("click", (e) => {
 			e.preventDefault();
 			this.openEditModal(task);
 		});
 
-		const meta = labelMain.createDiv({ cls: "timeline-task-row-info-panel-meta" });
-		meta.setText(
-			`${task.start}${DisplayedTexts.timeline.dateRangeSeparator}${task.end}`
-		);
+		const element_meta = element_labelMain.createDiv({ cls: "timeline-task-row-info-panel-meta" });
+		element_meta.setText(`${task.start} → ${task.end}`);
 
-		const actions = labelMain.createDiv({ cls: "timeline-task-row-info-panel-actions" });
-		const delBtn = actions.createEl("button", {
-			text: DisplayedTexts.timeline.deleteTask,
-		});
-		delBtn.addEventListener("click", () => this.deleteTask(task.id));
-
-		const track = row.createDiv({ cls: "timeline-task-row-track" });
-		track.style.minWidth = `${this.data.dayCount * dayW}px`;
-		this.bindMarqueeOnTrack(track);
-
-		const ts = parseYmd(task.start);
-		const te = parseYmd(task.end);
-		const { start, end } = clampDateOrder(ts, te);
-
-		const rangeEnd = addDays(rangeStart, this.data.dayCount - 1);
-		if (end < rangeStart || start > rangeEnd) {
-			const pastLeft = end < rangeStart;
-			const row = track.createDiv({
-				cls:
-					"timeline-planner-outside-range timeline-planner-outside-range--track " +
-					(pastLeft
-						? "timeline-planner-outside-range--past-left"
-						: "timeline-planner-outside-range--past-right"),
+		const element_actions = element_labelMain.createDiv({ cls: "timeline-task-row-info-panel-actions" });
+		if(element_actions){
+			const delBtn = element_actions.createEl("button", {
+				text: DisplayedTexts.timeline.deleteTaskSymbol,
 			});
-
-			const onJumpMouseDown = (ev: MouseEvent): void => {
-				ev.preventDefault();
-				ev.stopPropagation();
-			};
-			const onJumpClick = (ev: MouseEvent): void => {
-				ev.preventDefault();
-				ev.stopPropagation();
-				this.jumpRangeToShowTask(start, end);
-			};
-
-			const leftArrow = row.createEl("button", {
-				type: "button",
-				cls: "timeline-planner-outside-range-arrow timeline-planner-outside-range-arrow--left",
-				text: pastLeft ? "◀" : "",
-			});
-			if (pastLeft) {
-				const tip = DisplayedTexts.timeline.outsideRangeArrowTitleLeft(
-					formatYmd(rangeStart)
-				);
-				leftArrow.setAttr("title", tip);
-				leftArrow.setAttr("aria-label", tip);
-				leftArrow.addEventListener("mousedown", onJumpMouseDown);
-				leftArrow.addEventListener("click", onJumpClick);
-			} else {
-				leftArrow.disabled = true;
-				leftArrow.setAttr("aria-hidden", "true");
-				leftArrow.addClass("is-inactive");
-			}
-
-			const center = row.createDiv({
-				cls: "timeline-planner-outside-range-center",
-			});
-			const jumpBtn = center.createEl("button", {
-				type: "button",
-				cls: "timeline-planner-jump-task-btn",
-				text: DisplayedTexts.timeline.jumpToTaskButton,
-			});
-			jumpBtn.setAttr("title", DisplayedTexts.timeline.jumpToTaskTitle);
-			jumpBtn.addEventListener("mousedown", onJumpMouseDown);
-			jumpBtn.addEventListener("click", onJumpClick);
-
-			const rightArrow = row.createEl("button", {
-				type: "button",
-				cls: "timeline-planner-outside-range-arrow timeline-planner-outside-range-arrow--right",
-				text: pastLeft ? "" : "▶",
-			});
-			if (!pastLeft) {
-				const tip = DisplayedTexts.timeline.outsideRangeArrowTitleRight(
-					formatYmd(rangeEnd)
-				);
-				rightArrow.setAttr("title", tip);
-				rightArrow.setAttr("aria-label", tip);
-				rightArrow.addEventListener("mousedown", onJumpMouseDown);
-				rightArrow.addEventListener("click", onJumpClick);
-			} else {
-				rightArrow.disabled = true;
-				rightArrow.setAttr("aria-hidden", "true");
-				rightArrow.addClass("is-inactive");
-			}
-
-			return;
+			delBtn.addEventListener("click", () => this.deleteTask(task.id));
 		}
 
-		const visStart = start < rangeStart ? rangeStart : start;
-		const visEnd = end > rangeEnd ? rangeEnd : end;
+		const element_track = element_row.createDiv({ cls: "timeline-task-row-track" });
+		if(element_track){
+			element_track.style.minWidth = `${this.data.dayCount * dayW}px`;
+			this.bindMarqueeOnTrack(element_track);
+			const { start, end } = clampDateOrder(parseYmd(task.start), parseYmd(task.end));
 
-		const i0 = daysBetweenInclusive(rangeStart, visStart);
-		const span = daysBetweenInclusive(visStart, visEnd) + 1;
-
-		const bar = track.createDiv({
-			cls:
-				"timeline-task-row-task-bar" +
-				(this.selectedTaskIds.has(task.id) ? " is-selected" : ""),
-		});
-		bar.dataset.taskId = task.id;
-		bar.style.left = `${i0 * dayW}px`;
-		bar.style.width = `${span * dayW - 4}px`;
-		bar.setAttr("title", DisplayedTexts.timeline.barTitle);
-
-		const labelRow = bar.createDiv({
-			cls: "timeline-task-row-task-bar-labelrow",
-		});
-		if (titleEmoji) {
-			labelRow.createSpan({
-				cls: "timeline-task-row-task-bar-emoji",
-				text: titleEmoji,
-			});
-		}
-		labelRow.createDiv({
-			cls: "timeline-task-row-task-bar-text",
-			text: task_title_bar,
-		});
-
-		const taskStates = this.api.getTaskStates();
-		const resolvedStateId =
-			task.stateId?.trim() &&
-			taskStates.some((s) => s.id === task.stateId!.trim())
-				? task.stateId!.trim()
-				: "";
-		const curState = taskStates.find((s) => s.id === resolvedStateId);
-		const stateBtn = bar.createEl("button", {
-			type: "button",
-			cls: "timeline-task-row-task-bar-state-select",
-			attr: {
-				"aria-label": DisplayedTexts.timeline.taskStateSelectTitle,
-				"aria-haspopup": "menu",
-			},
-			text: curState?.name ?? DisplayedTexts.taskModal.taskStateNone,
-		});
-		this.styleTaskStateSelect(stateBtn, curState?.color ?? null);
-		stateBtn.addEventListener("mousedown", (ev) => {
-			ev.stopPropagation();
-		});
-		stateBtn.addEventListener("click", (ev) => {
-			ev.stopPropagation();
-			if (
-				this.taskStateMenu &&
-				this.taskStateMenuAnchor === stateBtn
-			) {
-				this.taskStateMenu.hide();
-				return;
-			}
-			this.taskStateMenu?.hide();
-
-			const currentId =
-				task.stateId?.trim() &&
-				taskStates.some((s) => s.id === task.stateId!.trim())
-					? task.stateId!.trim()
-					: "";
-			const menu = new Menu();
-			this.taskStateMenu = menu;
-			this.taskStateMenuAnchor = stateBtn;
-			menu.onHide(() => {
-				if (this.taskStateMenu === menu) {
-					this.taskStateMenu = null;
-					this.taskStateMenuAnchor = null;
-				}
-			});
-			menu.setUseNativeMenu(false);
-			menu.addItem((item) => {
-				item.setTitle(DisplayedTexts.taskModal.taskStateNone);
-				item.setChecked(currentId === "");
-				item.onClick(() => {
-					const had = task.stateId?.trim();
-					if (had) {
-						delete task.stateId;
-						stateBtn.textContent = DisplayedTexts.taskModal.taskStateNone;
-						this.styleTaskStateSelect(stateBtn, null);
-						void this.persistAndRedraw();
-					}
+			const rangeEnd = addDays(rangeStart, this.data.dayCount - 1);
+			if (end < rangeStart || start > rangeEnd) {
+				const pastLeft = end < rangeStart;
+				const element_row = element_track.createDiv({
+					cls:
+						"timeline-planner-outside-range timeline-planner-outside-range--track " +
+						(
+							pastLeft
+							? "timeline-planner-outside-range--past-left"
+							: "timeline-planner-outside-range--past-right"
+						),
 				});
-			});
-			for (const s of taskStates) {
-				menu.addItem((item) => {
-					item.setTitle(s.name);
-					item.setChecked(currentId === s.id);
-					item.onClick(() => {
-						if (task.stateId !== s.id) {
-							task.stateId = s.id;
-							stateBtn.textContent = s.name;
-							this.styleTaskStateSelect(stateBtn, s.color);
-							void this.persistAndRedraw();
-						}
-					});
+
+				const onJumpMouseDown = (ev: MouseEvent): void => {
+					ev.preventDefault();
+					ev.stopPropagation();
+				};
+				const onJumpClick = (ev: MouseEvent): void => {
+					ev.preventDefault();
+					ev.stopPropagation();
+					this.jumpRangeToShowTask(start, end);
+				};
+
+				const element_leftArrow = element_row.createEl("button", {
+					type: "button",
+					cls: "timeline-planner-outside-range-arrow timeline-planner-outside-range-arrow--left",
+					text: "◀",
 				});
-			}
-			menu.showAtMouseEvent(ev);
-		});
-
-		this.applyTaskBarColor(bar, task);
-		this.bindTaskBarStackLayout(bar);
-		bar.addEventListener("dblclick", (ev) => {
-			ev.preventDefault();
-			ev.stopPropagation();
-			this.openEditModal(task);
-		});
-
-		const hL = bar.createDiv({
-			cls: "timeline-task-row-task-bar-handle timeline-task-row-task-bar-handle-left",
-		});
-		const hR = bar.createDiv({
-			cls: "timeline-task-row-task-bar-handle timeline-task-row-task-bar-handle-right",
-		});
-
-		bar.addEventListener("mousedown", (ev) => {
-			if (ev.button !== 0) return;
-			if (
-				(ev.target as HTMLElement).closest(
-					".timeline-task-row-task-bar-state-select"
-				)
-			)
-				return;
-			if (ev.target === hL || ev.target === hR) return;
-			if (ev.ctrlKey || ev.metaKey) {
-				ev.preventDefault();
-				ev.stopPropagation();
-				if (this.selectedTaskIds.has(task.id)) {
-					this.selectedTaskIds.delete(task.id);
+				if (pastLeft) {
+					const tip = DisplayedTexts.timeline.outsideRangeArrowTitleLeft(
+						formatYmd(rangeStart)
+					);
+					element_leftArrow.setAttr("title", "");
+					element_leftArrow.setAttr("aria-label", tip);
+					element_leftArrow.addEventListener("mousedown", onJumpMouseDown);
+					element_leftArrow.addEventListener("click", onJumpClick);
 				} else {
-					this.selectedTaskIds.add(task.id);
+					element_leftArrow.disabled = true;
+					element_leftArrow.setAttr("aria-hidden", "true");
+					element_leftArrow.addClass("is-inactive");
 				}
-				this.redraw();
+
+				const element_center = element_row.createDiv({
+					cls: "timeline-planner-outside-range-center",
+				});
+				if(element_center){
+					const jumpBtn = element_center.createEl("button", {
+						type: "button",
+						cls: "timeline-planner-jump-task-btn",
+						text: DisplayedTexts.timeline.jumpToTaskButton,
+					});
+					jumpBtn.setAttr("title", "");
+					jumpBtn.setAttr("aria-label", DisplayedTexts.timeline.jumpToTaskTitle);
+					jumpBtn.addEventListener("mousedown", onJumpMouseDown);
+					jumpBtn.addEventListener("click", onJumpClick);
+				}
+				
+
+				const element_rightArrow = element_row.createEl("button", {
+					type: "button",
+					cls: "timeline-planner-outside-range-arrow timeline-planner-outside-range-arrow--right",
+					text: "▶",
+				});
+				if(element_rightArrow){
+					if (!pastLeft) {
+						const tip = DisplayedTexts.timeline.outsideRangeArrowTitleRight(
+							formatYmd(rangeEnd)
+						);
+						element_rightArrow.setAttr("title", "");
+						element_rightArrow.setAttr("aria-label", tip);
+						element_rightArrow.addEventListener("mousedown", onJumpMouseDown);
+						element_rightArrow.addEventListener("click", onJumpClick);
+					}
+					else {
+						element_rightArrow.disabled = true;
+						element_rightArrow.setAttr("aria-hidden", "true");
+						element_rightArrow.addClass("is-inactive");
+					}
+				}
+
 				return;
 			}
-			ev.preventDefault();
-			if (!this.selectedTaskIds.has(task.id)) {
-				this.selectedTaskIds.clear();
+
+			const visStart = start < rangeStart ? rangeStart : start;
+			const visEnd = end > rangeEnd ? rangeEnd : end;
+
+			const i0 = daysBetweenInclusive(rangeStart, visStart);
+			const span = daysBetweenInclusive(visStart, visEnd) + 1;
+
+			const element_task_bar = element_track.createDiv({
+				cls: "timeline-task-row-task-bar" + (this.selectedTaskIds.has(task.id) ? " is-selected" : ""),
+			});
+			if(element_task_bar){
+				element_task_bar.dataset.taskId = task.id;
+				element_task_bar.style.left = `${i0 * dayW}px`;
+				element_task_bar.style.width = `${span * dayW - 4}px`;
+				element_task_bar.setAttr("title", DisplayedTexts.timeline.barTitle);
+
+				const element_labelRow = element_task_bar.createDiv({
+					cls: "timeline-task-row-task-bar-labelrow",
+				});
+				if(element_labelRow){
+					if (titleEmoji) {
+						element_labelRow.createSpan({
+							cls: "timeline-task-row-task-bar-emoji",
+							text: titleEmoji,
+						});
+					}
+					element_labelRow.createDiv({
+						cls: "timeline-task-row-task-bar-text",
+						text: task_title_label,
+					});
+				}
+				
+		
+				const taskStates: TaskStateDefinition[] = this.api.getTaskStates();
+				const resolvedStateId =
+					task.stateId?.trim()
+					&& taskStates.some((s) => s.id === task.stateId!.trim())
+						? task.stateId!.trim()
+						: "";
+				const curState = taskStates.find((s) => s.id === resolvedStateId);
+
+
+				const stateBtn = element_task_bar.createEl("button", {
+					type: "button",
+					cls: "timeline-task-row-task-bar-state-select",
+					attr: {
+						"aria-label": DisplayedTexts.timeline.taskStateSelectTitle,
+						"aria-haspopup": "menu",
+					},
+					text: curState?.name ?? DisplayedTexts.taskModal.taskStateNone,
+				});
+
+				if(stateBtn){
+					this.styleTaskStateSelect(stateBtn, curState?.color ?? null);
+					stateBtn.addEventListener("mousedown", (ev) => {
+						ev.stopPropagation();
+					});
+
+					stateBtn.addEventListener("click", (ev) => {
+						this.sateButtonPressCallback(ev, task, taskStates, stateBtn);
+					});
+				}
+		
+				this.applyTaskBarColor(element_task_bar, task);
+				this.bindTaskBarStackLayout(element_task_bar);
+				element_task_bar.addEventListener("dblclick", (ev) => {
+					ev.preventDefault();
+					ev.stopPropagation();
+					this.openEditModal(task);
+				});
+		
+				const hL = element_task_bar.createDiv({
+					cls: "timeline-task-row-task-bar-handle timeline-task-row-task-bar-handle-left",
+				});
+				const hR = element_task_bar.createDiv({
+					cls: "timeline-task-row-task-bar-handle timeline-task-row-task-bar-handle-right",
+				});
+		
+				element_task_bar.addEventListener("mousedown", (ev) => {
+					if (ev.button !== 0 || ev.target === hL || ev.target === hR) {
+						return;
+					}
+
+					if ((ev.target as HTMLElement).closest(".timeline-task-row-task-bar-state-select"))
+					{
+						return;
+					}
+
+					if (ev.ctrlKey || ev.metaKey) {
+						ev.preventDefault();
+						ev.stopPropagation();
+
+						if (this.selectedTaskIds.has(task.id)) {
+							this.selectedTaskIds.delete(task.id);
+						} else {
+							this.selectedTaskIds.add(task.id);
+						}
+
+						this.redraw();
+
+						return;
+					}
+
+					ev.preventDefault();
+					
+					if (!this.selectedTaskIds.has(task.id)) {
+						this.selectedTaskIds.clear();
+					}
+
+					this.dragState = {
+						mode: "pending-bar",
+						taskId: task.id,
+						startX: ev.clientX,
+						startY: ev.clientY,
+						origStart: new Date(start),
+						origEnd: new Date(end),
+					};
+
+					this.syncDocumentCursorFromInteractionState();
+				});
+
+
+				hL.addEventListener("mousedown", (ev) => {
+					if (ev.button !== 0) {
+						return;
+					}
+
+					ev.preventDefault();
+					ev.stopPropagation();
+					
+					this.dragState = {
+						mode: "resize-left",
+						taskId: task.id,
+						startX: ev.clientX,
+						origStart: new Date(start),
+						origEnd: new Date(end),
+					};
+					
+					this.syncDocumentCursorFromInteractionState();
+				});
+		
+				hR.addEventListener("mousedown", (ev) => {
+					if (ev.button !== 0) {
+						return;
+					}
+
+					ev.preventDefault();
+					ev.stopPropagation();
+					
+					this.dragState = {
+						mode: "resize-right",
+						taskId: task.id,
+						startX: ev.clientX,
+						origStart: new Date(start),
+						origEnd: new Date(end),
+					};
+
+					this.syncDocumentCursorFromInteractionState();
+				});
 			}
-			this.dragState = {
-				mode: "pending-bar",
-				taskId: task.id,
-				startX: ev.clientX,
-				startY: ev.clientY,
-				origStart: new Date(start),
-				origEnd: new Date(end),
-			};
-			this.syncDocumentCursorFromInteractionState();
-		});
-		hL.addEventListener("mousedown", (ev) => {
-			if (ev.button !== 0) return;
-			ev.preventDefault();
-			ev.stopPropagation();
-			this.dragState = {
-				mode: "resize-left",
-				taskId: task.id,
-				startX: ev.clientX,
-				origStart: new Date(start),
-				origEnd: new Date(end),
-			};
-			this.syncDocumentCursorFromInteractionState();
-		});
-		hR.addEventListener("mousedown", (ev) => {
-			if (ev.button !== 0) return;
-			ev.preventDefault();
-			ev.stopPropagation();
-			this.dragState = {
-				mode: "resize-right",
-				taskId: task.id,
-				startX: ev.clientX,
-				origStart: new Date(start),
-				origEnd: new Date(end),
-			};
-			this.syncDocumentCursorFromInteractionState();
-		});
+		}
 	}
 
 	private onGlobalMouseMove(ev: MouseEvent): void {
@@ -1210,6 +1197,7 @@ export class TimelineView extends FileView {
 				ev.preventDefault();
 				return;
 			}
+
 			if (this.panState && this.scrollEl) {
 				const p = this.panState;
 				const el = this.scrollEl;
@@ -1229,7 +1217,11 @@ export class TimelineView extends FileView {
 				ev.preventDefault();
 				return;
 			}
-			if (!this.dragState) return;
+
+			if (!this.dragState) {
+				return;
+			}
+
 			let st = this.dragState;
 
 			if (st.mode === "pending-bar") {
@@ -1300,7 +1292,9 @@ export class TimelineView extends FileView {
 			}
 
 			const task = this.data.tasks.find((t) => t.id === st.taskId);
-			if (!task) return;
+			if (!task) {
+				return;
+			}
 
 			const dx = ev.clientX - st.startX;
 			const dayDelta = Math.round(dx / this.data.pixelsPerDay);
@@ -1317,8 +1311,10 @@ export class TimelineView extends FileView {
 						tsk.start = formatYmd(cl.start);
 						tsk.end = formatYmd(cl.end);
 					}
+					
 					this.scheduleDragRedraw();
 					ev.preventDefault();
+
 					return;
 				}
 			}
@@ -1342,13 +1338,14 @@ export class TimelineView extends FileView {
 			const o = clampDateOrder(ns, ne);
 			task.start = formatYmd(o.start);
 			task.end = formatYmd(o.end);
+
 			this.scheduleDragRedraw();
 		} finally {
 			if (
-				this.panState ||
-				this.dragState ||
-				this.marqueeState ||
-				this.appliedDocumentCursorClass !== null
+				this.panState
+				|| this.dragState
+				|| this.marqueeState
+				|| this.appliedDocumentCursorClass !== null
 			) {
 				this.syncDocumentCursorFromInteractionState();
 			}
@@ -1379,14 +1376,17 @@ export class TimelineView extends FileView {
 			}
 			if (this.marqueeState) {
 				const ms = this.marqueeState;
+
 				if (ms.phase === "dragging") {
 					this.applyMarqueeSelection(ms);
 				} else if (ms.phase === "pending" && !ms.additive) {
 					this.selectedTaskIds.clear();
 					this.redraw();
 				}
+				
 				this.endMarqueeGesture();
 			}
+
 			if (this.dragState) {
 				const wasPendingBar = this.dragState.mode === "pending-bar";
 				if (this.dragRedrawRafId !== null) {
@@ -1394,7 +1394,9 @@ export class TimelineView extends FileView {
 					this.dragRedrawRafId = null;
 					this.redraw();
 				}
+
 				this.dragState = null;
+				
 				if (!wasPendingBar) {
 					void this.api.persist(this);
 				}
@@ -1409,6 +1411,7 @@ export class TimelineView extends FileView {
 			new Notice(DisplayedTexts.timeline.noticeNoFile);
 			return;
 		}
+
 		const t0 = parseYmd(todayYmd());
 		const id = `t-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 		const task: TimelineTask = {
@@ -1418,9 +1421,11 @@ export class TimelineView extends FileView {
 			start: formatYmd(t0),
 			end: formatYmd(addDays(t0, 2)),
 		};
+
 		this.data.tasks.push(task);
 		new Notice(DisplayedTexts.timeline.noticeTaskAdded);
 		void this.persistAndRedraw();
+		
 		this.openEditModal(task);
 	}
 
@@ -1442,21 +1447,38 @@ export class TimelineView extends FileView {
 					stateId: stateIdUp,
 					...rest
 				} = updated;
+
 				Object.assign(task, rest);
+				
 				if (colorUp !== undefined) {
-					if (!String(colorUp).trim()) delete task.color;
-					else task.color = String(colorUp).trim();
+					if (!String(colorUp).trim()) {
+						delete task.color;
+					}
+					else {
+						task.color = String(colorUp).trim();
+					}
 				}
+				
 				if (emojiUp !== undefined) {
 					const e = String(emojiUp).trim();
-					if (e) task.emoji = firstGrapheme(e);
-					else delete task.emoji;
+					if (e) {
+						task.emoji = firstGrapheme(e);
+					}
+					else {
+						delete task.emoji;
+					}
 				}
+				
 				if (stateIdUp !== undefined) {
 					const s = String(stateIdUp).trim();
-					if (s) task.stateId = s;
-					else delete task.stateId;
+					if (s) {
+						task.stateId = s;
+					}
+					else {
+						delete task.stateId;
+					}
 				}
+				
 				void this.persistAndRedraw();
 			},
 			this.api.getDefaultTaskBarColor(),
@@ -1467,8 +1489,7 @@ export class TimelineView extends FileView {
 
 	/** Notes tag + title (no emoji); emoji is separate for layout. */
 	private taskLabelParts(task: TimelineTask): { emoji: string; core: string } {
-		const notesTag =
-			task.text.length > 0 && task.title.length > 0 ? "[~] " : "";
+		const notesTag = task.text.length > 0 && task.title.length > 0 ? `${DisplayedTexts.timeline.taskExisitngNoteIndication} ` : "";
 		const core = notesTag + task.title;
 		const emoji = task.emoji?.trim() ? firstGrapheme(task.emoji) : "";
 		return { emoji, core };
@@ -1478,11 +1499,11 @@ export class TimelineView extends FileView {
 	 * Narrow bars: stack title + state (class mirrors CSS). Uses ResizeObserver
 	 * because `@container` is unreliable in Obsidian’s embedded Chromium.
 	 */
-	private bindTaskBarStackLayout(bar: HTMLElement): void {
+	private bindTaskBarStackLayout(element_task_bar: HTMLElement): void {
 		const apply = (): void => {
-			const w = bar.offsetWidth;
+			const w = element_task_bar.offsetWidth;
 			const thresholdPx = this.api.getTaskBarStackLayoutBreakpointPx();
-			bar.toggleClass(
+			element_task_bar.toggleClass(
 				"timeline-task-row-task-bar--stacked",
 				w > 0 && w < thresholdPx
 			);
@@ -1490,7 +1511,7 @@ export class TimelineView extends FileView {
 		apply();
 		requestAnimationFrame(apply);
 		const ro = new ResizeObserver(apply);
-		ro.observe(bar);
+		ro.observe(element_task_bar);
 		this.taskBarStackObservers.push(ro);
 	}
 
@@ -1498,33 +1519,92 @@ export class TimelineView extends FileView {
 	 * Filled state: full pill uses state color; hover/focus/active kept identical so
 	 * opening the native menu does not flash theme “unhovered” chrome.
 	 */
-	private styleTaskStateSelect(
-		el: HTMLElement,
-		fillHex: string | null
-	): void {
+	private styleTaskStateSelect(el: HTMLElement, fillHex: string | null): void {
 		el.removeClass("timeline-task-row-task-bar-state-select--filled");
+		
 		if (!fillHex?.trim()) {
 			el.style.removeProperty("--tp-state-fill");
 			return;
 		}
+		
 		el.style.setProperty("--tp-state-fill", fillHex.trim());
 		el.addClass("timeline-task-row-task-bar-state-select--filled");
 	}
 
 	/** Uses theme bar CSS when both task and plugin default are empty. */
-	private applyTaskBarColor(bar: HTMLElement, task: TimelineTask): void {
+	private applyTaskBarColor(element_task_bar: HTMLElement, task: TimelineTask): void {
 		const fallback = this.api.getDefaultTaskBarColor().trim();
 		const rawColor = (task.color?.trim() || fallback) || "";
 		const useCustom = rawColor.length > 0;
 		
-		bar.classList.toggle("timeline-task-row-task-bar--custom", useCustom);
+		element_task_bar.classList.toggle("timeline-task-row-task-bar--custom", useCustom);
 
 		if (useCustom) {
-			bar.style.background = barAccentLikeGradient(rawColor);
-			bar.style.borderColor = `color-mix(in srgb, ${rawColor} 55%, black)`;
+			element_task_bar.style.background = barAccentLikeGradient(rawColor);
+			element_task_bar.style.borderColor = `color-mix(in srgb, ${rawColor} 55%, black)`;
 		} else {
-			bar.style.removeProperty("background");
-			bar.style.removeProperty("border-color");
+			element_task_bar.style.removeProperty("background");
+			element_task_bar.style.removeProperty("border-color");
 		}
+	}
+
+	private sateButtonPressCallback(ev: MouseEvent, task: TimelineTask, taskStates: TaskStateDefinition[], stateBtn: HTMLElement){
+		ev.stopPropagation();
+
+		if (
+			this.taskStateMenu
+			&& this.taskStateMenuAnchor === stateBtn
+		) {
+			this.taskStateMenu.hide();
+			return;
+		}
+		this.taskStateMenu?.hide();
+
+		const currentId =
+			task.stateId?.trim()
+			&& taskStates.some((s) => s.id === task.stateId!.trim())
+				? task.stateId!.trim()
+				: "";
+		const menu = new Menu();
+		this.taskStateMenu = menu;
+		this.taskStateMenuAnchor = stateBtn;
+		menu.onHide(() => {
+			if (this.taskStateMenu === menu) {
+				this.taskStateMenu = null;
+				this.taskStateMenuAnchor = null;
+			}
+		});
+		menu.setUseNativeMenu(false);
+
+		menu.addItem((item) => {
+			item.setTitle(DisplayedTexts.taskModal.taskStateNone);
+			item.setChecked(currentId === "");
+			item.onClick(() => {
+				const had = task.stateId?.trim();
+				if (had) {
+					delete task.stateId;
+					stateBtn.textContent = DisplayedTexts.taskModal.taskStateNone;
+					this.styleTaskStateSelect(stateBtn, null);
+					void this.persistAndRedraw();
+				}
+			});
+		});
+
+		for (const s of taskStates) {
+			menu.addItem((item) => {
+				item.setTitle(s.name);
+				item.setChecked(currentId === s.id);
+				item.onClick(() => {
+					if (task.stateId === s.id) {
+						return;
+					}
+					task.stateId = s.id;
+					stateBtn.textContent = s.name;
+					this.styleTaskStateSelect(stateBtn, s.color);
+					void this.persistAndRedraw();
+				});
+			});
+		}
+		menu.showAtMouseEvent(ev);
 	}
 }
