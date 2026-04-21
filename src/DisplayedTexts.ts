@@ -116,7 +116,6 @@ export const DisplayedTexts = {
 		reorderTitle: "Drag up or down to reorder (or drag the bar vertically on the timeline)",
 		deleteTaskSymbol: "x",
 		deleteTask: "Delete this task.",
-		taskExisitngNoteIndication: "[~]",
 		outsideRangeArrowTitleLeft: (firstVisibleDay: string) => `Task is earlier — ends before ${firstVisibleDay} (left of the timeline).`,
 		outsideRangeArrowTitleRight: (lastVisibleDay: string) => `Task is later — starts after ${lastVisibleDay} (right of the timeline).`,
 		jumpToTaskButton: "Jump to task",

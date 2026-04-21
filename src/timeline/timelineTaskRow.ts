@@ -17,10 +17,10 @@ export function renderTimelineTaskRow(
 ): void {
 	const rowEl = ctx.bodyEl.createDiv({ cls: "timeline-task-row" });
 
-	const { emoji, core } = taskLabelParts(task);
-	const title = core || DisplayedTexts.timeline.untitledTaskLabel;
+	var labelData = taskLabelParts(task);
+	labelData.title = labelData.title || DisplayedTexts.timeline.untitledTaskLabel;
 
-	appendTimelineTaskLabel(rowEl, task, ctx, { emoji, title });
+	appendTimelineTaskLabel(rowEl, task, ctx, labelData);
 
 	const trackResult = appendTimelineTaskRowTrack(
 		rowEl,
@@ -48,7 +48,7 @@ export function renderTimelineTaskRow(
 		task,
 		ctx,
 		{ i0: trackResult.i0, span: trackResult.span, dayW },
-		{ emoji, title },
+		labelData,
 		{ start: trackResult.barStart, end: trackResult.barEnd }
 	);
 }

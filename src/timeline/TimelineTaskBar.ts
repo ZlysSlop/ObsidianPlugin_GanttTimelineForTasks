@@ -2,6 +2,7 @@ import { barAccentLikeGradient } from "../colorUi";
 import { DisplayedTexts } from "../DisplayedTexts";
 import type { TaskStateDefinition } from "../settings/settingsData";
 import type { TimelineTask } from "./TimelineTypes";
+import type { TaskLabelDisplay } from "./timelineTaskLabel";
 import type { TaskRowRenderContext } from "./timelineTaskTrack";
 
 /**
@@ -60,18 +61,13 @@ export function bindTaskBarStackLayout(
 	observersOut.push(ro);
 }
 
-export type TaskBarDisplay = {
-	emoji: string;
-	title: string;
-};
-
 /** Builds `.timeline-task-row-task-bar` inside the track. */
 export function appendTimelineTaskBar(
 	trackEl: HTMLElement,
 	task: TimelineTask,
 	ctx: TaskRowRenderContext,
 	geometry: { i0: number; span: number; dayW: number },
-	display: TaskBarDisplay,
+	display: TaskLabelDisplay,
 	orderedRange: { start: Date; end: Date }
 ): void {
 	const { i0, span, dayW } = geometry;
@@ -97,10 +93,13 @@ export function appendTimelineTaskBar(
 			text: display.emoji,
 		});
 	}
-	element_labelRow.createDiv({
+	const element_task_name = element_labelRow.createDiv({
 		cls: "timeline-task-row-task-bar-text",
 		text: display.title,
 	});
+	if(display.hasText){
+		element_task_name.style.textDecoration = "underline";
+	}
 
 	const taskStates: TaskStateDefinition[] = ctx.getTaskStates();
 	const resolvedStateId =

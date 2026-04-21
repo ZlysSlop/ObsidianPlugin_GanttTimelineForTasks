@@ -251,6 +251,7 @@ export class TimelineView extends FileView {
 
 			this.syncDocumentCursorFromInteractionState();
 		});
+
 		this.registerDomEvent(this.mainWrapEl, "contextmenu", (ev: MouseEvent) => {
 			if (this.panState) ev.preventDefault();
 		});
@@ -284,7 +285,9 @@ export class TimelineView extends FileView {
 		this.registerDomEvent(window, "mousemove",
 			(ev: MouseEvent) => this.onGlobalMouseMove(ev)
 		);
+		
 		this.registerDomEvent(window, "mouseup", () => this.onGlobalMouseUp());
+
 		this.registerDomEvent(window, "keydown", (ev: KeyboardEvent) => {
 			if (ev.key !== "Escape") {
 				return;

@@ -28,9 +28,9 @@
 /* -------------------------------------------------------------------- */
 
 .timeline-task-row-label {
-	width: 200px;
+	/*width: {}px; - is set from code */
 	flex-shrink: 0;
-	padding: 8px 8px 8px 6px;
+	padding: 8px;
 	border-right: 1px solid color-mix(in srgb, var(--background-modifier-border) 80%, transparent);
 	display: flex;
 	flex-direction: row;
@@ -48,9 +48,7 @@
 .timeline-task-row-movehandle {
 	flex-shrink: 0;
 	width: 16px;
-	min-height: 44px;
 	align-self: center;
-	padding: 6px 2px;
 	cursor: grab;
 	color: var(--text-faint, var(--text-muted));
 	font-size: 18px;
@@ -87,7 +85,7 @@
 	flex-direction: column;
 	gap: 4px;
 	justify-content: center;
-	padding: 2px 4px;
+	padding: 2px;
 	overflow: hidden;
 }
 
@@ -142,6 +140,8 @@
 	margin-top: 2px;
 	align-self: flex-end;
 	flex-wrap: wrap;
+	width: 100%;
+	justify-content: space-between;
 }
 
 /* Delete button style. */
