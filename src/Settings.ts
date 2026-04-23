@@ -32,34 +32,52 @@ export function createTaskEditModalSettings(
 	ctx: TaskEditFormContext,
 	onSave: (partial: Partial<TimelineTask>) => void
 ): void {
+	const emitSave = (): void => {
+		onSave(
+			{
+				title: task.title,
+				start: task.start,
+				end: task.end,
+				text: task.text,
+				color: barColorDraft !== undefined ? barColorDraft.trim() : initialBarColor,
+				emoji: emojiDraft !== undefined ? emojiDraft.trim() : initialEmoji,
+				stateId: stateDraft !== undefined ? stateDraft.trim() : initialStateId,
+			}
+		);
+	};
+
+	const initialEmoji = task.emoji?.trim() ?? "";
+	let emojiDraft: string | undefined = undefined;
+	const initialStateId = task.stateId?.trim() ?? "";
+	let stateDraft: string | undefined = undefined;
+	const initialBarColor = task.color?.trim() ?? "";
+	let barColorDraft: string | undefined = undefined;
+
 	new Setting(parent)
 		.setName(DisplayedTexts.taskModal.fieldTitle)
 		.addText((t) => {
 			t.setValue(task.title).onChange((v) => {
 				task.title = v;
+				emitSave();
 			});
 		});
 
-	const initialEmoji = task.emoji?.trim() ?? "";
-	let emojiDraft: string | undefined = undefined;
 	let emojiPickBtn: ButtonComponent | undefined;
 	new Setting(parent)
 		.setName(DisplayedTexts.taskModal.fieldEmoji)
 		.setDesc(DisplayedTexts.taskModal.fieldEmojiDesc)
 		.addButton((b) => {
 			emojiPickBtn = b;
-			b.setButtonText(
-				initialEmoji || DisplayedTexts.taskModal.chooseEmoji
-			);
+			b.setButtonText(initialEmoji || DisplayedTexts.taskModal.chooseEmoji);
 			b.onClick(() => {
 				new EmojiSelectModal(
-					app,
-					ctx.emojiPickerCategories,
+					app, ctx.emojiPickerCategories,
 					(ch) => {
 						emojiDraft = ch;
 						emojiPickBtn?.setButtonText(
 							ch || DisplayedTexts.taskModal.chooseEmoji
 						);
+						emitSave();
 					}
 				).open();
 			});
@@ -72,6 +90,7 @@ export function createTaskEditModalSettings(
 				emojiPickBtn?.setButtonText(
 					DisplayedTexts.taskModal.chooseEmoji
 				);
+				emitSave();
 			});
 		});
 
@@ -81,6 +100,7 @@ export function createTaskEditModalSettings(
 			t.inputEl.type = "date";
 			t.setValue(task.start).onChange((v) => {
 				task.start = v;
+				emitSave();
 			});
 		});
 
@@ -90,39 +110,39 @@ export function createTaskEditModalSettings(
 			t.inputEl.type = "date";
 			t.setValue(task.end).onChange((v) => {
 				task.end = v;
+				emitSave();
 			});
 		});
 
-	const initialStateId = task.stateId?.trim() ?? "";
-	let stateDraft: string | undefined = undefined;
 	new Setting(parent)
 		.setName(DisplayedTexts.taskModal.fieldTaskState)
 		.addDropdown((dd) => {
 			dd.addOption("", DisplayedTexts.taskModal.taskStateNone);
+			
 			for (const s of ctx.taskStates) {
 				dd.addOption(s.id, s.name);
 			}
-			const valid =
-				initialStateId &&
-				ctx.taskStates.some((x) => x.id === initialStateId);
+
+			const valid = initialStateId && ctx.taskStates.some((x) => x.id === initialStateId);
+			
 			dd.setValue(valid ? initialStateId : "");
+			
 			dd.onChange((v) => {
 				stateDraft = v;
+				emitSave();
 			});
 		});
 
-	const initialBarColor = task.color?.trim() ?? "";
-	let barColorDraft: string | undefined = undefined;
 	let barColorCp: ColorComponent | undefined;
 	const barColorGate = { ignore: false };
 	const barColorDesc =
 		DisplayedTexts.taskModal.barColorDescLead +
-		(ctx.pluginDefaultBarColor.trim()
-			? DisplayedTexts.taskModal.barColorDescWithPluginDefault(
-					ctx.pluginDefaultBarColor.trim()
-				)
-			: DisplayedTexts.taskModal.barColorDescNoDefault) +
-		DisplayedTexts.taskModal.barColorDescTail;
+		(
+			ctx.pluginDefaultBarColor.trim()
+			? DisplayedTexts.taskModal.barColorDescWithPluginDefault(ctx.pluginDefaultBarColor.trim())
+			: DisplayedTexts.taskModal.barColorDescNoDefault
+		)
+		+ DisplayedTexts.taskModal.barColorDescTail;
 
 	new Setting(parent)
 		.setName(DisplayedTexts.taskModal.fieldBarColor)
@@ -137,6 +157,7 @@ export function createTaskEditModalSettings(
 			cp.onChange((hex) => {
 				if (barColorGate.ignore) return;
 				barColorDraft = hex;
+				emitSave();
 			});
 		})
 		.addExtraButton((btn) => {
@@ -146,6 +167,7 @@ export function createTaskEditModalSettings(
 				barColorDraft = "";
 				armColorPickerGate(barColorGate);
 				barColorCp?.setValue(PICKER_PLACEHOLDER_HEX);
+				emitSave();
 			});
 		});
 
@@ -154,34 +176,16 @@ export function createTaskEditModalSettings(
 		.addTextArea((ta) => {
 			ta.inputEl.addClass("timeline-planner-modal-text");
 			let p: HTMLElement | null = ta.inputEl.parentElement;
+			
 			while (p && !p.classList.contains("setting-item")) {
 				p = p.parentElement;
 			}
+			
 			p?.addClass("timeline-planner-modal-notes");
+			
 			ta.setValue(task.text).onChange((v) => {
 				task.text = v;
+				emitSave();
 			});
 		});
-
-	new Setting(parent).addButton((b) =>
-		b.setButtonText(DisplayedTexts.taskModal.save).setCta().onClick(() => {
-			const colorSubmit =
-				barColorDraft !== undefined
-					? barColorDraft.trim()
-					: initialBarColor;
-			const emojiSubmit =
-				emojiDraft !== undefined ? emojiDraft.trim() : initialEmoji;
-			const stateSubmit =
-				stateDraft !== undefined ? stateDraft.trim() : initialStateId;
-			onSave({
-				title: task.title,
-				start: task.start,
-				end: task.end,
-				text: task.text,
-				color: colorSubmit,
-				emoji: emojiSubmit,
-				stateId: stateSubmit,
-			});
-		})
-	);
 }

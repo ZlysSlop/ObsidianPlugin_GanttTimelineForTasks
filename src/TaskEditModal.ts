@@ -33,7 +33,6 @@ export class TaskEditModal extends Modal {
 			},
 			(partial) => {
 				this.onSubmit(partial);
-				this.close();
 			}
 		);
 	}
