@@ -1,0 +1,42 @@
+/* Inline “+” on top/bottom track edge to add a task on a day column */
+
+.timeline-planner-track-add-btn {
+	position: absolute;
+	z-index: 40;
+	min-width: 1.5rem;
+	height: 1.5rem;
+	padding: 0 0.35rem;
+	line-height: 1;
+	border-radius: 4px;
+	font-size: var(--font-ui-small);
+	font-weight: 800;
+	cursor: pointer;
+	color: var(--text-on-accent);
+	background: var(--interactive-accent);
+	border: 1px solid color-mix(in srgb, var(--interactive-accent) 55%, black);
+	box-shadow:
+		0 1px 2px color-mix(in srgb, var(--background-primary) 35%, rgba(0, 0, 0, 0.35));
+}
+
+/* Pin to top/bottom edge; translate centers the control on the border line */
+.timeline-planner-track-add-btn--top {
+	top: 0;
+	transform: translate(-50%, -50%);
+}
+
+.timeline-planner-track-add-btn--bottom {
+	bottom: 0;
+	transform: translate(-50%, 50%);
+}
+
+.timeline-planner-track-add-btn:hover {
+	filter: brightness(1.05);
+}
+
+.timeline-planner-track-add-btn--top:active {
+	transform: translate(-50%, -50%) scale(0.98);
+}
+
+.timeline-planner-track-add-btn--bottom:active {
+	transform: translate(-50%, 50%) scale(0.98);
+}

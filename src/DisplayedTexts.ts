@@ -113,9 +113,8 @@ export const DisplayedTexts = {
 		emptyNoFileLoaded: "No .zly-timeline file loaded.",
 		emptyNoTasks: 'No tasks yet. Click "New task" to add one.',
 		reorderHandleGlyph: "⋮⋮",
-		reorderTitle:
-			"Drag to reorder. Hold Ctrl (⌘ on Mac) and drag the handle up or down to place a duplicate above or below.",
-		deleteTaskSymbol: "x",
+		reorderTitle: "Drag to reorder. Hold Ctrl (⌘ on Mac) and drag the handle up or down to place a duplicate above or below.",
+		deleteTaskSymbol: "×",
 		deleteTask: "Delete this task.",
 		outsideRangeArrowTitleLeft: (firstVisibleDay: string) => `Task is earlier — ends before ${firstVisibleDay} (left of the timeline).`,
 		outsideRangeArrowTitleRight: (lastVisibleDay: string) => `Task is later — starts after ${lastVisibleDay} (right of the timeline).`,
@@ -128,5 +127,10 @@ export const DisplayedTexts = {
 		noticeTaskAdded: "Task added.",
 		noticeTaskRemoved: "Task removed.",
 		taskStateSelectTitle: "Task state",
+
+		/** Track top/bottom edge — add task on hovered day, above/below this row */
+		trackAddTaskButton: "+",
+		trackAddTaskAboveTitle: (dayYmd: string) => `Add a new task starting on ${dayYmd}, above this row`,
+		trackAddTaskBelowTitle: (dayYmd: string) => `Add a new task starting on ${dayYmd}, below this row`,
 	},
 } as const;

@@ -9,6 +9,7 @@ import { DisplayedTexts } from "../DisplayedTexts";
 import type { TaskStateDefinition } from "../settings/settingsData";
 import type { TaskDateRange, TimelineTask } from "./TimelineTypes";
 import { sortTaskIdsByListOrder } from "./timelineUtils";
+import { TIMELINE_TRACK_ADD_EDGE_PX } from "./timelineConstants";
 import type { TimelineView } from "./TimelineView";
 
 export type TaskRowRenderContext = {
@@ -64,6 +65,13 @@ export type TaskRowRenderContext = {
 		taskStates: TaskStateDefinition[],
 		stateBtn: HTMLElement
 	) => void;
+
+	/** Create a task starting on `dayYmd`, inserted above/below `anchorTaskId` in list order. */
+	addTaskOnTrackEdge: (
+		dayYmd: string,
+		place: "above" | "below",
+		anchorTaskId: string
+	) => void;
 };
 
 /**
@@ -93,6 +101,12 @@ type TimelineViewForTaskRows = {
 		task: TimelineTask,
 		taskStates: TaskStateDefinition[],
 		stateBtn: HTMLElement
+	): void;
+
+	addTaskOnTrackEdge(
+		dayYmd: string,
+		place: "above" | "below",
+		anchorTaskId: string
 	): void;
 	
 	dragState:
@@ -227,7 +241,81 @@ export function buildTaskRowContext(view: TimelineView): TaskRowRenderContext {
 		onStateButtonPress: (ev, task, taskStates, stateBtn) => {
 			v.stateButtonPressCallback(ev, task, taskStates, stateBtn);
 		},
+
+		addTaskOnTrackEdge: (dayYmd, place, anchorTaskId) =>
+			v.addTaskOnTrackEdge(dayYmd, place, anchorTaskId),
 	};
+}
+
+/**
+ * Top/bottom track hover: “+” to add a task on the day column under the pointer.
+ */
+function installTrackEdgeAddTaskUi(
+	trackEl: HTMLElement,
+	dayW: number,
+	dayCount: number,
+	rangeStart: Date,
+	task: TimelineTask,
+	addTaskOnTrackEdge: TaskRowRenderContext["addTaskOnTrackEdge"]
+): void {
+	const rangeStartYmd = formatYmd(rangeStart);
+	const plusBtn = trackEl.createEl("button", {
+		type: "button",
+		cls: "timeline-planner-track-add-btn",
+		text: DisplayedTexts.timeline.trackAddTaskButton,
+	});
+	plusBtn.style.display = "none";
+
+	let place: "above" | "below" = "below";
+	let dayYmd = rangeStartYmd;
+
+	const update = (ev: MouseEvent): void => {
+		const r = trackEl.getBoundingClientRect();
+		const x = ev.clientX - r.left;
+		const y = ev.clientY - r.top;
+		const edge = TIMELINE_TRACK_ADD_EDGE_PX;
+		const dTop = y;
+		const dBottom = r.height - y;
+		const inEdge = dTop < edge || dBottom < edge;
+		if (!inEdge) {
+			plusBtn.style.display = "none";
+			return;
+		}
+		place = dTop <= dBottom ? "above" : "below";
+		const col = Math.max(0, Math.min(dayCount - 1, Math.floor(x / dayW)));
+		dayYmd = formatYmd(addDays(parseYmd(rangeStartYmd), col));
+		plusBtn.style.display = "";
+		plusBtn.style.left = `${col * dayW + dayW / 2}px`;
+		plusBtn.toggleClass("timeline-planner-track-add-btn--top", place === "above");
+		plusBtn.toggleClass("timeline-planner-track-add-btn--bottom", place === "below");
+		if (place === "above") {
+			plusBtn.style.top = "0";
+			plusBtn.style.bottom = "auto";
+		} else {
+			plusBtn.style.top = "auto";
+			plusBtn.style.bottom = "0";
+		}
+		plusBtn.setAttr(
+			"title",
+			place === "above"
+				? DisplayedTexts.timeline.trackAddTaskAboveTitle(dayYmd)
+				: DisplayedTexts.timeline.trackAddTaskBelowTitle(dayYmd)
+		);
+		plusBtn.setAttr("aria-label", plusBtn.getAttr("title") ?? "");
+	};
+
+	trackEl.addEventListener("mousemove", update);
+	trackEl.addEventListener("mouseleave", () => {
+		plusBtn.style.display = "none";
+	});
+	plusBtn.addEventListener("mousedown", (ev) => {
+		ev.stopPropagation();
+	});
+	plusBtn.addEventListener("click", (ev) => {
+		ev.preventDefault();
+		ev.stopPropagation();
+		addTaskOnTrackEdge(dayYmd, place, task.id);
+	});
 }
 
 export type TimelineTaskTrackResult =
@@ -251,6 +339,7 @@ export type TimelineTaskTrackResult =
 export type TaskTrackHost = {
 	dayCount: number;
 	bindMarqueeOnTrack: (track: HTMLElement) => void;
+	addTaskOnTrackEdge: TaskRowRenderContext["addTaskOnTrackEdge"];
 };
 
 /**
@@ -267,6 +356,14 @@ export function appendTimelineTaskRowTrack(
 	trackEl.setAttr("title", DisplayedTexts.timeline.scrollRegionTitle);
 	trackEl.style.minWidth = `${ctx.dayCount * dayW}px`;
 	ctx.bindMarqueeOnTrack(trackEl);
+	installTrackEdgeAddTaskUi(
+		trackEl,
+		dayW,
+		ctx.dayCount,
+		rangeStart,
+		task,
+		ctx.addTaskOnTrackEdge
+	);
 
 	const { start, end } = clampDateOrder(parseYmd(task.start), parseYmd(task.end));
 	const rangeEnd = addDays(rangeStart, ctx.dayCount - 1);

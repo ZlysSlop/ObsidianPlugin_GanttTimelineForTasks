@@ -1206,6 +1206,41 @@ export class TimelineView extends FileView {
 		}
 	}
 
+	/** Insert a new task on `dayYmd` above/below the row for `anchorTaskId` (list order). */
+	addTaskOnTrackEdge(
+		dayYmd: string,
+		place: "above" | "below",
+		anchorTaskId: string
+	): void {
+		if (!this.file) {
+			new Notice(DisplayedTexts.timeline.noticeNoFile);
+			return;
+		}
+
+		const t0 = parseYmd(dayYmd);
+		const id = createStampedId("t", { randomLength: 6 });
+		const task: TimelineTask = {
+			id,
+			title: DisplayedTexts.timeline.newTaskDefaultTitle,
+			text: "",
+			start: formatYmd(t0),
+			end: formatYmd(addDays(t0, 2)),
+		};
+
+		const anchorIndex = this.data.tasks.findIndex((t) => t.id === anchorTaskId);
+		if (anchorIndex < 0) {
+			this.data.tasks.push(task);
+		} else {
+			const at = place === "above" ? anchorIndex : anchorIndex + 1;
+			this.data.tasks.splice(at, 0, task);
+		}
+
+		this.selectedTaskIds.clear();
+		new Notice(DisplayedTexts.timeline.noticeTaskAdded);
+		void this.persistAndRedraw();
+		this.openEditModal(task);
+	}
+
 	private deleteTask(id: string): void {
 		this.selectedTaskIds.delete(id);
 		this.data.tasks = this.data.tasks.filter((t) => t.id !== id);
