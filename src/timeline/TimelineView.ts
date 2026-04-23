@@ -525,6 +525,9 @@ export class TimelineView extends FileView {
 			text: task.text,
 			start: task.start,
 			end: task.end,
+			emoji: task.emoji,
+			color: task.color,
+			stateId: task.stateId,
 		};
 		
 		return out;
