@@ -20,7 +20,10 @@ export type TaskRowRenderContext = {
 	getTaskBarStackLayoutBreakpointPx: () => number;
 	taskBarStackObservers: ResizeObserver[];
 	bindMarqueeOnTrack: (track: HTMLElement) => void;
-	beginReorder: (taskId: string) => void;
+	beginReorder: (
+		taskId: string,
+		options?: { duplicate: boolean; startX: number; startY: number }
+	) => void;
 	jumpRangeToShowTask: (start: Date, end: Date) => void;
 	deleteTask: (id: string) => void;
 	openEditModal: (task: TimelineTask) => void;
@@ -97,6 +100,12 @@ type TimelineViewForTaskRows = {
 				origEnd: Date;
 		  }
 		| { mode: "reorder"; taskIds: string[] }
+		| {
+				mode: "reorder-duplicate-pending";
+				taskIds: string[];
+				startX: number;
+				startY: number;
+		  }
 		| null;
 };
 
@@ -112,7 +121,7 @@ export function buildTaskRowContext(view: TimelineView): TaskRowRenderContext {
 			v.api.getTaskBarStackLayoutBreakpointPx(),
 		taskBarStackObservers: v.taskBarStackObservers,
 		bindMarqueeOnTrack: (track) => v.bindMarqueeOnTrack(track),
-		beginReorder: (taskId) => {
+		beginReorder: (taskId, options) => {
 			let taskIds: string[];
 			if (v.selectedTaskIds.has(taskId) && v.selectedTaskIds.size > 1) {
 				taskIds = sortTaskIdsByListOrder(
@@ -123,7 +132,16 @@ export function buildTaskRowContext(view: TimelineView): TaskRowRenderContext {
 				v.selectedTaskIds.clear();
 				taskIds = [taskId];
 			}
-			v.dragState = { mode: "reorder", taskIds };
+			if (options?.duplicate) {
+				v.dragState = {
+					mode: "reorder-duplicate-pending",
+					taskIds,
+					startX: options.startX,
+					startY: options.startY,
+				};
+			} else {
+				v.dragState = { mode: "reorder", taskIds };
+			}
 			v.syncDocumentCursorFromInteractionState();
 		},
 		jumpRangeToShowTask: (start, end) => v.jumpRangeToShowTask(start, end),

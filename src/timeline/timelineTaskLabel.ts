@@ -19,7 +19,10 @@ export function taskLabelParts(task: TimelineTask): TaskLabelDisplay {
 }
 
 export type TaskLabelHost = {
-	beginReorder: (taskId: string) => void;
+	beginReorder: (
+		taskId: string,
+		options?: { duplicate: boolean; startX: number; startY: number }
+	) => void;
 	openEditModal: (task: TimelineTask) => void;
 	deleteTask: (id: string) => void;
 };
@@ -45,7 +48,15 @@ export function appendTimelineTaskLabel(
 			if (ev.button !== 0) return;
 			ev.preventDefault();
 			ev.stopPropagation();
-			ctx.beginReorder(task.id);
+			if (ev.ctrlKey || ev.metaKey) {
+				ctx.beginReorder(task.id, {
+					duplicate: true,
+					startX: ev.clientX,
+					startY: ev.clientY,
+				});
+			} else {
+				ctx.beginReorder(task.id);
+			}
 		});
 
 		const element_labelMain = element_label.createDiv({ cls: "timeline-task-row-info-panel" });{

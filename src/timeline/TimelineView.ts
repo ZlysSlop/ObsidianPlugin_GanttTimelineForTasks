@@ -91,6 +91,12 @@ export class TimelineView extends FileView {
 			origEnd: Date;
 		  }
 		| { mode: "reorder"; taskIds: string[] }
+		| {
+				mode: "reorder-duplicate-pending";
+				taskIds: string[];
+				startX: number;
+				startY: number;
+		  }
 		| null = null;
 	/** OS-style drag box on empty timeline track; `phase` upgrades from pointer-down to drag. */
 	private marqueeState:
@@ -502,6 +508,51 @@ export class TimelineView extends FileView {
 		return computeReorderDropIndex(this.bodyEl, clientY);
 	}
 
+	private cloneTaskForDuplicate(
+		task: TimelineTask,
+		now: number,
+		suffix: number
+	): TimelineTask {
+		const out: TimelineTask = {
+			id: `t-${now}-${suffix}-${Math.random().toString(36).slice(2, 8)}`,
+			title: task.title,
+			text: task.text,
+			start: task.start,
+			end: task.end,
+		};
+		
+		return out;
+	}
+
+	/**
+	 * Inserts a copy of each task in list order, above the block (drag up) or
+	 * below it (drag down), then returns the new ids for a follow-up reorder.
+	 */
+	private insertDuplicateBlockForPendingReorder(
+		taskIds: string[],
+		insertAbove: boolean
+	): string[] {
+		const { tasks } = this.data;
+		const sortedIds = sortTaskIdsByListOrder(tasks, taskIds);
+		const sortedIdxs = sortedIds
+			.map((id) => tasks.findIndex((t) => t.id === id))
+			.filter((i) => i >= 0)
+			.sort((a, b) => a - b);
+		if (sortedIdxs.length === 0) {
+			return [];
+		}
+		const minIdx = sortedIdxs[0];
+		const maxIdx = sortedIdxs[sortedIdxs.length - 1];
+		const at = insertAbove ? minIdx : maxIdx + 1;
+		const t0 = Date.now();
+		const clones: TimelineTask[] = sortedIdxs.map((i, j) =>
+			this.cloneTaskForDuplicate(tasks[i], t0, j)
+		);
+		tasks.splice(at, 0, ...clones);
+		this.redrawPreservingScroll();
+		return clones.map((c) => c.id);
+	}
+
 	/** Remove `html` cursor override (call on mouseup / view close). */
 	private clearDocumentCursorOverride(): void {
 		if (this.appliedDocumentCursorClass === null) return;
@@ -517,6 +568,8 @@ export class TimelineView extends FileView {
 		if (!this.dragState) return null;
 		const st = this.dragState;
 		if (st.mode === "pending-bar") return "timeline-planner-doc-cursor-grab";
+		if (st.mode === "reorder-duplicate-pending")
+			return "timeline-planner-doc-cursor-grab";
 		if (st.mode === "reorder") return "timeline-planner-doc-cursor-ns-resize";
 		if (st.mode === "resize-left" || st.mode === "resize-right") {
 			return "timeline-planner-doc-cursor-ew-resize";
@@ -805,6 +858,28 @@ export class TimelineView extends FileView {
 
 			let st = this.dragState;
 
+			if (st.mode === "reorder-duplicate-pending") {
+				const dx = ev.clientX - st.startX;
+				const dy = ev.clientY - st.startY;
+				if (Math.hypot(dx, dy) < TIMELINE_PENDING_BAR_DRAG_PX) {
+					ev.preventDefault();
+					return;
+				}
+				if (Math.abs(dy) <= Math.abs(dx)) {
+					this.dragState = { mode: "reorder", taskIds: st.taskIds };
+				} else {
+					const newIds = this.insertDuplicateBlockForPendingReorder(
+						st.taskIds,
+						dy < 0
+					);
+					this.dragState =
+						newIds.length > 0
+							? { mode: "reorder", taskIds: newIds }
+							: { mode: "reorder", taskIds: st.taskIds };
+				}
+				st = this.dragState;
+			}
+
 			if (st.mode === "pending-bar") {
 				const dx = ev.clientX - st.startX;
 				const dy = ev.clientY - st.startY;
@@ -975,6 +1050,8 @@ export class TimelineView extends FileView {
 
 			if (this.dragState) {
 				const wasPendingBar = this.dragState.mode === "pending-bar";
+				const wasDuplicateAborted =
+					this.dragState.mode === "reorder-duplicate-pending";
 				if (this.dragRedrawRafId !== null) {
 					cancelAnimationFrame(this.dragRedrawRafId);
 					this.dragRedrawRafId = null;
@@ -982,8 +1059,8 @@ export class TimelineView extends FileView {
 				}
 
 				this.dragState = null;
-				
-				if (!wasPendingBar) {
+
+				if (!wasPendingBar && !wasDuplicateAborted) {
 					void this.api.persist(this);
 				}
 			}

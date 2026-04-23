@@ -8,7 +8,7 @@ export const ZLY_TIMELINE_EXTENSION = "zly-timeline";
 export const ZLY_TIMELINE_FORMAT_VERSION = 1;
 
 /** Used for styles of left side of the timeline. */
-export const TIMELINE_LABEL_COLUMN_PX = 250;
+export const TIMELINE_LABEL_COLUMN_PX = 210;
 
 /** Minimum days visible (strongest zoom-in; widest day columns). */
 export const TIMELINE_VISIBLE_DAYS_MIN = 7;
