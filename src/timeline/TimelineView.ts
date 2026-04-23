@@ -38,6 +38,11 @@ import {
 import { applyTaskStateButtonUi } from "./TimelineTaskBar";
 import { renderTimelineTaskRow } from "./TimelineTaskRow";
 import { buildTaskRowContext } from "./timelineTaskTrack";
+import {
+	applyPlannerData,
+	clonePlannerData,
+	PlannerHistory,
+} from "./plannerHistory";
 import type {
 	TaskDateRange,
 	TimelinePlannerData,
@@ -145,6 +150,13 @@ export class TimelineView extends FileView {
 	private taskStateMenuAnchor: HTMLElement | null = null;
 	/** Cleared on each `redraw` so detached task bars don’t leak observers. */
 	private readonly taskBarStackObservers: ResizeObserver[] = [];
+	private readonly plannerHistory = new PlannerHistory();
+	/** One undo point for a bar drag/resize/reorder; established at gesture start. */
+	private dragSessionSnapshot: TimelinePlannerData | null = null;
+	/** JSON snapshot at start of right-drag pan. */
+	private panUndoSnapshot: TimelinePlannerData | null = null;
+	/** Pre-layout snapshot before a burst of `ResizeObserver` + debounced save. */
+	private resizeUndoAnchor: TimelinePlannerData | null = null;
 
 
 	constructor(
@@ -214,7 +226,16 @@ export class TimelineView extends FileView {
 
 
 	async onLoadFile(file: TFile): Promise<void> {
+		/* Undo stack is per open file; do not clear on `reloadFromDisk` (same file) or
+		 * own saves will fire `vault.on("modify")` after the short save-ignore window and wipe history. */
+		this.plannerHistory.setRecordingEnabled(false);
+		this.plannerHistory.clear();
+		this.dragSessionSnapshot = null;
+		this.panUndoSnapshot = null;
+		this.resizeUndoAnchor = null;
+
 		await this.loadDataFromFile(file);
+		this.plannerHistory.setRecordingEnabled(true);
 		if (this.headerRowEl) {
 			this.redraw();
 		}
@@ -222,6 +243,7 @@ export class TimelineView extends FileView {
 
 
 	async onUnloadFile(_file: TFile): Promise<void> {
+		this.plannerHistory.setRecordingEnabled(false);
 		this.selectedTaskIds.clear();
 		this.endMarqueeGesture();
 	}
@@ -253,6 +275,9 @@ export class TimelineView extends FileView {
 			ev.preventDefault();
 
 			const el = this.mainWrapEl;
+			if (this.file && this.plannerHistory.isRecordingEnabled()) {
+				this.panUndoSnapshot = clonePlannerData(this.data);
+			}
 			this.panState = {
 				startX: ev.clientX,
 				startY: ev.clientY,
@@ -277,6 +302,9 @@ export class TimelineView extends FileView {
 		this.resizeObserver = new ResizeObserver(() => {
 			const prevDayCount = this.data.dayCount;
 			const prevPpd = this.data.pixelsPerDay;
+			if (this.file && this.resizePersistTimer === null) {
+				this.resizeUndoAnchor = clonePlannerData(this.data);
+			}
 			this.redrawPreservingScroll();
 			if (
 				this.file &&
@@ -288,8 +316,18 @@ export class TimelineView extends FileView {
 				}
 				this.resizePersistTimer = window.setTimeout(() => {
 					this.resizePersistTimer = null;
+					if (this.file && this.resizeUndoAnchor) {
+						this.plannerHistory.pushUndoablePastState(
+							this.resizeUndoAnchor
+						);
+						this.resizeUndoAnchor = null;
+					}
 					void this.api.persist(this);
 				}, 400);
+			} else {
+				if (this.resizePersistTimer === null) {
+					this.resizeUndoAnchor = null;
+				}
 			}
 		});
 		this.resizeObserver.observe(this.mainWrapEl);
@@ -302,6 +340,34 @@ export class TimelineView extends FileView {
 		this.registerDomEvent(window, "mouseup", () => this.onGlobalMouseUp());
 
 		this.registerDomEvent(window, "keydown", (ev: KeyboardEvent) => {
+			const mod = ev.ctrlKey || ev.metaKey;
+			if (mod && (ev.key === "z" || ev.key === "Z")) {
+				if (this.isEditableKeyboardTarget(ev.target)) {
+					return;
+				}
+				if (this.app.workspace.getActiveViewOfType(TimelineView) !== this) {
+					return;
+				}
+				ev.preventDefault();
+				if (ev.shiftKey) {
+					this.tryPlannerRedo();
+				} else {
+					this.tryPlannerUndo();
+				}
+				return;
+			}
+			if (mod && (ev.key === "y" || ev.key === "Y")) {
+				if (this.isEditableKeyboardTarget(ev.target)) {
+					return;
+				}
+				if (this.app.workspace.getActiveViewOfType(TimelineView) !== this) {
+					return;
+				}
+				ev.preventDefault();
+				this.tryPlannerRedo();
+				return;
+			}
+
 			if (ev.key === "Delete" && this.selectedTaskIds.size > 0) {
 				if (this.isEditableKeyboardTarget(ev.target)) {
 					return;
@@ -378,6 +444,65 @@ export class TimelineView extends FileView {
 		this.redrawPreservingScroll();
 	}
 
+	/** Captures the planner JSON once per bar gesture (resize, reorder, move, duplicate). */
+	beginBarGestureForHistory(): void {
+		if (!this.plannerHistory.isRecordingEnabled()) {
+			return;
+		}
+		if (this.dragSessionSnapshot) {
+			return;
+		}
+		this.dragSessionSnapshot = clonePlannerData(this.data);
+	}
+
+	private pruneInvalidSelection(): void {
+		const ids = new Set(this.data.tasks.map((t) => t.id));
+		for (const id of Array.from(this.selectedTaskIds)) {
+			if (!ids.has(id)) {
+				this.selectedTaskIds.delete(id);
+			}
+		}
+	}
+
+	private canUseHistoryFromKeyboard(): boolean {
+		if (!this.file) {
+			return false;
+		}
+		return !this.dragState && !this.panState && !this.marqueeState;
+	}
+
+	private tryPlannerUndo(): void {
+		if (!this.canUseHistoryFromKeyboard()) {
+			return;
+		}
+		if (!this.plannerHistory.isRecordingEnabled()) {
+			return;
+		}
+		const snap = this.plannerHistory.undoToApply(this.data);
+		if (!snap) {
+			return;
+		}
+		applyPlannerData(this.data, snap);
+		this.pruneInvalidSelection();
+		void this.persistAndRedraw();
+	}
+
+	private tryPlannerRedo(): void {
+		if (!this.canUseHistoryFromKeyboard()) {
+			return;
+		}
+		if (!this.plannerHistory.isRecordingEnabled()) {
+			return;
+		}
+		const snap = this.plannerHistory.redoToApply(this.data);
+		if (!snap) {
+			return;
+		}
+		applyPlannerData(this.data, snap);
+		this.pruneInvalidSelection();
+		void this.persistAndRedraw();
+	}
+
 	private isEditableKeyboardTarget(target: EventTarget | null): boolean {
 		const el = target as HTMLElement | null;
 		
@@ -396,6 +521,9 @@ export class TimelineView extends FileView {
 		if (this.selectedTaskIds.size === 0) {
 			return;
 		}
+		if (this.file) {
+			this.plannerHistory.pushBeforeMutation(this.data);
+		}
 
 		const selected = new Set(this.selectedTaskIds);
 		this.data.tasks = this.data.tasks.filter((t) => !selected.has(t.id));
@@ -408,6 +536,9 @@ export class TimelineView extends FileView {
 
 	/** Toolbar — place today near the start of the visible range (same as legacy jump). */
 	toolbarJumpToToday(): void {
+		if (this.file) {
+			this.plannerHistory.pushBeforeMutation(this.data);
+		}
 		const t = parseYmd(todayYmd());
 		this.data.rangeStart = formatYmd(addDays(t, -7));
 		void this.persistAndRedraw();
@@ -415,6 +546,9 @@ export class TimelineView extends FileView {
 
 	/** Toolbar — shift `rangeStart` by `delta` calendar days (negative = earlier). */
 	toolbarShiftVisibleRangeByDays(delta: number): void {
+		if (this.file) {
+			this.plannerHistory.pushBeforeMutation(this.data);
+		}
 		this.data.rangeStart = formatYmd(
 			addDays(parseYmd(this.data.rangeStart), delta)
 		);
@@ -438,6 +572,7 @@ export class TimelineView extends FileView {
 	 */
 	private jumpRangeToShowTask(taskStart: Date, taskEnd: Date): void {
 		if (!this.file) return;
+		this.plannerHistory.pushBeforeMutation(this.data);
 		this.data.rangeStart = computeJumpRangeStartYmd(
 			taskStart,
 			taskEnd,
@@ -460,13 +595,19 @@ export class TimelineView extends FileView {
 			const maxAdd = TIMELINE_VISIBLE_DAYS_MAX - this.data.dayCount;
 			if (maxAdd <= 0) return;
 			s = Math.min(s, maxAdd);
-			const [startSide] = pickZoomSideDeltas(s, this.zoomSplitAlternate);
-			this.data.rangeStart = formatYmd(addDays(rs, -startSide));
-			this.data.dayCount += s;
 		} else {
 			const maxRemove = this.data.dayCount - TIMELINE_VISIBLE_DAYS_MIN;
 			if (maxRemove <= 0) return;
 			s = Math.min(s, maxRemove);
+		}
+
+		this.plannerHistory.pushBeforeMutation(this.data);
+
+		if (zoomOut) {
+			const [startSide] = pickZoomSideDeltas(s, this.zoomSplitAlternate);
+			this.data.rangeStart = formatYmd(addDays(rs, -startSide));
+			this.data.dayCount += s;
+		} else {
 			const [startSide] = pickZoomSideDeltas(s, this.zoomSplitAlternate);
 			this.data.rangeStart = formatYmd(addDays(rs, startSide));
 			this.data.dayCount -= s;
@@ -487,6 +628,8 @@ export class TimelineView extends FileView {
 			new Notice(DisplayedTexts.timeline.noticeNoSelection);
 			return;
 		}
+
+		this.plannerHistory.pushBeforeMutation(this.data);
 
 		for (const id of Array.from(this.selectedTaskIds)) {
 			const t = this.data.tasks.find((x) => x.id === id);
@@ -607,6 +750,7 @@ export class TimelineView extends FileView {
 		taskIds: string[],
 		insertAbove: boolean
 	): string[] {
+		this.beginBarGestureForHistory();
 		const { tasks } = this.data;
 		const sortedIds = sortTaskIdsByListOrder(tasks, taskIds);
 		const sortedIdxs = sortedIds
@@ -949,6 +1093,7 @@ export class TimelineView extends FileView {
 				}
 
 				if (Math.abs(dy) <= Math.abs(dx)) {
+					this.beginBarGestureForHistory();
 					this.dragState = { mode: "reorder", taskIds: st.taskIds };
 				} else {
 					const newIds = this.insertDuplicateBlockForPendingReorder(st.taskIds, dy < 0);
@@ -997,8 +1142,10 @@ export class TimelineView extends FileView {
 						this.selectedTaskIds.size > 0 && this.selectedTaskIds.has(primaryId)
 							? sortTaskIdsByListOrder(this.data.tasks, Array.from(this.selectedTaskIds))
 							: [primaryId];
+					this.beginBarGestureForHistory();
 					this.dragState = { mode: "reorder", taskIds };
 				} else {
+					this.beginBarGestureForHistory();
 					const primaryId = st.taskId;
 					const ids =
 						this.selectedTaskIds.size > 0 &&
@@ -1132,7 +1279,13 @@ export class TimelineView extends FileView {
 					this.file
 					&& this.data.rangeStart !== initialRange
 				) {
+					if (this.panUndoSnapshot) {
+						this.plannerHistory.pushUndoablePastState(this.panUndoSnapshot);
+						this.panUndoSnapshot = null;
+					}
 					void this.api.persist(this);
+				} else {
+					this.panUndoSnapshot = null;
 				}
 			}
 			if (this.marqueeState) {
@@ -1175,7 +1328,15 @@ export class TimelineView extends FileView {
 				}
 
 				if (!wasPendingBar && !wasDuplicateAborted) {
+					if (this.dragSessionSnapshot) {
+						this.plannerHistory.pushUndoablePastState(
+							this.dragSessionSnapshot
+						);
+						this.dragSessionSnapshot = null;
+					}
 					void this.api.persist(this);
+				} else {
+					this.dragSessionSnapshot = null;
 				}
 			}
 		} finally {
@@ -1188,6 +1349,8 @@ export class TimelineView extends FileView {
 			new Notice(DisplayedTexts.timeline.noticeNoFile);
 			return;
 		}
+
+		this.plannerHistory.pushBeforeMutation(this.data);
 
 		const t0 = parseYmd(todayYmd());
 		const id = createStampedId("t", { randomLength: 6 });
@@ -1220,6 +1383,8 @@ export class TimelineView extends FileView {
 			return;
 		}
 
+		this.plannerHistory.pushBeforeMutation(this.data);
+
 		const t0 = parseYmd(dayYmd);
 		const id = createStampedId("t", { randomLength: 6 });
 		const task: TimelineTask = {
@@ -1245,6 +1410,9 @@ export class TimelineView extends FileView {
 	}
 
 	private deleteTask(id: string): void {
+		if (this.file) {
+			this.plannerHistory.pushBeforeMutation(this.data);
+		}
 		this.selectedTaskIds.delete(id);
 		this.data.tasks = this.data.tasks.filter((t) => t.id !== id);
 		new Notice(DisplayedTexts.timeline.noticeTaskRemoved);
@@ -1256,6 +1424,8 @@ export class TimelineView extends FileView {
 			this.app,
 			task,
 			(updated) => {
+				this.plannerHistory.pushBeforeMutation(this.data);
+
 				const {
 					color: colorUp,
 					emoji: emojiUp,
@@ -1341,6 +1511,7 @@ export class TimelineView extends FileView {
 			item.onClick(() => {
 				const had = task.stateId?.trim();
 				if (had) {
+					this.plannerHistory.pushBeforeMutation(this.data);
 					delete task.stateId;
 					applyTaskStateButtonUi(stateBtn, null, null);
 					void this.persistAndRedraw();
@@ -1356,6 +1527,7 @@ export class TimelineView extends FileView {
 					if (task.stateId === s.id) {
 						return;
 					}
+					this.plannerHistory.pushBeforeMutation(this.data);
 					task.stateId = s.id;
 					applyTaskStateButtonUi(stateBtn, s.name, s.color);
 					void this.persistAndRedraw();

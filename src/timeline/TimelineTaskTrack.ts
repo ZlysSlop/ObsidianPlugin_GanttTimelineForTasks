@@ -74,6 +74,9 @@ export type TaskRowRenderContext = {
 
 	/** Pixels from top/bottom of track that show the “+ add task” control (from settings). */
 	getTimelineTrackAddEdgePx: () => number;
+
+	/** Remember a snapshot for undo before a bar drag / resize / reorder gesture commits. */
+	beginBarGestureForHistory: () => void;
 };
 
 /**
@@ -111,6 +114,8 @@ type TimelineViewForTaskRows = {
 		place: "above" | "below",
 		anchorTaskId: string
 	): void;
+
+	beginBarGestureForHistory(): void;
 	
 	dragState:
 		| {
@@ -156,6 +161,7 @@ export function buildTaskRowContext(view: TimelineView): TaskRowRenderContext {
 		bindMarqueeOnTrack: (track) => v.bindMarqueeOnTrack(track),
 		
 		beginReorder: (taskId, options) => {
+			v.beginBarGestureForHistory();
 			let taskIds: string[];
 			if (v.selectedTaskIds.has(taskId) && v.selectedTaskIds.size > 1) {
 				taskIds = sortTaskIdsByListOrder(
@@ -220,6 +226,7 @@ export function buildTaskRowContext(view: TimelineView): TaskRowRenderContext {
 		},
 		
 		beginResizeLeft: (taskId, clientX, origStart, origEnd) => {
+			v.beginBarGestureForHistory();
 			v.dragState = {
 				mode: "resize-left",
 				taskId,
@@ -231,6 +238,7 @@ export function buildTaskRowContext(view: TimelineView): TaskRowRenderContext {
 		},
 		
 		beginResizeRight: (taskId, clientX, origStart, origEnd) => {
+			v.beginBarGestureForHistory();
 			v.dragState = {
 				mode: "resize-right",
 				taskId,
@@ -249,6 +257,8 @@ export function buildTaskRowContext(view: TimelineView): TaskRowRenderContext {
 			v.addTaskOnTrackEdge(dayYmd, place, anchorTaskId),
 
 		getTimelineTrackAddEdgePx: () => v.api.getTimelineTrackAddEdgePx(),
+
+		beginBarGestureForHistory: () => v.beginBarGestureForHistory(),
 	};
 }
 
