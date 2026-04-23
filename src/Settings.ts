@@ -13,7 +13,13 @@ import { DisplayedTexts } from "./DisplayedTexts";
 import { EmojiSelectModal } from "./emoji/EmojiSelectModal";
 import type { EmojiPickerCategoryForModal } from "./emoji/emojiPickerRuntime";
 import type { TaskStateDefinition } from "./settings/settingsData";
+import { cloneTimelineTask } from "./timeline/plannerHistory";
 import type { TimelineTask } from "./timeline/TimelineTypes";
+
+export type TaskEditModalUndoMeta = {
+	/** Row as it was before this `emitSave` (Settings mutates `task` before calling this). */
+	taskRowBeforeThisEdit: TimelineTask;
+};
 
 export type TaskEditFormContext = {
 	pluginDefaultBarColor: string;
@@ -30,9 +36,12 @@ export function createTaskEditModalSettings(
 	parent: HTMLElement,
 	task: TimelineTask,
 	ctx: TaskEditFormContext,
-	onSave: (partial: Partial<TimelineTask>) => void
+	onSave: (
+		partial: Partial<TimelineTask>,
+		undo?: TaskEditModalUndoMeta
+	) => void
 ): void {
-	const emitSave = (): void => {
+	const emitSave = (taskRowBefore?: TimelineTask): void => {
 		onSave(
 			{
 				title: task.title,
@@ -42,7 +51,10 @@ export function createTaskEditModalSettings(
 				color: barColorDraft !== undefined ? barColorDraft.trim() : initialBarColor,
 				emoji: emojiDraft !== undefined ? emojiDraft.trim() : initialEmoji,
 				stateId: stateDraft !== undefined ? stateDraft.trim() : initialStateId,
-			}
+			},
+			taskRowBefore
+				? { taskRowBeforeThisEdit: taskRowBefore }
+				: undefined
 		);
 	};
 
@@ -57,8 +69,9 @@ export function createTaskEditModalSettings(
 		.setName(DisplayedTexts.taskModal.fieldTitle)
 		.addText((t) => {
 			t.setValue(task.title).onChange((v) => {
+				const rowBefore = cloneTimelineTask(task);
 				task.title = v;
-				emitSave();
+				emitSave(rowBefore);
 			});
 		});
 
@@ -99,8 +112,9 @@ export function createTaskEditModalSettings(
 		.addText((t) => {
 			t.inputEl.type = "date";
 			t.setValue(task.start).onChange((v) => {
+				const rowBefore = cloneTimelineTask(task);
 				task.start = v;
-				emitSave();
+				emitSave(rowBefore);
 			});
 		});
 
@@ -109,8 +123,9 @@ export function createTaskEditModalSettings(
 		.addText((t) => {
 			t.inputEl.type = "date";
 			t.setValue(task.end).onChange((v) => {
+				const rowBefore = cloneTimelineTask(task);
 				task.end = v;
-				emitSave();
+				emitSave(rowBefore);
 			});
 		});
 
@@ -184,8 +199,9 @@ export function createTaskEditModalSettings(
 			p?.addClass("timeline-planner-modal-notes");
 			
 			ta.setValue(task.text).onChange((v) => {
+				const rowBefore = cloneTimelineTask(task);
 				task.text = v;
-				emitSave();
+				emitSave(rowBefore);
 			});
 		});
 }

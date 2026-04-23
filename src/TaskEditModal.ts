@@ -1,5 +1,8 @@
 import { App, Modal } from "obsidian";
-import { createTaskEditModalSettings } from "./Settings";
+import {
+	createTaskEditModalSettings,
+	type TaskEditModalUndoMeta,
+} from "./Settings";
 import { DisplayedTexts } from "./DisplayedTexts";
 import type { EmojiPickerCategoryForModal } from "./emoji/emojiPickerRuntime";
 import type { TaskStateDefinition } from "./settings/settingsData";
@@ -9,7 +12,10 @@ export class TaskEditModal extends Modal {
 	constructor(
 		app: App,
 		private task: TimelineTask,
-		private onSubmit: (t: Partial<TimelineTask>) => void,
+		private onSubmit: (
+			t: Partial<TimelineTask>,
+			undo?: TaskEditModalUndoMeta
+		) => void,
 		private readonly pluginDefaultBarColor: string = "",
 		private readonly taskStates: TaskStateDefinition[] = [],
 		private readonly emojiPickerCategories: EmojiPickerCategoryForModal[] = []
@@ -31,8 +37,8 @@ export class TaskEditModal extends Modal {
 				taskStates: this.taskStates,
 				emojiPickerCategories: this.emojiPickerCategories,
 			},
-			(partial) => {
-				this.onSubmit(partial);
+			(partial, undo) => {
+				this.onSubmit(partial, undo);
 			}
 		);
 	}

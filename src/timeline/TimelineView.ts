@@ -17,6 +17,7 @@ import type { EmojiPickerCategoryForModal } from "../emoji/emojiPickerRuntime";
 import { firstGrapheme } from "../emoji/emojiUtils";
 import { createStampedId } from "../idUtils";
 import type { TaskStateDefinition } from "../settings/settingsData";
+import type { TaskEditModalUndoMeta } from "../Settings";
 import { TaskEditModal } from "../TaskEditModal";
 import {
 	placeTodayLine,
@@ -41,6 +42,8 @@ import { buildTaskRowContext } from "./timelineTaskTrack";
 import {
 	applyPlannerData,
 	clonePlannerData,
+	cloneTimelineTask,
+	plannerDataEqual,
 	PlannerHistory,
 } from "./plannerHistory";
 import type {
@@ -302,7 +305,11 @@ export class TimelineView extends FileView {
 		this.resizeObserver = new ResizeObserver(() => {
 			const prevDayCount = this.data.dayCount;
 			const prevPpd = this.data.pixelsPerDay;
-			if (this.file && this.resizePersistTimer === null) {
+			if (
+				this.file &&
+				this.resizePersistTimer === null &&
+				this.plannerHistory.isRecordingEnabled()
+			) {
 				this.resizeUndoAnchor = clonePlannerData(this.data);
 			}
 			this.redrawPreservingScroll();
@@ -317,10 +324,9 @@ export class TimelineView extends FileView {
 				this.resizePersistTimer = window.setTimeout(() => {
 					this.resizePersistTimer = null;
 					if (this.file && this.resizeUndoAnchor) {
-						this.plannerHistory.pushUndoablePastState(
-							this.resizeUndoAnchor
-						);
+						const anchor = this.resizeUndoAnchor;
 						this.resizeUndoAnchor = null;
+						this.recordUndoIfDiverged(anchor);
 					}
 					void this.api.persist(this);
 				}, 400);
@@ -503,6 +509,17 @@ export class TimelineView extends FileView {
 		void this.persistAndRedraw();
 	}
 
+	/** Pushes a pre-mutation snapshot only if `this.data` actually differs (avoids no-op undo steps). */
+	private recordUndoIfDiverged(before: TimelinePlannerData): void {
+		if (!this.file || !this.plannerHistory.isRecordingEnabled()) {
+			return;
+		}
+		if (plannerDataEqual(before, this.data)) {
+			return;
+		}
+		this.plannerHistory.pushUndoablePastState(before);
+	}
+
 	private isEditableKeyboardTarget(target: EventTarget | null): boolean {
 		const el = target as HTMLElement | null;
 		
@@ -521,13 +538,12 @@ export class TimelineView extends FileView {
 		if (this.selectedTaskIds.size === 0) {
 			return;
 		}
-		if (this.file) {
-			this.plannerHistory.pushBeforeMutation(this.data);
-		}
 
+		const before = clonePlannerData(this.data);
 		const selected = new Set(this.selectedTaskIds);
 		this.data.tasks = this.data.tasks.filter((t) => !selected.has(t.id));
 		this.selectedTaskIds.clear();
+		this.recordUndoIfDiverged(before);
 		
 		new Notice(DisplayedTexts.timeline.noticeTaskRemoved);
 		
@@ -536,22 +552,20 @@ export class TimelineView extends FileView {
 
 	/** Toolbar — place today near the start of the visible range (same as legacy jump). */
 	toolbarJumpToToday(): void {
-		if (this.file) {
-			this.plannerHistory.pushBeforeMutation(this.data);
-		}
+		const before = clonePlannerData(this.data);
 		const t = parseYmd(todayYmd());
 		this.data.rangeStart = formatYmd(addDays(t, -7));
+		this.recordUndoIfDiverged(before);
 		void this.persistAndRedraw();
 	}
 
 	/** Toolbar — shift `rangeStart` by `delta` calendar days (negative = earlier). */
 	toolbarShiftVisibleRangeByDays(delta: number): void {
-		if (this.file) {
-			this.plannerHistory.pushBeforeMutation(this.data);
-		}
+		const before = clonePlannerData(this.data);
 		this.data.rangeStart = formatYmd(
 			addDays(parseYmd(this.data.rangeStart), delta)
 		);
+		this.recordUndoIfDiverged(before);
 		void this.persistAndRedraw();
 	}
 
@@ -572,12 +586,13 @@ export class TimelineView extends FileView {
 	 */
 	private jumpRangeToShowTask(taskStart: Date, taskEnd: Date): void {
 		if (!this.file) return;
-		this.plannerHistory.pushBeforeMutation(this.data);
+		const before = clonePlannerData(this.data);
 		this.data.rangeStart = computeJumpRangeStartYmd(
 			taskStart,
 			taskEnd,
 			this.data.dayCount
 		);
+		this.recordUndoIfDiverged(before);
 		void this.persistAndRedraw();
 	}
 
@@ -601,7 +616,7 @@ export class TimelineView extends FileView {
 			s = Math.min(s, maxRemove);
 		}
 
-		this.plannerHistory.pushBeforeMutation(this.data);
+		const beforeZoom = clonePlannerData(this.data);
 
 		if (zoomOut) {
 			const [startSide] = pickZoomSideDeltas(s, this.zoomSplitAlternate);
@@ -614,6 +629,7 @@ export class TimelineView extends FileView {
 		}
 
 		this.zoomSplitAlternate = !this.zoomSplitAlternate;
+		this.recordUndoIfDiverged(beforeZoom);
 		void this.persistAndRedraw();
 	}
 
@@ -629,7 +645,7 @@ export class TimelineView extends FileView {
 			return;
 		}
 
-		this.plannerHistory.pushBeforeMutation(this.data);
+		const before = clonePlannerData(this.data);
 
 		for (const id of Array.from(this.selectedTaskIds)) {
 			const t = this.data.tasks.find((x) => x.id === id);
@@ -643,6 +659,7 @@ export class TimelineView extends FileView {
 			t.start = formatYmd(o.start);
 			t.end = formatYmd(o.end);
 		}
+		this.recordUndoIfDiverged(before);
 		
 		void this.persistAndRedraw();
 	}
@@ -1280,8 +1297,9 @@ export class TimelineView extends FileView {
 					&& this.data.rangeStart !== initialRange
 				) {
 					if (this.panUndoSnapshot) {
-						this.plannerHistory.pushUndoablePastState(this.panUndoSnapshot);
+						const snap = this.panUndoSnapshot;
 						this.panUndoSnapshot = null;
+						this.recordUndoIfDiverged(snap);
 					}
 					void this.api.persist(this);
 				} else {
@@ -1329,10 +1347,9 @@ export class TimelineView extends FileView {
 
 				if (!wasPendingBar && !wasDuplicateAborted) {
 					if (this.dragSessionSnapshot) {
-						this.plannerHistory.pushUndoablePastState(
-							this.dragSessionSnapshot
-						);
+						const snap = this.dragSessionSnapshot;
 						this.dragSessionSnapshot = null;
+						this.recordUndoIfDiverged(snap);
 					}
 					void this.api.persist(this);
 				} else {
@@ -1350,7 +1367,7 @@ export class TimelineView extends FileView {
 			return;
 		}
 
-		this.plannerHistory.pushBeforeMutation(this.data);
+		const before = clonePlannerData(this.data);
 
 		const t0 = parseYmd(todayYmd());
 		const id = createStampedId("t", { randomLength: 6 });
@@ -1363,6 +1380,7 @@ export class TimelineView extends FileView {
 		};
 
 		this.data.tasks.push(task);
+		this.recordUndoIfDiverged(before);
 		new Notice(DisplayedTexts.timeline.noticeTaskAdded);
 		void this.persistAndRedraw();
 		
@@ -1383,7 +1401,7 @@ export class TimelineView extends FileView {
 			return;
 		}
 
-		this.plannerHistory.pushBeforeMutation(this.data);
+		const before = clonePlannerData(this.data);
 
 		const t0 = parseYmd(dayYmd);
 		const id = createStampedId("t", { randomLength: 6 });
@@ -1402,6 +1420,7 @@ export class TimelineView extends FileView {
 			const at = place === "above" ? anchorIndex : anchorIndex + 1;
 			this.data.tasks.splice(at, 0, task);
 		}
+		this.recordUndoIfDiverged(before);
 
 		this.selectedTaskIds.clear();
 		new Notice(DisplayedTexts.timeline.noticeTaskAdded);
@@ -1410,11 +1429,10 @@ export class TimelineView extends FileView {
 	}
 
 	private deleteTask(id: string): void {
-		if (this.file) {
-			this.plannerHistory.pushBeforeMutation(this.data);
-		}
+		const before = clonePlannerData(this.data);
 		this.selectedTaskIds.delete(id);
 		this.data.tasks = this.data.tasks.filter((t) => t.id !== id);
+		this.recordUndoIfDiverged(before);
 		new Notice(DisplayedTexts.timeline.noticeTaskRemoved);
 		void this.persistAndRedraw();
 	}
@@ -1423,8 +1441,17 @@ export class TimelineView extends FileView {
 		new TaskEditModal(
 			this.app,
 			task,
-			(updated) => {
-				this.plannerHistory.pushBeforeMutation(this.data);
+			(updated, undoMeta?: TaskEditModalUndoMeta) => {
+				/* `createTaskEditModalSettings` may mutate `task` before this runs; `undoMeta` has the pre-edit row. */
+				const before = clonePlannerData(this.data);
+				if (undoMeta) {
+					const i = before.tasks.findIndex((t) => t.id === task.id);
+					if (i >= 0) {
+						before.tasks[i] = cloneTimelineTask(
+							undoMeta.taskRowBeforeThisEdit
+						);
+					}
+				}
 
 				const {
 					color: colorUp,
@@ -1463,7 +1490,7 @@ export class TimelineView extends FileView {
 						delete task.stateId;
 					}
 				}
-				
+				this.recordUndoIfDiverged(before);
 				void this.persistAndRedraw();
 			},
 			this.api.getDefaultTaskBarColor(),
@@ -1511,9 +1538,10 @@ export class TimelineView extends FileView {
 			item.onClick(() => {
 				const had = task.stateId?.trim();
 				if (had) {
-					this.plannerHistory.pushBeforeMutation(this.data);
+					const before = clonePlannerData(this.data);
 					delete task.stateId;
 					applyTaskStateButtonUi(stateBtn, null, null);
+					this.recordUndoIfDiverged(before);
 					void this.persistAndRedraw();
 				}
 			});
@@ -1527,9 +1555,10 @@ export class TimelineView extends FileView {
 					if (task.stateId === s.id) {
 						return;
 					}
-					this.plannerHistory.pushBeforeMutation(this.data);
+					const before = clonePlannerData(this.data);
 					task.stateId = s.id;
 					applyTaskStateButtonUi(stateBtn, s.name, s.color);
+					this.recordUndoIfDiverged(before);
 					void this.persistAndRedraw();
 				});
 			});

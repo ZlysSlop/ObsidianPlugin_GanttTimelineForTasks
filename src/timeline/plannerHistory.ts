@@ -2,7 +2,8 @@ import type { TimelinePlannerData, TimelineTask } from "./TimelineTypes";
 
 const MAX_UNDO = 50;
 
-function cloneTask(t: TimelineTask): TimelineTask {
+/** Deep copy of one task (for undo + task editor). */
+export function cloneTimelineTask(t: TimelineTask): TimelineTask {
 	const out: TimelineTask = {
 		id: t.id,
 		title: t.title,
@@ -21,7 +22,7 @@ export function clonePlannerData(data: TimelinePlannerData): TimelinePlannerData
 		rangeStart: data.rangeStart,
 		dayCount: data.dayCount,
 		pixelsPerDay: data.pixelsPerDay,
-		tasks: data.tasks.map(cloneTask),
+		tasks: data.tasks.map(cloneTimelineTask),
 	};
 }
 
@@ -35,7 +36,44 @@ export function applyPlannerData(
 	target.rangeStart = source.rangeStart;
 	target.dayCount = source.dayCount;
 	target.pixelsPerDay = source.pixelsPerDay;
-	target.tasks = source.tasks.map(cloneTask);
+	target.tasks = source.tasks.map(cloneTimelineTask);
+}
+
+const PPX_EPS = 0.0001;
+
+function sameOptionalStr(a: string | undefined, b: string | undefined): boolean {
+	return (a?.trim() ?? "") === (b?.trim() ?? "");
+}
+
+function taskDataEqual(a: TimelineTask, b: TimelineTask): boolean {
+	if (a.id !== b.id) return false;
+	if (a.title !== b.title) return false;
+	if (a.text !== b.text) return false;
+	if (a.start !== b.start) return false;
+	if (a.end !== b.end) return false;
+	if (!sameOptionalStr(a.color, b.color)) return false;
+	if (!sameOptionalStr(a.emoji, b.emoji)) return false;
+	if (!sameOptionalStr(a.stateId, b.stateId)) return false;
+	return true;
+}
+
+/** True if both snapshots represent the same planner file content (tasks order matters). */
+export function plannerDataEqual(
+	a: TimelinePlannerData,
+	b: TimelinePlannerData
+): boolean {
+	if (a.rangeStart !== b.rangeStart) return false;
+	if (a.dayCount !== b.dayCount) return false;
+	if (Math.abs(a.pixelsPerDay - b.pixelsPerDay) > PPX_EPS) {
+		return false;
+	}
+	if (a.tasks.length !== b.tasks.length) return false;
+	for (let i = 0; i < a.tasks.length; i++) {
+		if (!taskDataEqual(a.tasks[i], b.tasks[i])) {
+			return false;
+		}
+	}
+	return true;
 }
 
 /**
