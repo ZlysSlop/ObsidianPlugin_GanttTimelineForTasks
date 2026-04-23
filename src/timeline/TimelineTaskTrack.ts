@@ -37,7 +37,11 @@ export type TaskRowRenderContext = {
 		clientX: number,
 		clientY: number,
 		start: Date,
-		end: Date
+		end: Date,
+		options?: {
+			duplicateOnVertical: boolean;
+			toggleSelectionOnMouseUp: boolean;
+		}
 	) => void;
 	
 	beginResizeLeft: (
@@ -107,6 +111,8 @@ type TimelineViewForTaskRows = {
 			startY: number;
 			origStart: Date;
 			origEnd: Date;
+			duplicateOnVertical?: boolean;
+			toggleSelectionOnMouseUp?: boolean;
 		  }
 		| {
 			mode: "reorder"; taskIds: string[]
@@ -170,8 +176,15 @@ export function buildTaskRowContext(view: TimelineView): TaskRowRenderContext {
 			v.redrawPreservingScroll();
 		},
 		
-		beginPendingBarDrag: (taskId, clientX, clientY, origStart, origEnd) => {
-			if (!v.selectedTaskIds.has(taskId)) {
+		beginPendingBarDrag: (
+			taskId,
+			clientX,
+			clientY,
+			origStart,
+			origEnd,
+			options
+		) => {
+			if (!v.selectedTaskIds.has(taskId) && !options?.toggleSelectionOnMouseUp) {
 				v.selectedTaskIds.clear();
 			}
 		
@@ -182,6 +195,8 @@ export function buildTaskRowContext(view: TimelineView): TaskRowRenderContext {
 				startY: clientY,
 				origStart,
 				origEnd,
+				duplicateOnVertical: options?.duplicateOnVertical,
+				toggleSelectionOnMouseUp: options?.toggleSelectionOnMouseUp,
 			};
 		
 			v.syncDocumentCursorFromInteractionState();

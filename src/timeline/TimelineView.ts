@@ -91,6 +91,8 @@ export class TimelineView extends FileView {
 			startY: number;
 			origStart: Date;
 			origEnd: Date;
+			duplicateOnVertical?: boolean;
+			toggleSelectionOnMouseUp?: boolean;
 		  }
 		| { mode: "reorder"; taskIds: string[] }
 		| {
@@ -461,6 +463,7 @@ export class TimelineView extends FileView {
 	private onWheelZoom(ev: WheelEvent): void {
 		if (!this.file) return;
 		if (!ev.ctrlKey && !ev.metaKey) return;
+
 		const now = Date.now();
 		if (
 			now - this.lastWheelZoomAt <
@@ -469,6 +472,7 @@ export class TimelineView extends FileView {
 			ev.preventDefault();
 			return;
 		}
+		
 		this.lastWheelZoomAt = now;
 		ev.preventDefault();
 		const step = this.api.getTimelineZoomDayStep();
@@ -483,20 +487,34 @@ export class TimelineView extends FileView {
 
 	/** One full redraw per frame max while horizontally panning (range changes). */
 	private schedulePanRedraw(): void {
-		if (this.panRedrawRafId !== null) return;
+		if (this.panRedrawRafId !== null) {
+			return;
+		}
+		
 		this.panRedrawRafId = requestAnimationFrame(() => {
 			this.panRedrawRafId = null;
-			if (!this.panState || !this.mainWrapEl) return;
+			
+			if (!this.panState || !this.mainWrapEl) {
+				return;
+			}
+
 			this.redrawPreservingScroll();
 		});
 	}
 
 	/** One full redraw per frame max while moving or resizing a task bar. */
 	private scheduleDragRedraw(): void {
-		if (this.dragRedrawRafId !== null) return;
+		if (this.dragRedrawRafId !== null) {
+			return;
+		}
+
 		this.dragRedrawRafId = requestAnimationFrame(() => {
 			this.dragRedrawRafId = null;
-			if (!this.dragState) return;
+			
+			if (!this.dragState) {
+				return;
+			}
+			
 			this.redrawPreservingScroll();
 		});
 	}
@@ -506,7 +524,10 @@ export class TimelineView extends FileView {
 	 * Swap only when the cursor enters another task row’s bounds.
 	 */
 	private computeReorderTargetIndex(clientY: number): number {
-		if (!this.bodyEl) return 0;
+		if (!this.bodyEl) {
+			return 0;
+		}
+
 		return computeReorderDropIndex(this.bodyEl, clientY);
 	}
 
@@ -903,6 +924,29 @@ export class TimelineView extends FileView {
 				}
 
 				if (Math.abs(dy) > Math.abs(dx)) {
+					if (st.duplicateOnVertical) {
+						const primaryId = st.taskId;
+						const taskIds =
+							this.selectedTaskIds.size > 0 &&
+							this.selectedTaskIds.has(primaryId)
+								? sortTaskIdsByListOrder(
+										this.data.tasks,
+										Array.from(this.selectedTaskIds)
+									)
+								: [primaryId];
+						const newIds = this.insertDuplicateBlockForPendingReorder(
+							taskIds,
+							dy < 0
+						);
+						this.dragState =
+							newIds.length > 0
+								? { mode: "reorder", taskIds: newIds }
+								: { mode: "reorder", taskIds };
+						st = this.dragState;
+						ev.preventDefault();
+						return;
+					}
+
 					const primaryId = st.taskId;
 					const taskIds =
 						this.selectedTaskIds.size > 0 && this.selectedTaskIds.has(primaryId)
@@ -1060,6 +1104,7 @@ export class TimelineView extends FileView {
 			}
 
 			if (this.dragState) {
+				const pendingBarState = this.dragState.mode === "pending-bar" ? this.dragState : null;
 				const wasPendingBar = this.dragState.mode === "pending-bar";
 				const wasDuplicateAborted = this.dragState.mode === "reorder-duplicate-pending";
 				if (this.dragRedrawRafId !== null) {
@@ -1069,6 +1114,20 @@ export class TimelineView extends FileView {
 				}
 
 				this.dragState = null;
+
+				if (
+					pendingBarState?.toggleSelectionOnMouseUp
+					&& !this.selectedTaskIds.has(pendingBarState.taskId)
+				) {
+					this.selectedTaskIds.add(pendingBarState.taskId);
+					this.redrawPreservingScroll();
+				} else if (
+					pendingBarState?.toggleSelectionOnMouseUp
+					&& this.selectedTaskIds.has(pendingBarState.taskId)
+				) {
+					this.selectedTaskIds.delete(pendingBarState.taskId);
+					this.redrawPreservingScroll();
+				}
 
 				if (!wasPendingBar && !wasDuplicateAborted) {
 					void this.api.persist(this);

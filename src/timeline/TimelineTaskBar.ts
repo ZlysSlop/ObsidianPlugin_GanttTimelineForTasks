@@ -157,17 +157,13 @@ export function appendTimelineTaskBar(
 			return;
 		}
 
-		if (ev.ctrlKey || ev.metaKey) {
-			ev.preventDefault();
-			ev.stopPropagation();
-			ctx.toggleBarMultiSelect(task.id);
-			return;
-		}
-
 		ev.preventDefault();
+		ev.stopPropagation();
 
 		if (!ctx.selectedTaskIds.has(task.id)) {
-			ctx.selectedTaskIds.clear();
+			if (!(ev.ctrlKey || ev.metaKey)) {
+				ctx.selectedTaskIds.clear();
+			}
 		}
 
 		ctx.beginPendingBarDrag(
@@ -175,7 +171,13 @@ export function appendTimelineTaskBar(
 			ev.clientX,
 			ev.clientY,
 			new Date(start),
-			new Date(end)
+			new Date(end),
+			ev.ctrlKey || ev.metaKey
+				? {
+						duplicateOnVertical: true,
+						toggleSelectionOnMouseUp: true,
+					}
+				: undefined
 		);
 	});
 
