@@ -77,6 +77,7 @@ export class TimelineView extends FileView {
 		getTimelineTrackAddEdgePx: () => number;
 		getTimelineMarqueeDragPx: () => number;
 		getTimelineWheelZoomMinIntervalMs: () => number;
+		getPlannerMaxUndoSteps: () => number;
 		getEmojiPickerCategories: () => EmojiPickerCategoryForModal[];
 	};
 	/** Task ids selected with Ctrl/Cmd+click on bars — moved together when you drag or use nudge buttons. */
@@ -174,6 +175,7 @@ export class TimelineView extends FileView {
 			getTimelineTrackAddEdgePx: () => number;
 			getTimelineMarqueeDragPx: () => number;
 			getTimelineWheelZoomMinIntervalMs: () => number;
+			getPlannerMaxUndoSteps: () => number;
 			getEmojiPickerCategories: () => EmojiPickerCategoryForModal[];
 		}
 	) {
@@ -181,6 +183,7 @@ export class TimelineView extends FileView {
 		this.api = api;
 		this.data = createEmptyPlannerData();
 		this.navigation = true;
+		this.plannerHistory.setMaxUndoSteps(this.api.getPlannerMaxUndoSteps());
 	}
 
 
@@ -687,6 +690,7 @@ export class TimelineView extends FileView {
 
 	/** Call when planner data was reloaded from disk so the grid updates. */
 	refresh(): void {
+		this.plannerHistory.setMaxUndoSteps(this.api.getPlannerMaxUndoSteps());
 		this.redraw();
 	}
 

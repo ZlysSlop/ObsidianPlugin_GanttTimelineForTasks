@@ -1,7 +1,5 @@
 import type { TimelinePlannerData, TimelineTask } from "./TimelineTypes";
 
-const MAX_UNDO = 50;
-
 /** Deep copy of one task (for undo + task editor). */
 export function cloneTimelineTask(t: TimelineTask): TimelineTask {
 	const out: TimelineTask = {
@@ -85,6 +83,7 @@ export function plannerDataEqual(
 export class PlannerHistory {
 	private undo: TimelinePlannerData[] = [];
 	private redo: TimelinePlannerData[] = [];
+	private maxUndoSteps = 50;
 	/**
 	 * Off until the timeline file is fully read into the view, so we never
 	 * record snapshots of the pre-load empty `data` (which would make the first
@@ -95,6 +94,21 @@ export class PlannerHistory {
 	/** When false, all pushes are ignored; undo/redo only apply to stacks built while enabled. */
 	setRecordingEnabled(enabled: boolean): void {
 		this.recordingEnabled = enabled;
+	}
+
+	/** Caps undo/redo list lengths; drops oldest entries when the limit shrinks. */
+	setMaxUndoSteps(n: number): void {
+		const cap = Math.round(Math.min(200, Math.max(1, n)));
+		if (cap === this.maxUndoSteps) {
+			return;
+		}
+		this.maxUndoSteps = cap;
+		while (this.undo.length > this.maxUndoSteps) {
+			this.undo.shift();
+		}
+		while (this.redo.length > this.maxUndoSteps) {
+			this.redo.shift();
+		}
 	}
 
 	isRecordingEnabled(): boolean {
@@ -112,7 +126,7 @@ export class PlannerHistory {
 			return;
 		}
 		this.undo.push(clonePlannerData(current));
-		if (this.undo.length > MAX_UNDO) {
+		if (this.undo.length > this.maxUndoSteps) {
 			this.undo.shift();
 		}
 		this.redo = [];
@@ -127,7 +141,7 @@ export class PlannerHistory {
 			return;
 		}
 		this.undo.push(clonePlannerData(snap));
-		if (this.undo.length > MAX_UNDO) {
+		if (this.undo.length > this.maxUndoSteps) {
 			this.undo.shift();
 		}
 		this.redo = [];
@@ -148,6 +162,9 @@ export class PlannerHistory {
 		}
 		const next = this.undo.pop()!;
 		this.redo.push(clonePlannerData(current));
+		if (this.redo.length > this.maxUndoSteps) {
+			this.redo.shift();
+		}
 		return next;
 	}
 
@@ -158,6 +175,9 @@ export class PlannerHistory {
 		}
 		const next = this.redo.pop()!;
 		this.undo.push(clonePlannerData(current));
+		if (this.undo.length > this.maxUndoSteps) {
+			this.undo.shift();
+		}
 		return next;
 	}
 }

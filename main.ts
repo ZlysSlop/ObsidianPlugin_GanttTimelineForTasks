@@ -5,6 +5,7 @@ import { getBuiltInEmojiPickerCategoryDefinitions } from "./src/emoji/emojiPicke
 import { definitionsToRuntimeCategories } from "./src/emoji/emojiPickerRuntime";
 import type { TimelinePlannerSettings } from "./src/settings/settingsData";
 import {
+	clampPlannerMaxUndoSteps,
 	clampTaskBarStackBreakpointPx,
 	clampTimelineMarqueeDragPx,
 	clampTimelinePendingBarDragPx,
@@ -63,6 +64,8 @@ export default class TimelinePlannerPlugin extends Plugin {
 					clampTimelineWheelZoomMinIntervalMs(
 						this.settings.timelineWheelZoomMinIntervalMs
 					),
+				getPlannerMaxUndoSteps: () =>
+					clampPlannerMaxUndoSteps(this.settings.plannerMaxUndoSteps),
 				getEmojiPickerCategories: () => {
 					const runtime = definitionsToRuntimeCategories(
 						this.settings.emojiPickerCategories

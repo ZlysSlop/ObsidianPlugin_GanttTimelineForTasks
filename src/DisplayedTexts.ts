@@ -36,6 +36,10 @@ export const DisplayedTexts = {
 		timelineWheelZoomMinIntervalMsName: "Ctrl/⌘+scroll zoom throttle (ms)",
 		timelineWheelZoomMinIntervalMsDesc:
 			"Minimum time between pinch-as-zoom (Ctrl/⌘+scroll) steps so trackpads do not change zoom too fast. Use 0 for no limit.\nRange: 0-500.",
+		undoCategoryHeading: "Undo & redo",
+		plannerMaxUndoStepsName: "Max undo steps (per open timeline)",
+		plannerMaxUndoStepsDesc:
+			"How many edits each open timeline can undo (Ctrl/⌘+Z) before older history is dropped. Redo (Ctrl+Shift+Z) uses the same window; higher values use more memory.\nRange: 1-200.",
 		taskStatesHeading: "Task states",
 		taskStatesSummaryDesc: "Workflow states (name + color) for tasks on the bar and in the editor.\nOpens in a separate window.",
 		openTaskStatesSettingsButton: "Configure task states...",

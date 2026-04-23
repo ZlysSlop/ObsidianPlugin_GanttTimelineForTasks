@@ -53,6 +53,14 @@ export function clampTimelineWheelZoomMinIntervalMs(value: unknown): number {
 	return Math.round(Math.min(500, Math.max(0, n)));
 }
 
+export function clampPlannerMaxUndoSteps(value: unknown): number {
+	const n =
+		typeof value === "number" && Number.isFinite(value)
+			? value
+			: DEFAULT_TIMELINE_SETTINGS.plannerMaxUndoSteps;
+	return Math.round(Math.min(200, Math.max(1, n)));
+}
+
 /** Merge `data.json` payload with defaults and normalize arrays / emoji config. */
 export function mergeLoadedTimelineSettings(
 	raw: unknown
@@ -85,6 +93,9 @@ export function mergeLoadedTimelineSettings(
 		clampTimelineWheelZoomMinIntervalMs(
 			settings.timelineWheelZoomMinIntervalMs
 		);
+	settings.plannerMaxUndoSteps = clampPlannerMaxUndoSteps(
+		settings.plannerMaxUndoSteps
+	);
 	if (!Array.isArray(settings.emojiPickerCategories)) {
 		settings.emojiPickerCategories = [];
 	}

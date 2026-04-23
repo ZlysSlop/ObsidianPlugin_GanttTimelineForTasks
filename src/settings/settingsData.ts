@@ -55,6 +55,10 @@ export interface TimelinePlannerSettings {
 	 * Minimum time between pinch-as-zoom (Ctrl/⌘+scroll) steps; 0 = no throttling.
 	 */
 	timelineWheelZoomMinIntervalMs: number;
+	/**
+	 * How many prior planner snapshots are kept for Ctrl/Cmd+Z undo (and redo) per open timeline.
+	 */
+	plannerMaxUndoSteps: number;
 	/** Custom emoji picker categories; empty on disk until first load seeds built-ins. */
 	emojiPickerCategories: EmojiPickerCategoryDefinition[];
 }
@@ -68,5 +72,6 @@ export const DEFAULT_TIMELINE_SETTINGS: TimelinePlannerSettings = {
 	timelineTrackAddEdgePx: 14,
 	timelineMarqueeDragPx: 4,
 	timelineWheelZoomMinIntervalMs: 90,
+	plannerMaxUndoSteps: 50,
 	emojiPickerCategories: [],
 };
