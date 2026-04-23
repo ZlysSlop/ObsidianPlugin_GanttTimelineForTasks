@@ -9,7 +9,6 @@ import { DisplayedTexts } from "../DisplayedTexts";
 import type { TaskStateDefinition } from "../settings/settingsData";
 import type { TaskDateRange, TimelineTask } from "./TimelineTypes";
 import { sortTaskIdsByListOrder } from "./timelineUtils";
-import { TIMELINE_TRACK_ADD_EDGE_PX } from "./timelineConstants";
 import type { TimelineView } from "./TimelineView";
 
 export type TaskRowRenderContext = {
@@ -72,6 +71,9 @@ export type TaskRowRenderContext = {
 		place: "above" | "below",
 		anchorTaskId: string
 	) => void;
+
+	/** Pixels from top/bottom of track that show the “+ add task” control (from settings). */
+	getTimelineTrackAddEdgePx: () => number;
 };
 
 /**
@@ -87,6 +89,7 @@ type TimelineViewForTaskRows = {
 		getTaskStates: () => TaskStateDefinition[];
 		getDefaultTaskBarColor: () => string;
 		getTaskBarStackLayoutBreakpointPx: () => number;
+		getTimelineTrackAddEdgePx: () => number;
 	};
 	
 	bindMarqueeOnTrack(track: HTMLElement): void;
@@ -244,6 +247,8 @@ export function buildTaskRowContext(view: TimelineView): TaskRowRenderContext {
 
 		addTaskOnTrackEdge: (dayYmd, place, anchorTaskId) =>
 			v.addTaskOnTrackEdge(dayYmd, place, anchorTaskId),
+
+		getTimelineTrackAddEdgePx: () => v.api.getTimelineTrackAddEdgePx(),
 	};
 }
 
@@ -256,7 +261,8 @@ function installTrackEdgeAddTaskUi(
 	dayCount: number,
 	rangeStart: Date,
 	task: TimelineTask,
-	addTaskOnTrackEdge: TaskRowRenderContext["addTaskOnTrackEdge"]
+	addTaskOnTrackEdge: TaskRowRenderContext["addTaskOnTrackEdge"],
+	getTrackAddEdgePx: () => number
 ): void {
 	const rangeStartYmd = formatYmd(rangeStart);
 	const plusBtn = trackEl.createEl("button", {
@@ -273,7 +279,7 @@ function installTrackEdgeAddTaskUi(
 		const r = trackEl.getBoundingClientRect();
 		const x = ev.clientX - r.left;
 		const y = ev.clientY - r.top;
-		const edge = TIMELINE_TRACK_ADD_EDGE_PX;
+		const edge = getTrackAddEdgePx();
 		const dTop = y;
 		const dBottom = r.height - y;
 		const inEdge = dTop < edge || dBottom < edge;
@@ -340,6 +346,7 @@ export type TaskTrackHost = {
 	dayCount: number;
 	bindMarqueeOnTrack: (track: HTMLElement) => void;
 	addTaskOnTrackEdge: TaskRowRenderContext["addTaskOnTrackEdge"];
+	getTimelineTrackAddEdgePx: TaskRowRenderContext["getTimelineTrackAddEdgePx"];
 };
 
 /**
@@ -362,7 +369,8 @@ export function appendTimelineTaskRowTrack(
 		ctx.dayCount,
 		rangeStart,
 		task,
-		ctx.addTaskOnTrackEdge
+		ctx.addTaskOnTrackEdge,
+		ctx.getTimelineTrackAddEdgePx
 	);
 
 	const { start, end } = clampDateOrder(parseYmd(task.start), parseYmd(task.end));

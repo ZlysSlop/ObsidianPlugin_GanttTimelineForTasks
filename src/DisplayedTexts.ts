@@ -23,6 +23,19 @@ export const DisplayedTexts = {
 		taskBarStackBreakpointDesc: "When a bar is narrower than this many pixels, the title stacks above the state control (zoom affects bar width in px).\nHigher = stay on one row longer while zoomed out; lower = stack sooner.\nRange: 120-600.",
 		timelineZoomDayStepName: "Timeline zoom step (days)",
 		timelineZoomDayStepDesc: "Total days added or removed per zoom (timeline +/- or Ctrl/⌘+scroll).\nThe change is split across both ends of the visible range (centered zoom); odd steps alternate which side gets the extra day.\nRange: 1-30.",
+		timelineInteractionCategoryHeading: "Timeline interaction",
+		timelinePendingBarDragPxName: "Bar drag: reorder vs. date threshold (px)",
+		timelinePendingBarDragPxDesc:
+			"After you press a task bar, the pointer must move this far before the timeline decides: vertical = reorder (or duplicate with Ctrl) vs horizontal = shift dates on the bar.\nRange: 1-30.",
+		timelineTrackAddEdgePxName: "Track edge: add-task zone (px)",
+		timelineTrackAddEdgePxDesc:
+			"When the pointer is within this many pixels of the top or bottom of a day track, a “+” appears on the day column to add a task above or below that row.\nRange: 2-50.",
+		timelineMarqueeDragPxName: "Empty track: marquee start (px)",
+		timelineMarqueeDragPxDesc:
+			"On an empty part of a track, the pointer must move this far after press before rubber-band (marquee) selection begins.\nRange: 1-20.",
+		timelineWheelZoomMinIntervalMsName: "Ctrl/⌘+scroll zoom throttle (ms)",
+		timelineWheelZoomMinIntervalMsDesc:
+			"Minimum time between pinch-as-zoom (Ctrl/⌘+scroll) steps so trackpads do not change zoom too fast. Use 0 for no limit.\nRange: 0-500.",
 		taskStatesHeading: "Task states",
 		taskStatesSummaryDesc: "Workflow states (name + color) for tasks on the bar and in the editor.\nOpens in a separate window.",
 		openTaskStatesSettingsButton: "Configure task states...",

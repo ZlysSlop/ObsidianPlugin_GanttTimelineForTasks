@@ -37,6 +37,24 @@ export interface TimelinePlannerSettings {
 	 * (+/− on the timeline or Ctrl/⌘+scroll).
 	 */
 	timelineZoomDayStep: number;
+	// --- Timeline interaction (thresholds, px / ms) ---
+	/**
+	 * After pressing a task bar, movement past this distance decides vertical reorder
+	 * (or duplicate) vs horizontal date drag.
+	 */
+	timelinePendingBarDragPx: number;
+	/**
+	 * Near the top or bottom of a day track, this band (px) shows the “+ add task” control.
+	 */
+	timelineTrackAddEdgePx: number;
+	/**
+	 * On empty track, pointer movement past this before rubber-band (marquee) select starts.
+	 */
+	timelineMarqueeDragPx: number;
+	/**
+	 * Minimum time between pinch-as-zoom (Ctrl/⌘+scroll) steps; 0 = no throttling.
+	 */
+	timelineWheelZoomMinIntervalMs: number;
 	/** Custom emoji picker categories; empty on disk until first load seeds built-ins. */
 	emojiPickerCategories: EmojiPickerCategoryDefinition[];
 }
@@ -46,5 +64,9 @@ export const DEFAULT_TIMELINE_SETTINGS: TimelinePlannerSettings = {
 	taskStates: [],
 	taskBarStackLayoutBreakpointPx: 200,
 	timelineZoomDayStep: 6,
+	timelinePendingBarDragPx: 6,
+	timelineTrackAddEdgePx: 14,
+	timelineMarqueeDragPx: 4,
+	timelineWheelZoomMinIntervalMs: 90,
 	emojiPickerCategories: [],
 };

@@ -9,7 +9,13 @@ import { TIMELINE_VIEW_TYPE, ZLY_TIMELINE_EXTENSION } from "../constants";
 import { DisplayedTexts } from "../DisplayedTexts";
 import { EmojiPickerSettingsModal } from "../emoji/EmojiPickerSettingsModal";
 import { TimelineView } from "../timeline/TimelineView";
-import { clampTimelineZoomDayStep } from "./settingsSetup";
+import {
+	clampTimelineMarqueeDragPx,
+	clampTimelinePendingBarDragPx,
+	clampTimelineTrackAddEdgePx,
+	clampTimelineWheelZoomMinIntervalMs,
+	clampTimelineZoomDayStep,
+} from "./settingsSetup";
 import type { TimelinePlannerPluginLike } from "./timelinePluginLike";
 import { TaskStatesSettingsModal } from "./TaskStatesSettingsModal";
 
@@ -172,6 +178,183 @@ export class TimelinePlannerSettingTab extends PluginSettingTab {
 						).open();
 					})
 			);
+
+
+		containerEl.createEl("h3", {
+			text: DisplayedTexts.settings.timelineInteractionCategoryHeading,
+		});
+
+		new Setting(containerEl)
+			.setName(DisplayedTexts.settings.timelinePendingBarDragPxName)
+			.setDesc(DisplayedTexts.settings.timelinePendingBarDragPxDesc)
+			.addText((tc) => {
+				const input = tc.inputEl;
+				input.type = "text";
+				input.inputMode = "numeric";
+				input.autocomplete = "off";
+				input.spellcheck = false;
+				const previous = (): number =>
+					this.plugin.settings.timelinePendingBarDragPx;
+				const revert = (): void => {
+					tc.setValue(String(previous()));
+				};
+				tc.setValue(String(previous()));
+				const commit = async (): Promise<void> => {
+					const raw = tc.getValue().trim();
+					if (raw === "" || !/^\d+$/.test(raw)) {
+						revert();
+						return;
+					}
+					const n = parseInt(raw, 10);
+					if (!Number.isFinite(n)) {
+						revert();
+						return;
+					}
+					const clamped = clampTimelinePendingBarDragPx(n);
+					this.plugin.settings.timelinePendingBarDragPx = clamped;
+					await this.plugin.saveSettings();
+					this.refreshOpenTimelineViews();
+					tc.setValue(String(clamped));
+				};
+				this.plugin.registerDomEvent(input, "blur", () => {
+					void commit();
+				});
+				this.plugin.registerDomEvent(input, "keydown", (ev: KeyboardEvent) => {
+					if (ev.key === "Enter") {
+						ev.preventDefault();
+						input.blur();
+					}
+				});
+			});
+
+		new Setting(containerEl)
+			.setName(DisplayedTexts.settings.timelineTrackAddEdgePxName)
+			.setDesc(DisplayedTexts.settings.timelineTrackAddEdgePxDesc)
+			.addText((tc) => {
+				const input = tc.inputEl;
+				input.type = "text";
+				input.inputMode = "numeric";
+				input.autocomplete = "off";
+				input.spellcheck = false;
+				const previous = (): number =>
+					this.plugin.settings.timelineTrackAddEdgePx;
+				const revert = (): void => {
+					tc.setValue(String(previous()));
+				};
+				tc.setValue(String(previous()));
+				const commit = async (): Promise<void> => {
+					const raw = tc.getValue().trim();
+					if (raw === "" || !/^\d+$/.test(raw)) {
+						revert();
+						return;
+					}
+					const n = parseInt(raw, 10);
+					if (!Number.isFinite(n)) {
+						revert();
+						return;
+					}
+					const clamped = clampTimelineTrackAddEdgePx(n);
+					this.plugin.settings.timelineTrackAddEdgePx = clamped;
+					await this.plugin.saveSettings();
+					this.refreshOpenTimelineViews();
+					tc.setValue(String(clamped));
+				};
+				this.plugin.registerDomEvent(input, "blur", () => {
+					void commit();
+				});
+				this.plugin.registerDomEvent(input, "keydown", (ev: KeyboardEvent) => {
+					if (ev.key === "Enter") {
+						ev.preventDefault();
+						input.blur();
+					}
+				});
+			});
+
+		new Setting(containerEl)
+			.setName(DisplayedTexts.settings.timelineMarqueeDragPxName)
+			.setDesc(DisplayedTexts.settings.timelineMarqueeDragPxDesc)
+			.addText((tc) => {
+				const input = tc.inputEl;
+				input.type = "text";
+				input.inputMode = "numeric";
+				input.autocomplete = "off";
+				input.spellcheck = false;
+				const previous = (): number =>
+					this.plugin.settings.timelineMarqueeDragPx;
+				const revert = (): void => {
+					tc.setValue(String(previous()));
+				};
+				tc.setValue(String(previous()));
+				const commit = async (): Promise<void> => {
+					const raw = tc.getValue().trim();
+					if (raw === "" || !/^\d+$/.test(raw)) {
+						revert();
+						return;
+					}
+					const n = parseInt(raw, 10);
+					if (!Number.isFinite(n)) {
+						revert();
+						return;
+					}
+					const clamped = clampTimelineMarqueeDragPx(n);
+					this.plugin.settings.timelineMarqueeDragPx = clamped;
+					await this.plugin.saveSettings();
+					this.refreshOpenTimelineViews();
+					tc.setValue(String(clamped));
+				};
+				this.plugin.registerDomEvent(input, "blur", () => {
+					void commit();
+				});
+				this.plugin.registerDomEvent(input, "keydown", (ev: KeyboardEvent) => {
+					if (ev.key === "Enter") {
+						ev.preventDefault();
+						input.blur();
+					}
+				});
+			});
+
+		new Setting(containerEl)
+			.setName(DisplayedTexts.settings.timelineWheelZoomMinIntervalMsName)
+			.setDesc(DisplayedTexts.settings.timelineWheelZoomMinIntervalMsDesc)
+			.addText((tc) => {
+				const input = tc.inputEl;
+				input.type = "text";
+				input.inputMode = "numeric";
+				input.autocomplete = "off";
+				input.spellcheck = false;
+				const previous = (): number =>
+					this.plugin.settings.timelineWheelZoomMinIntervalMs;
+				const revert = (): void => {
+					tc.setValue(String(previous()));
+				};
+				tc.setValue(String(previous()));
+				const commit = async (): Promise<void> => {
+					const raw = tc.getValue().trim();
+					if (raw === "" || !/^\d+$/.test(raw)) {
+						revert();
+						return;
+					}
+					const n = parseInt(raw, 10);
+					if (!Number.isFinite(n)) {
+						revert();
+						return;
+					}
+					const clamped = clampTimelineWheelZoomMinIntervalMs(n);
+					this.plugin.settings.timelineWheelZoomMinIntervalMs = clamped;
+					await this.plugin.saveSettings();
+					this.refreshOpenTimelineViews();
+					tc.setValue(String(clamped));
+				};
+				this.plugin.registerDomEvent(input, "blur", () => {
+					void commit();
+				});
+				this.plugin.registerDomEvent(input, "keydown", (ev: KeyboardEvent) => {
+					if (ev.key === "Enter") {
+						ev.preventDefault();
+						input.blur();
+					}
+				});
+			});
 	}
 
 	private refreshOpenTimelineViews(): void {

@@ -19,11 +19,6 @@ import { createStampedId } from "../idUtils";
 import type { TaskStateDefinition } from "../settings/settingsData";
 import { TaskEditModal } from "../TaskEditModal";
 import {
-	TIMELINE_MARQUEE_DRAG_PX,
-	TIMELINE_PENDING_BAR_DRAG_PX,
-	TIMELINE_WHEEL_ZOOM_MIN_INTERVAL_MS,
-} from "./timelineConstants";
-import {
 	placeTodayLine,
 	removeTodayLineElements,
 	renderDayHeaderRow,
@@ -70,6 +65,10 @@ export class TimelineView extends FileView {
 		getTaskStates: () => TaskStateDefinition[];
 		getTaskBarStackLayoutBreakpointPx: () => number;
 		getTimelineZoomDayStep: () => number;
+		getTimelinePendingBarDragPx: () => number;
+		getTimelineTrackAddEdgePx: () => number;
+		getTimelineMarqueeDragPx: () => number;
+		getTimelineWheelZoomMinIntervalMs: () => number;
 		getEmojiPickerCategories: () => EmojiPickerCategoryForModal[];
 	};
 	/** Task ids selected with Ctrl/Cmd+click on bars — moved together when you drag or use nudge buttons. */
@@ -156,6 +155,10 @@ export class TimelineView extends FileView {
 			getTaskStates: () => TaskStateDefinition[];
 			getTaskBarStackLayoutBreakpointPx: () => number;
 			getTimelineZoomDayStep: () => number;
+			getTimelinePendingBarDragPx: () => number;
+			getTimelineTrackAddEdgePx: () => number;
+			getTimelineMarqueeDragPx: () => number;
+			getTimelineWheelZoomMinIntervalMs: () => number;
 			getEmojiPickerCategories: () => EmojiPickerCategoryForModal[];
 		}
 	) {
@@ -509,7 +512,7 @@ export class TimelineView extends FileView {
 		const now = Date.now();
 		if (
 			now - this.lastWheelZoomAt <
-			TIMELINE_WHEEL_ZOOM_MIN_INTERVAL_MS
+			this.api.getTimelineWheelZoomMinIntervalMs()
 		) {
 			ev.preventDefault();
 			return;
@@ -884,7 +887,7 @@ export class TimelineView extends FileView {
 						ev.clientX - ms.startX,
 						ev.clientY - ms.startY
 					);
-					if (d < TIMELINE_MARQUEE_DRAG_PX) {
+					if (d < this.api.getTimelineMarqueeDragPx()) {
 						ev.preventDefault();
 						return;
 					}
@@ -940,7 +943,7 @@ export class TimelineView extends FileView {
 				const dx = ev.clientX - st.startX;
 				const dy = ev.clientY - st.startY;
 
-				if (Math.hypot(dx, dy) < TIMELINE_PENDING_BAR_DRAG_PX) {
+				if (Math.hypot(dx, dy) < this.api.getTimelinePendingBarDragPx()) {
 					ev.preventDefault();
 					return;
 				}
@@ -960,7 +963,7 @@ export class TimelineView extends FileView {
 				const dx = ev.clientX - st.startX;
 				const dy = ev.clientY - st.startY;
 				
-				if (Math.hypot(dx, dy) < TIMELINE_PENDING_BAR_DRAG_PX) {
+				if (Math.hypot(dx, dy) < this.api.getTimelinePendingBarDragPx()) {
 					ev.preventDefault();
 					return;
 				}

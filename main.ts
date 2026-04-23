@@ -6,6 +6,10 @@ import { definitionsToRuntimeCategories } from "./src/emoji/emojiPickerRuntime";
 import type { TimelinePlannerSettings } from "./src/settings/settingsData";
 import {
 	clampTaskBarStackBreakpointPx,
+	clampTimelineMarqueeDragPx,
+	clampTimelinePendingBarDragPx,
+	clampTimelineTrackAddEdgePx,
+	clampTimelineWheelZoomMinIntervalMs,
 	clampTimelineZoomDayStep,
 	mergeLoadedTimelineSettings,
 } from "./src/settings/settingsSetup";
@@ -43,6 +47,22 @@ export default class TimelinePlannerPlugin extends Plugin {
 					),
 				getTimelineZoomDayStep: () =>
 					clampTimelineZoomDayStep(this.settings.timelineZoomDayStep),
+				getTimelinePendingBarDragPx: () =>
+					clampTimelinePendingBarDragPx(
+						this.settings.timelinePendingBarDragPx
+					),
+				getTimelineTrackAddEdgePx: () =>
+					clampTimelineTrackAddEdgePx(
+						this.settings.timelineTrackAddEdgePx
+					),
+				getTimelineMarqueeDragPx: () =>
+					clampTimelineMarqueeDragPx(
+						this.settings.timelineMarqueeDragPx
+					),
+				getTimelineWheelZoomMinIntervalMs: () =>
+					clampTimelineWheelZoomMinIntervalMs(
+						this.settings.timelineWheelZoomMinIntervalMs
+					),
 				getEmojiPickerCategories: () => {
 					const runtime = definitionsToRuntimeCategories(
 						this.settings.emojiPickerCategories
