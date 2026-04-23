@@ -19,6 +19,19 @@ export function styleTaskStateSelect(el: HTMLElement, fillHex: string | null): v
 	el.addClass("timeline-task-row-task-bar-state-select--filled");
 }
 
+export function applyTaskStateButtonUi(
+	el: HTMLElement,
+	stateName: string | null,
+	fillHex: string | null
+): void {
+	const hasState = !!stateName?.trim();
+	el.style.display = hasState ? "" : "none";
+	if (hasState) {
+		el.textContent = stateName!;
+	}
+	styleTaskStateSelect(el, fillHex);
+}
+
 /** Uses theme bar CSS when both task and plugin default are empty. */
 export function applyTaskBarColor(
 	element_task_bar: HTMLElement,
@@ -115,10 +128,10 @@ export function appendTimelineTaskBar(
 			"aria-label": DisplayedTexts.timeline.taskStateSelectTitle,
 			"aria-haspopup": "menu",
 		},
-		text: curState?.name ?? DisplayedTexts.taskModal.taskStateNone,
+		text: curState?.name ?? "",
 	});
 
-	styleTaskStateSelect(stateBtn, curState?.color ?? null);
+	applyTaskStateButtonUi(stateBtn, curState?.name ?? null, curState?.color ?? null);
 	stateBtn.addEventListener("mousedown", (ev) => {
 		ev.stopPropagation();
 	});

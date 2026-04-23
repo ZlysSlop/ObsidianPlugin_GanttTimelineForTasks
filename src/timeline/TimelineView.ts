@@ -40,7 +40,7 @@ import {
 	moveTasksToDisplayIndex,
 	sortTaskIdsByListOrder,
 } from "./timelineUtils";
-import { styleTaskStateSelect } from "./TimelineTaskBar";
+import { applyTaskStateButtonUi } from "./TimelineTaskBar";
 import { renderTimelineTaskRow } from "./TimelineTaskRow";
 import { buildTaskRowContext } from "./timelineTaskTrack";
 import type {
@@ -440,10 +440,12 @@ export class TimelineView extends FileView {
 			new Notice(DisplayedTexts.timeline.noticeNoFile);
 			return;
 		}
+		
 		if (this.selectedTaskIds.size === 0) {
 			new Notice(DisplayedTexts.timeline.noticeNoSelection);
 			return;
 		}
+
 		for (const id of Array.from(this.selectedTaskIds)) {
 			const t = this.data.tasks.find((x) => x.id === id);
 			if (!t) continue;
@@ -456,6 +458,7 @@ export class TimelineView extends FileView {
 			t.start = formatYmd(o.start);
 			t.end = formatYmd(o.end);
 		}
+		
 		void this.persistAndRedraw();
 	}
 
@@ -472,7 +475,7 @@ export class TimelineView extends FileView {
 			ev.preventDefault();
 			return;
 		}
-		
+
 		this.lastWheelZoomAt = now;
 		ev.preventDefault();
 		const step = this.api.getTimelineZoomDayStep();
@@ -1262,8 +1265,7 @@ export class TimelineView extends FileView {
 				const had = task.stateId?.trim();
 				if (had) {
 					delete task.stateId;
-					stateBtn.textContent = DisplayedTexts.taskModal.taskStateNone;
-					styleTaskStateSelect(stateBtn, null);
+					applyTaskStateButtonUi(stateBtn, null, null);
 					void this.persistAndRedraw();
 				}
 			});
@@ -1278,8 +1280,7 @@ export class TimelineView extends FileView {
 						return;
 					}
 					task.stateId = s.id;
-					stateBtn.textContent = s.name;
-					styleTaskStateSelect(stateBtn, s.color);
+					applyTaskStateButtonUi(stateBtn, s.name, s.color);
 					void this.persistAndRedraw();
 				});
 			});
