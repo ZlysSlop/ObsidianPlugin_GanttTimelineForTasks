@@ -43,7 +43,11 @@ import {
 import { styleTaskStateSelect } from "./TimelineTaskBar";
 import { renderTimelineTaskRow } from "./TimelineTaskRow";
 import { buildTaskRowContext } from "./timelineTaskTrack";
-import type { TimelinePlannerData, TimelineTask } from "./TimelineTypes";
+import type {
+	TaskDateRange,
+	TimelinePlannerData,
+	TimelineTask,
+} from "./TimelineTypes";
 import { DisplayedTexts } from "../DisplayedTexts";
 import {
 	createEmptyPlannerData,
@@ -78,10 +82,7 @@ export class TimelineView extends FileView {
 			origStart: Date;
 			origEnd: Date;
 			/** Present for `move`: all tasks that move together (same day delta from drag start). */
-			groupOrigins?: Map<
-				string,
-				{ origStart: Date; origEnd: Date }
-			>;
+			groupOrigins?: Map<string, TaskDateRange>;
 		  }
 		| {
 			mode: "pending-bar";
@@ -543,18 +544,24 @@ export class TimelineView extends FileView {
 			.map((id) => tasks.findIndex((t) => t.id === id))
 			.filter((i) => i >= 0)
 			.sort((a, b) => a - b);
-		if (sortedIdxs.length === 0) {
+		
+			if (sortedIdxs.length === 0) {
 			return [];
 		}
+
 		const minIdx = sortedIdxs[0];
 		const maxIdx = sortedIdxs[sortedIdxs.length - 1];
 		const at = insertAbove ? minIdx : maxIdx + 1;
 		const t0 = Date.now();
+
 		const clones: TimelineTask[] = sortedIdxs.map((i, j) =>
 			this.cloneTaskForDuplicate(tasks[i], t0, j)
 		);
+
 		tasks.splice(at, 0, ...clones);
+		
 		this.redrawPreservingScroll();
+		
 		return clones.map((c) => c.id);
 	}
 
@@ -866,21 +873,19 @@ export class TimelineView extends FileView {
 			if (st.mode === "reorder-duplicate-pending") {
 				const dx = ev.clientX - st.startX;
 				const dy = ev.clientY - st.startY;
+
 				if (Math.hypot(dx, dy) < TIMELINE_PENDING_BAR_DRAG_PX) {
 					ev.preventDefault();
 					return;
 				}
+
 				if (Math.abs(dy) <= Math.abs(dx)) {
 					this.dragState = { mode: "reorder", taskIds: st.taskIds };
 				} else {
-					const newIds = this.insertDuplicateBlockForPendingReorder(
-						st.taskIds,
-						dy < 0
-					);
-					this.dragState =
-						newIds.length > 0
-							? { mode: "reorder", taskIds: newIds }
-							: { mode: "reorder", taskIds: st.taskIds };
+					const newIds = this.insertDuplicateBlockForPendingReorder(st.taskIds, dy < 0);
+					this.dragState = newIds.length > 0
+						? { mode: "reorder", taskIds: newIds }
+						: { mode: "reorder", taskIds: st.taskIds };
 				}
 				st = this.dragState;
 			}
@@ -888,19 +893,17 @@ export class TimelineView extends FileView {
 			if (st.mode === "pending-bar") {
 				const dx = ev.clientX - st.startX;
 				const dy = ev.clientY - st.startY;
+				
 				if (Math.hypot(dx, dy) < TIMELINE_PENDING_BAR_DRAG_PX) {
 					ev.preventDefault();
 					return;
 				}
+
 				if (Math.abs(dy) > Math.abs(dx)) {
 					const primaryId = st.taskId;
 					const taskIds =
-						this.selectedTaskIds.size > 0 &&
-						this.selectedTaskIds.has(primaryId)
-							? sortTaskIdsByListOrder(
-									this.data.tasks,
-									Array.from(this.selectedTaskIds)
-								)
+						this.selectedTaskIds.size > 0 && this.selectedTaskIds.has(primaryId)
+							? sortTaskIdsByListOrder(this.data.tasks, Array.from(this.selectedTaskIds))
 							: [primaryId];
 					this.dragState = { mode: "reorder", taskIds };
 				} else {
@@ -910,10 +913,8 @@ export class TimelineView extends FileView {
 						this.selectedTaskIds.has(primaryId)
 							? Array.from(this.selectedTaskIds)
 							: [primaryId];
-					const groupOrigins = new Map<
-						string,
-						{ origStart: Date; origEnd: Date }
-					>();
+					const groupOrigins = new Map<string, TaskDateRange>();
+					
 					for (const id of ids) {
 						const t = this.data.tasks.find((x) => x.id === id);
 						if (!t) continue;
@@ -925,7 +926,9 @@ export class TimelineView extends FileView {
 							origEnd: new Date(c.end),
 						});
 					}
+					
 					const pr = groupOrigins.get(primaryId);
+
 					if (!pr || groupOrigins.size === 0) {
 						this.dragState = {
 							mode: "move",
@@ -1055,8 +1058,7 @@ export class TimelineView extends FileView {
 
 			if (this.dragState) {
 				const wasPendingBar = this.dragState.mode === "pending-bar";
-				const wasDuplicateAborted =
-					this.dragState.mode === "reorder-duplicate-pending";
+				const wasDuplicateAborted = this.dragState.mode === "reorder-duplicate-pending";
 				if (this.dragRedrawRafId !== null) {
 					cancelAnimationFrame(this.dragRedrawRafId);
 					this.dragRedrawRafId = null;

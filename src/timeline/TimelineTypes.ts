@@ -16,6 +16,12 @@ export interface TimelineTask {
 	stateId?: string;
 }
 
+/** Date interval snapshot used while dragging/resizing tasks. */
+export type TaskDateRange = {
+	origStart: Date;
+	origEnd: Date;
+};
+
 export interface TimelinePlannerData {
 	tasks: TimelineTask[];
 	/** First visible day (YYYY-MM-DD) */

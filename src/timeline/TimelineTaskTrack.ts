@@ -7,7 +7,7 @@ import {
 } from "../dateUtils";
 import { DisplayedTexts } from "../DisplayedTexts";
 import type { TaskStateDefinition } from "../settings/settingsData";
-import type { TimelineTask } from "./TimelineTypes";
+import type { TaskDateRange, TimelineTask } from "./TimelineTypes";
 import { sortTaskIdsByListOrder } from "./timelineUtils";
 import type { TimelineView } from "./TimelineView";
 
@@ -20,15 +20,18 @@ export type TaskRowRenderContext = {
 	getTaskBarStackLayoutBreakpointPx: () => number;
 	taskBarStackObservers: ResizeObserver[];
 	bindMarqueeOnTrack: (track: HTMLElement) => void;
+	
 	beginReorder: (
 		taskId: string,
 		options?: { duplicate: boolean; startX: number; startY: number }
 	) => void;
+	
 	jumpRangeToShowTask: (start: Date, end: Date) => void;
 	deleteTask: (id: string) => void;
 	openEditModal: (task: TimelineTask) => void;
 	redrawPreservingScroll: () => void;
 	toggleBarMultiSelect: (taskId: string) => void;
+	
 	beginPendingBarDrag: (
 		taskId: string,
 		clientX: number,
@@ -36,18 +39,21 @@ export type TaskRowRenderContext = {
 		start: Date,
 		end: Date
 	) => void;
+	
 	beginResizeLeft: (
 		taskId: string,
 		clientX: number,
 		start: Date,
 		end: Date
 	) => void;
+	
 	beginResizeRight: (
 		taskId: string,
 		clientX: number,
 		start: Date,
 		end: Date
 	) => void;
+	
 	onStateButtonPress: (
 		ev: MouseEvent,
 		task: TimelineTask,
@@ -70,41 +76,46 @@ type TimelineViewForTaskRows = {
 		getDefaultTaskBarColor: () => string;
 		getTaskBarStackLayoutBreakpointPx: () => number;
 	};
+	
 	bindMarqueeOnTrack(track: HTMLElement): void;
 	syncDocumentCursorFromInteractionState(): void;
 	jumpRangeToShowTask(start: Date, end: Date): void;
 	deleteTask(id: string): void;
 	openEditModal(task: TimelineTask): void;
 	redrawPreservingScroll(): void;
+	
 	stateButtonPressCallback(
 		ev: MouseEvent,
 		task: TimelineTask,
 		taskStates: TaskStateDefinition[],
 		stateBtn: HTMLElement
 	): void;
+	
 	dragState:
 		| {
-				mode: "move" | "resize-left" | "resize-right";
-				taskId: string;
-				startX: number;
-				origStart: Date;
-				origEnd: Date;
-				groupOrigins?: Map<string, { origStart: Date; origEnd: Date }>;
+			mode: "move" | "resize-left" | "resize-right";
+			taskId: string;
+			startX: number;
+			origStart: Date;
+			origEnd: Date;
+			groupOrigins?: Map<string, TaskDateRange>;
 		  }
 		| {
-				mode: "pending-bar";
-				taskId: string;
-				startX: number;
-				startY: number;
-				origStart: Date;
-				origEnd: Date;
+			mode: "pending-bar";
+			taskId: string;
+			startX: number;
+			startY: number;
+			origStart: Date;
+			origEnd: Date;
 		  }
-		| { mode: "reorder"; taskIds: string[] }
 		| {
-				mode: "reorder-duplicate-pending";
-				taskIds: string[];
-				startX: number;
-				startY: number;
+			mode: "reorder"; taskIds: string[]
+		  }
+		| {
+			mode: "reorder-duplicate-pending";
+			taskIds: string[];
+			startX: number;
+			startY: number;
 		  }
 		| null;
 };
@@ -117,10 +128,10 @@ export function buildTaskRowContext(view: TimelineView): TaskRowRenderContext {
 		selectedTaskIds: v.selectedTaskIds,
 		getTaskStates: () => v.api.getTaskStates(),
 		getDefaultTaskBarColor: () => v.api.getDefaultTaskBarColor(),
-		getTaskBarStackLayoutBreakpointPx: () =>
-			v.api.getTaskBarStackLayoutBreakpointPx(),
+		getTaskBarStackLayoutBreakpointPx: () => v.api.getTaskBarStackLayoutBreakpointPx(),
 		taskBarStackObservers: v.taskBarStackObservers,
 		bindMarqueeOnTrack: (track) => v.bindMarqueeOnTrack(track),
+		
 		beginReorder: (taskId, options) => {
 			let taskIds: string[];
 			if (v.selectedTaskIds.has(taskId) && v.selectedTaskIds.size > 1) {
@@ -144,10 +155,12 @@ export function buildTaskRowContext(view: TimelineView): TaskRowRenderContext {
 			}
 			v.syncDocumentCursorFromInteractionState();
 		},
+
 		jumpRangeToShowTask: (start, end) => v.jumpRangeToShowTask(start, end),
 		deleteTask: (id) => v.deleteTask(id),
 		openEditModal: (task) => v.openEditModal(task),
 		redrawPreservingScroll: () => v.redrawPreservingScroll(),
+		
 		toggleBarMultiSelect: (taskId) => {
 			if (v.selectedTaskIds.has(taskId)) {
 				v.selectedTaskIds.delete(taskId);
@@ -156,10 +169,12 @@ export function buildTaskRowContext(view: TimelineView): TaskRowRenderContext {
 			}
 			v.redrawPreservingScroll();
 		},
+		
 		beginPendingBarDrag: (taskId, clientX, clientY, origStart, origEnd) => {
 			if (!v.selectedTaskIds.has(taskId)) {
 				v.selectedTaskIds.clear();
 			}
+		
 			v.dragState = {
 				mode: "pending-bar",
 				taskId,
@@ -168,8 +183,10 @@ export function buildTaskRowContext(view: TimelineView): TaskRowRenderContext {
 				origStart,
 				origEnd,
 			};
+		
 			v.syncDocumentCursorFromInteractionState();
 		},
+		
 		beginResizeLeft: (taskId, clientX, origStart, origEnd) => {
 			v.dragState = {
 				mode: "resize-left",
@@ -180,6 +197,7 @@ export function buildTaskRowContext(view: TimelineView): TaskRowRenderContext {
 			};
 			v.syncDocumentCursorFromInteractionState();
 		},
+		
 		beginResizeRight: (taskId, clientX, origStart, origEnd) => {
 			v.dragState = {
 				mode: "resize-right",
@@ -190,6 +208,7 @@ export function buildTaskRowContext(view: TimelineView): TaskRowRenderContext {
 			};
 			v.syncDocumentCursorFromInteractionState();
 		},
+		
 		onStateButtonPress: (ev, task, taskStates, stateBtn) => {
 			v.stateButtonPressCallback(ev, task, taskStates, stateBtn);
 		},
@@ -275,19 +294,18 @@ export function appendOutsideRangeOverlayOnTaskRow(
 ): void {
 	const jumpOverlay = rowEl.createDiv({
 		cls:
-			"timeline-planner-outside-range-overlay timeline-planner-outside-range " +
-			(pastLeft
+			"timeline-planner-outside-range-overlay timeline-planner-outside-range "
+			+ (pastLeft
 				? "timeline-planner-outside-range--past-left"
 				: "timeline-planner-outside-range--past-right"),
 	});
-	const outsideStrip = jumpOverlay.createDiv({
-		cls: "timeline-planner-outside-range-inner",
-	});
+	const outsideStrip = jumpOverlay.createDiv({ cls: "timeline-planner-outside-range-inner" });
 
 	const onJumpMouseDown = (ev: MouseEvent): void => {
 		ev.preventDefault();
 		ev.stopPropagation();
 	};
+
 	const onJumpClick = (ev: MouseEvent): void => {
 		ev.preventDefault();
 		ev.stopPropagation();
@@ -300,9 +318,7 @@ export function appendOutsideRangeOverlayOnTaskRow(
 		text: "◀",
 	});
 	if (pastLeft) {
-		const tip = DisplayedTexts.timeline.outsideRangeArrowTitleLeft(
-			formatYmd(rangeStart)
-		);
+		const tip = DisplayedTexts.timeline.outsideRangeArrowTitleLeft(formatYmd(rangeStart));
 		element_leftArrow.setAttr("title", "");
 		element_leftArrow.setAttr("aria-label", tip);
 		element_leftArrow.addEventListener("mousedown", onJumpMouseDown);
@@ -313,9 +329,8 @@ export function appendOutsideRangeOverlayOnTaskRow(
 		element_leftArrow.addClass("is-inactive");
 	}
 
-	const element_center = outsideStrip.createDiv({
-		cls: "timeline-planner-outside-range-center",
-	});
+	const element_center = outsideStrip.createDiv({cls: "timeline-planner-outside-range-center",});
+
 	const jumpBtn = element_center.createEl("button", {
 		type: "button",
 		cls: "timeline-planner-jump-task-btn",
@@ -331,10 +346,9 @@ export function appendOutsideRangeOverlayOnTaskRow(
 		cls: "timeline-planner-outside-range-arrow timeline-planner-outside-range-arrow--right",
 		text: "▶",
 	});
+
 	if (!pastLeft) {
-		const tip = DisplayedTexts.timeline.outsideRangeArrowTitleRight(
-			formatYmd(rangeEnd)
-		);
+		const tip = DisplayedTexts.timeline.outsideRangeArrowTitleRight(formatYmd(rangeEnd));
 		element_rightArrow.setAttr("title", "");
 		element_rightArrow.setAttr("aria-label", tip);
 		element_rightArrow.addEventListener("mousedown", onJumpMouseDown);
