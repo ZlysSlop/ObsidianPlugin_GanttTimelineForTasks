@@ -5,6 +5,9 @@ import type { TimelineTask } from "./TimelineTypes";
 import type { TaskLabelDisplay } from "./timelineTaskLabel";
 import type { TaskRowRenderContext } from "./timelineTaskTrack";
 
+/** Stacked bar: state pill is hidden — center the title row in `bar.css`. */
+const TASK_BAR_NO_STATE_PILL_CLASS = "timeline-task-row-task-bar--no-state-pill";
+
 /**
  * Filled state: full pill uses state color; hover/focus/active kept identical so
  * opening the native menu does not flash theme “unhovered” chrome.
@@ -30,6 +33,10 @@ export function applyTaskStateButtonUi(
 		el.textContent = stateName!;
 	}
 	styleTaskStateSelect(el, fillHex);
+	const taskBar = el.closest(".timeline-task-row-task-bar");
+	if (taskBar) {
+		taskBar.classList.toggle(TASK_BAR_NO_STATE_PILL_CLASS, !hasState);
+	}
 }
 
 /** Uses theme bar CSS when both task and plugin default are empty. */

@@ -249,6 +249,13 @@
 	background-size: 9px 9px;
 }
 
+/* State pill is display:none: no second row, so don’t top-anchor the title. */
+.timeline-task-row-task-bar--stacked.timeline-task-row-task-bar--no-state-pill {
+	justify-content: center;
+	gap: 0;
+	padding: 2px 2px 2px 2px;
+}
+
 .timeline-task-row-task-bar-handle {
 	position: absolute;
 	top: 0;
