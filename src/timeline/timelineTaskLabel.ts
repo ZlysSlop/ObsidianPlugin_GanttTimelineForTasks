@@ -72,6 +72,7 @@ export function appendTimelineTaskLabel(
 				cls: "timeline-task-row-title-text",
 				text: display.title,
 			});
+			element_title_text.setAttr("aria-label", display.title);
 			if(display.hasText)
 			{
 				element_title_text.style.textDecoration = "underline";

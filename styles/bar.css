@@ -201,7 +201,7 @@
 	white-space: nowrap;
 	overflow: hidden;
 	text-overflow: ellipsis;
-	pointer-events: none;
+	pointer-events: auto;
 	font-size: var(--font-ui-medium);
 	font-weight: 500;
 	letter-spacing: 0.01em;
