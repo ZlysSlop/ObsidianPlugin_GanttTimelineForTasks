@@ -299,6 +299,17 @@ export class TimelineView extends FileView {
 		this.registerDomEvent(window, "mouseup", () => this.onGlobalMouseUp());
 
 		this.registerDomEvent(window, "keydown", (ev: KeyboardEvent) => {
+			if (ev.key === "Delete" && this.selectedTaskIds.size > 0) {
+				if (this.isEditableKeyboardTarget(ev.target)) {
+					return;
+				}
+				
+				ev.preventDefault();
+				this.deleteSelectedTasks();
+				
+				return;
+			}
+
 			if (ev.key !== "Escape") {
 				return;
 			}
@@ -362,6 +373,34 @@ export class TimelineView extends FileView {
 		if (!this.file) return;
 		await this.api.persist(this);
 		this.redrawPreservingScroll();
+	}
+
+	private isEditableKeyboardTarget(target: EventTarget | null): boolean {
+		const el = target as HTMLElement | null;
+		
+		if (!el) {
+			return false;
+		}
+
+		if (el.isContentEditable) {
+			return true;
+		}
+
+		return !!el.closest("input, textarea, select, [contenteditable='true']");
+	}
+
+	private deleteSelectedTasks(): void {
+		if (this.selectedTaskIds.size === 0) {
+			return;
+		}
+
+		const selected = new Set(this.selectedTaskIds);
+		this.data.tasks = this.data.tasks.filter((t) => !selected.has(t.id));
+		this.selectedTaskIds.clear();
+		
+		new Notice(DisplayedTexts.timeline.noticeTaskRemoved);
+		
+		void this.persistAndRedraw();
 	}
 
 	/** Toolbar — place today near the start of the visible range (same as legacy jump). */
