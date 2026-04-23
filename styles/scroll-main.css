@@ -8,10 +8,7 @@
 	overflow-x: hidden;
 	overflow-y: auto;
 	cursor: default;
-	/* Keep scrolling (wheel / touch / right-drag) but hide scrollbars. */
 	scrollbar-width: none;
-	-ms-overflow-style: none;
-	/* Breathing room so the last day column isn’t flush against the pane edge. */
 	padding-block-end: 6px;
 	box-sizing: border-box;
 	background: var(--background-primary);
