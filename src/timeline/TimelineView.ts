@@ -15,6 +15,7 @@ import {
 } from "../dateUtils";
 import type { EmojiPickerCategoryForModal } from "../emoji/emojiPickerRuntime";
 import { firstGrapheme } from "../emoji/emojiUtils";
+import { createStampedId } from "../idUtils";
 import type { TaskStateDefinition } from "../settings/settingsData";
 import { TaskEditModal } from "../TaskEditModal";
 import {
@@ -514,7 +515,11 @@ export class TimelineView extends FileView {
 		suffix: number
 	): TimelineTask {
 		const out: TimelineTask = {
-			id: `t-${now}-${suffix}-${Math.random().toString(36).slice(2, 8)}`,
+			id: createStampedId("t", {
+				stamp: now,
+				extraParts: [suffix],
+				randomLength: 6,
+			}),
 			title: task.title,
 			text: task.text,
 			start: task.start,
@@ -1076,7 +1081,7 @@ export class TimelineView extends FileView {
 		}
 
 		const t0 = parseYmd(todayYmd());
-		const id = `t-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+		const id = createStampedId("t", { randomLength: 6 });
 		const task: TimelineTask = {
 			id,
 			title: DisplayedTexts.timeline.newTaskDefaultTitle,
